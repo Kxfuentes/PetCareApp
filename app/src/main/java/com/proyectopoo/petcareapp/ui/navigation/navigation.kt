@@ -1,3 +1,18 @@
 package com.proyectopoo.petcareapp.ui.navigation
 
-@Seria
+import kotlinx.serialization.Serializable
+
+@Serializable
+object Login
+
+@Serializable
+object RoleSection
+
+@Serializable
+object Feed
+
+@Serializable
+object CreateService
+
+@Serializable
+object Profile
