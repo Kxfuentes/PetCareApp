@@ -12,6 +12,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import com.proyectopoo.petcareapp.ui.login.LoginScreen
+import com.proyectopoo.petcareapp.ui.login.PetCareApp
+import com.proyectopoo.petcareapp.ui.services.CreateServiceScreen
 import com.proyectopoo.petcareapp.ui.services.FeedScreen
 import com.proyectopoo.petcareapp.ui.theme.PetCareAppTheme
 
@@ -25,7 +28,7 @@ class MainActivity : ComponentActivity() {
             PetCareAppTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     Box(modifier = Modifier.padding(innerPadding)) {
-                        FeedScreen()
+                        PetCareApp()
                     }
                 }
             }
