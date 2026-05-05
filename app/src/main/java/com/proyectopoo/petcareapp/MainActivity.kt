@@ -11,7 +11,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
-import com.proyectopoo.petcareapp.ui.navigation.AppNavigation
 import com.proyectopoo.petcareapp.ui.theme.PetCareAppTheme
 
 class MainActivity : ComponentActivity() {
@@ -21,7 +20,8 @@ class MainActivity : ComponentActivity() {
         setContent {
             PetCareAppTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    AppNavigation(
+                    Greeting(
+                        name = "Android",
                         modifier = Modifier.padding(innerPadding)
                     )
                 }
