@@ -1,61 +1,46 @@
 package com.proyectopoo.petcareapp.ui.screen
 
-import androidx.compose.foundation.layout.Column
-import androidx.compose.material3.Button
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.*
+import com.proyectopoo.petcareapp.ui.components.CampoLogin
+import com.proyectopoo.petcareapp.ui.components.PantallaPetCare
+import com.proyectopoo.petcareapp.ui.components.TituloPetCare
+import com.proyectopoo.petcareapp.ui.theme.CafeClaro
+import com.proyectopoo.petcareapp.ui.theme.CafeOscuro
 
 @Composable
 fun LoginScreen(
-    onGoToRoleSection: () -> Unit
+    onRoleSelection: () -> Unit,
+    onGoToRegister: () -> Unit = {}
 ) {
+    var user by remember { mutableStateOf("") }
+    var pass by remember { mutableStateOf("") }
 
-    var nombre by remember { mutableStateOf("") }
-    var correo by remember { mutableStateOf("") }
+    PantallaPetCare {
+        Spacer(Modifier.height(60.dp))
+        TituloPetCare()
+        Text("Iniciar Sesión", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = CafeOscuro)
+        Spacer(Modifier.height(30.dp))
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(24.dp),
-        verticalArrangement = Arrangement.Center
-    ) {
-
-        Text(
-            text = "PetCare App",
-            style = MaterialTheme.typography.headlineMedium
-        )
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        OutlinedTextField(
-            value = nombre,
-            onValueChange = { nombre = it },
-            label = { Text("Nombre") },
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        OutlinedTextField(
-            value = correo,
-            onValueChange = { correo = it },
-            label = { Text("Correo") },
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        Spacer(modifier = Modifier.height(24.dp))
+        CampoLogin("Usuario", user, "Ingrese su usuario", { user = it })
+        CampoLogin("Contraseña", pass, "••••••", { pass = it }, esPassword = true)
 
         Button(
-            onClick = onGoToRoleSection,
-            modifier = Modifier.fillMaxWidth(),
-            enabled = nombre.isNotBlank() && correo.isNotBlank()
+            onClick = { onRoleSelection() },
+            modifier = Modifier.fillMaxWidth(0.8f).height(50.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = CafeClaro),
+            shape = RoundedCornerShape(12.dp)
         ) {
-            Text("Continuar")
+            Text("Entrar", color = CafeOscuro, fontWeight = FontWeight.Bold)
+        }
+
+        TextButton(onClick = onGoToRegister) {
+            Text("¿No tienes cuenta? Regístrate", color = CafeOscuro)
         }
     }
 }
