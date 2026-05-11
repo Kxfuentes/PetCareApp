@@ -19,3 +19,6 @@ object Profile
 
 @Serializable
 object Register
+
+@Serializable
+object DogInfo

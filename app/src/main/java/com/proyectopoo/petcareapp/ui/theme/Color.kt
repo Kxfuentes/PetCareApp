@@ -2,6 +2,7 @@ package com.proyectopoo.petcareapp.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
+
 val FondoCrema = Color(0xFFFFF7E8)
 val FondoClaro = Color(0xFFFFFBF2)
 val CafeOscuro = Color(0xFF3B2514)
@@ -12,6 +13,18 @@ val FondoCampo = Color(0xFFFFFCF5)
 val BordeCampo = Color(0xFFD6A57A)
 
 val TextoSuave = Color(0xFF8A6A55)
+
+
+
+val Celeste     = Color(0xFFA7EBF2)
+val Aqua        = Color(0xFF54ACBF)
+val Azul        = Color(0xFF26658C)
+val Marino      = Color(0xFF023859)
+val Oscuro      = Color(0xFF011C40)
+
+
+val Blanco= Color(0xFFFFFFFF)
+val TextoSecundario = Color(0xFF7A8A9A)
 
 val Purple80 = Color(0xFFD0BCFF)
 val PurpleGrey80 = Color(0xFFCCC2DC)

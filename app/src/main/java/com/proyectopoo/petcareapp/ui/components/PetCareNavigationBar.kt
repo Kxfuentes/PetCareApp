@@ -25,7 +25,6 @@ fun PetCareNavigationBar(navController: NavHostController) {
         val navBackStackEntry = navController.currentBackStackEntryAsState().value
         val currentDestination = navBackStackEntry?.destination
 
-        // Ítem INICIO
         NavigationBarItem(
             selected = currentDestination?.hierarchy?.any { it.hasRoute<Feed>() } == true,
             onClick = {
@@ -39,7 +38,6 @@ fun PetCareNavigationBar(navController: NavHostController) {
             label = { Text("Inicio") }
         )
 
-        // Ítem PUBLICAR
         NavigationBarItem(
             selected = currentDestination?.hierarchy?.any { it.hasRoute<CreateService>() } == true,
             onClick = {
@@ -52,7 +50,7 @@ fun PetCareNavigationBar(navController: NavHostController) {
             label = { Text("Publicar") }
         )
 
-        // Ítem PERFIL
+
         NavigationBarItem(
             selected = currentDestination?.hierarchy?.any { it.hasRoute<Profile>() } == true,
             onClick = {
