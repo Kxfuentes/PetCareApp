@@ -6,7 +6,6 @@ import com.proyectopoo.petcareapp.ui.model.PetService
 
 val listaServicios = listOf(
     PetService(
-        1,
         "Max",
         "Carlos",
         "Paseo",
@@ -15,8 +14,8 @@ val listaServicios = listOf(
         "1234-5678",
         "08:00 AM"
     ),
-    PetService(2, "Luna", "María", "Veterinario", "Cita para vacunas", "Managua", "8888-0000", "02:00 PM"),
-    PetService(3, "Rocky", "Pedro", "Baño", "Corte de pelo y baño", "León", "7777-1111", "10:30 AM")
+    PetService( "Luna", "María", "Veterinario", "Cita para vacunas", "Managua", "8888-0000", "02:00 PM"),
+    PetService( "Rocky", "Pedro", "Baño", "Corte de pelo y baño", "León", "7777-1111", "10:30 AM")
 )
 
 data class RoleInfo(val titulo: String, val descripcion: String)

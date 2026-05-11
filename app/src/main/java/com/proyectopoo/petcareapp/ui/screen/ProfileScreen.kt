@@ -33,8 +33,8 @@ fun ProfileScreen(
             Column(
                 modifier = Modifier.padding(16.dp)
             ) {
-                Text("Nombre: Usuario Demo")
-                Text("Correo: usuario@petcare.com")
+                Text("Nombre: Nahum")
+                Text("Correo: correonahum@gmail.com")
                 Text("Rol: Dueño de Mascota")
             }
         }

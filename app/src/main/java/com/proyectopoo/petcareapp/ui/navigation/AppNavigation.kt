@@ -1,73 +1,121 @@
 package com.proyectopoo.petcareapp.ui.navigation
 
-import com.proyectopoo.petcareapp.ui.screen.RoleSectionScreen
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
-import androidx.navigation.compose.*
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
 import com.proyectopoo.petcareapp.ui.screen.*
 
 @Composable
 fun AppNavigation(
     navController: NavHostController,
     modifier: Modifier = Modifier
-)
-{
+) {
+
     NavHost(
         navController = navController,
         startDestination = Login,
         modifier = modifier
-    )
+    ) {
 
-    {
         composable<Login> {
             LoginScreen(
-                onRoleSelection = { navController.navigate(RoleSection) },
-                onGoToRegister = { navController.navigate(Register) }
+                onRoleSelection = {
+                    navController.navigate(RoleSection)
+                },
+                onGoToRegister = {
+                    navController.navigate(Register)
+                }
             )
         }
 
         composable<Register> {
             RegisterScreen(
-                onRegisterSuccess = { navController.navigate(RoleSection) },
-                onBack = { navController.popBackStack() }
-            )
-        }
-
-        composable<RoleSection> {
-
-            RoleSectionScreen(
-
-                onOwnerSelected = {
-                    navController.navigate(DogInfo)
+                onRegisterSuccess = {
+                    navController.navigate(RoleSection)
                 },
-
-                onCaregiverSelected = {
-                    navController.navigate(Feed)
+                onBack = {
+                    navController.popBackStack()
                 }
             )
         }
 
-        composable<Feed> {
-            FeedScreen(
-                onGoToCreate = { navController.navigate(CreateService) },
-                onGoToProfile = { navController.navigate(Profile) }
+        composable<RoleSection> {
+            RoleSectionScreen(
+                onOwnerSelected = {
+                    navController.navigate(DogInfo)
+                },
+                onCaregiverSelected = {
+                    navController.navigate(CaregiverHome)
+                }
+            )
+        }
+
+        composable<DogInfo> {
+            DogInfoScreen(
+                onFinish = {
+                    navController.navigate(OwnerHome)
+                }
+            )
+        }
+
+        composable<OwnerHome> {
+            OwnerHomeScreen(
+                onGoToCreate = {
+                    navController.navigate(CreateService)
+                }
+
+            )
+        }
+
+        composable<OwnerFeed> {
+            OwnerFeedScreen(
+                onGoToProfile = { cuidadorId ->
+                    navController.navigate(Profile)
+                }
             )
         }
 
         composable<CreateService> {
-            CreateServiceScreen(onBack = { navController.popBackStack() })
+            CreateServiceScreen(
+                onBack = {
+                    navController.popBackStack()
+                }
+            )
+        }
+
+        composable<CaregiverHome> {
+            CaregiverHomeScreen(
+                onGoToProfile = {
+                    navController.navigate(Profile)
+                }
+            )
+        }
+
+        composable<CaregiverFeed> {
+            CaregiverFeedScreen(
+                onGoToCreate = {
+                    navController.navigate(CreateService)
+                },
+                onGoToProfile = {
+                    navController.navigate(Profile)
+                }
+            )
+        }
+
+        composable<CaregiverServices> {
+            CaregiverServiceScreen(
+                onBack = {
+                    navController.popBackStack()
+                }
+            )
         }
 
         composable<Profile> {
-            ProfileScreen(onBack = { navController.popBackStack() })
-        }
-
-        composable<DogInfo> {
-
-            DogInfoScreen(
-                onFinish = {
-                    navController.navigate(Feed)
+            ProfileScreen(
+                onBack = {
+                    navController.popBackStack()
                 }
             )
         }

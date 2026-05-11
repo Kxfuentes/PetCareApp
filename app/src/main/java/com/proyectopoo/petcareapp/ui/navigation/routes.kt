@@ -6,19 +6,31 @@ import kotlinx.serialization.Serializable
 object Login
 
 @Serializable
+object Register
+
+@Serializable
 object RoleSection
 
 @Serializable
-object Feed
+object DogInfo
+
+@Serializable
+object OwnerHome
+
+@Serializable
+object OwnerFeed
+
+@Serializable
+object CaregiverHome
+
+@Serializable
+object CaregiverFeed
+
+@Serializable
+object CaregiverServices
 
 @Serializable
 object CreateService
 
 @Serializable
 object Profile
-
-@Serializable
-object Register
-
-@Serializable
-object DogInfo
