@@ -56,7 +56,6 @@ class MainActivity : ComponentActivity() {
                     val navBackStackEntry by navController.currentBackStackEntryAsState()
                     val currentDestination = navBackStackEntry?.destination
 
-                    // Ocultamos la barra en login, registro, selección de rol y registro de mascota
                     val showBar = currentDestination?.let { dest ->
                         !dest.hasRoute<Login>() && 
                         !dest.hasRoute<Register>() && 

@@ -91,7 +91,6 @@ fun CaregiverFeedScreen(
                 .padding(20.dp)
         ) {
 
-            // FILTRO
             ExposedDropdownMenuBox(
                 expanded = expanded,
                 onExpandedChange = {

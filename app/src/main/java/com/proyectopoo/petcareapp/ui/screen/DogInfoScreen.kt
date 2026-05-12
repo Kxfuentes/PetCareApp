@@ -52,7 +52,6 @@ fun DogInfoScreen(
 
         Spacer(modifier = Modifier.height(30.dp))
 
-        // Nombre perro
         OutlinedTextField(
             value = dogName,
             onValueChange = { dogName = it },
@@ -78,7 +77,6 @@ fun DogInfoScreen(
 
         Spacer(modifier = Modifier.height(18.dp))
 
-        // Raza
         OutlinedTextField(
             value = breed,
             onValueChange = { breed = it },

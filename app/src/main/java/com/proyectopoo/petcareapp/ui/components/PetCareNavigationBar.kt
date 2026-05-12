@@ -27,7 +27,6 @@ fun PetCareNavigationBar(
 
     NavigationBar(containerColor = CafeOscuro) {
 
-        // ── INICIO ──
         val homeRoute = if (isOwner) OwnerHome else CaregiverHome
         NavigationBarItem(
             selected = currentDestination?.hierarchy?.any { it.hasRoute(homeRoute::class) } == true,
@@ -43,7 +42,6 @@ fun PetCareNavigationBar(
             colors = navigationBarColors()
         )
 
-        // ── BUSCAR ──
         val feedRoute = if (isOwner) OwnerFeed else CaregiverFeed
         NavigationBarItem(
             selected = currentDestination?.hierarchy?.any { it.hasRoute(feedRoute::class) } == true,
@@ -61,7 +59,6 @@ fun PetCareNavigationBar(
             colors = navigationBarColors()
         )
 
-        // ── PUBLICAR (solo dueño) ──
         if (isOwner) {
             NavigationBarItem(
                 selected = currentDestination?.hierarchy?.any { it.hasRoute<CreateService>() } == true,
@@ -80,7 +77,6 @@ fun PetCareNavigationBar(
             )
         }
 
-        // ── PERFIL ──
         NavigationBarItem(
             selected = currentDestination?.hierarchy?.any { it.hasRoute<Profile>() } == true,
             onClick = {
