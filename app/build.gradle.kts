@@ -1,12 +1,12 @@
 plugins {
     alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
 }
 
 android {
     namespace = "com.proyectopoo.petcareapp"
-    // CORRECCIÓN: Simplificamos el compileSdk para evitar errores de sintaxis
     compileSdk = 36
 
     defaultConfig {
@@ -36,6 +36,9 @@ android {
 
     buildFeatures {
         compose = true
+    }
+    kotlinOptions {
+        jvmTarget = "11"
     }
 }
 

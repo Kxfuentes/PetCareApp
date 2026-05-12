@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.proyectopoo.petcareapp.ui.theme.*
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun DogInfoScreen(
     onFinish: () -> Unit

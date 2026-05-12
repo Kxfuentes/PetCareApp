@@ -367,9 +367,7 @@ fun CaregiverServiceScreen(
 
                     shape = RoundedCornerShape(18.dp),
 
-                    border = ButtonDefaults.outlinedButtonBorder(
-                        enabled = true
-                    ),
+                    border = ButtonDefaults.outlinedButtonBorder,
 
                     colors = ButtonDefaults.outlinedButtonColors(
                         contentColor = CafeMedio
@@ -481,9 +479,7 @@ fun CaregiverServiceScreen(
 
                                 shape = RoundedCornerShape(14.dp),
 
-                                border = ButtonDefaults.outlinedButtonBorder(
-                                    enabled = true
-                                ),
+                                border = ButtonDefaults.outlinedButtonBorder,
 
                                 colors = ButtonDefaults.outlinedButtonColors(
                                     contentColor = CafeMedio
@@ -513,4 +509,3 @@ fun CaregiverServiceScreen(
         }
     }
 }
-

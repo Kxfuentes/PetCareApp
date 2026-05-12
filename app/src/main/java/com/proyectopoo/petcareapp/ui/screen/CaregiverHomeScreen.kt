@@ -161,9 +161,7 @@ fun CaregiverHomeScreen(
             OutlinedButton(
                 onClick = onGoToProfile,
                 modifier = Modifier.fillMaxWidth(),
-                border = ButtonDefaults.outlinedButtonBorder(
-                    enabled = true
-                ),
+                border = ButtonDefaults.outlinedButtonBorder,
                 colors = ButtonDefaults.outlinedButtonColors(
                     contentColor = CafeMedio
                 )

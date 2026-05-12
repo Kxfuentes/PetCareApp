@@ -135,7 +135,8 @@ fun OwnerFeedScreen(
                         Text("Tipo de servicio")
                     },
                     modifier = Modifier
-                        .fillMaxWidth(),
+                        .fillMaxWidth()
+                        .menuAnchor(),
                     shape = RoundedCornerShape(16.dp),
 
                     colors = OutlinedTextFieldDefaults.colors(
@@ -346,9 +347,7 @@ fun OwnerFeedScreen(
 
                                 shape = RoundedCornerShape(16.dp),
 
-                                border = ButtonDefaults.outlinedButtonBorder(
-                                    enabled = true
-                                ),
+                                border = ButtonDefaults.outlinedButtonBorder,
 
                                 colors = ButtonDefaults.outlinedButtonColors(
                                     contentColor = CafeMedio

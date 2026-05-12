@@ -290,9 +290,7 @@ fun CaregiverFeedScreen(
                                 onClick = { },
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(16.dp),
-                                border = ButtonDefaults.outlinedButtonBorder(
-                                    enabled = true
-                                ),
+                                border = ButtonDefaults.outlinedButtonBorder,
                                 colors = ButtonDefaults.outlinedButtonColors(
                                     contentColor = CafeMedio
                                 )
