@@ -147,7 +147,6 @@ fun LoginScreen(
 
                 Spacer(modifier = Modifier.height(10.dp))
 
-                // Tip Interactivo
                 Text(
                     text = "Autocompletar (Pruebas):",
                     fontSize = 11.sp,

@@ -226,7 +226,6 @@ fun CaregiverServiceScreen(
 
                 Spacer(modifier = Modifier.height(18.dp))
 
-                // PRECIO
                 OutlinedTextField(
                     value = precio,
                     onValueChange = {
@@ -253,7 +252,6 @@ fun CaregiverServiceScreen(
 
                 Spacer(modifier = Modifier.height(18.dp))
 
-                // DESCRIPCIÓN
                 OutlinedTextField(
                     value = descripcion,
                     onValueChange = {
@@ -279,7 +277,6 @@ fun CaregiverServiceScreen(
                 )
 
                 Spacer(modifier = Modifier.height(18.dp))
-
 
                 Row(
                     verticalAlignment = Alignment.CenterVertically
@@ -310,7 +307,6 @@ fun CaregiverServiceScreen(
 
                 Spacer(modifier = Modifier.height(30.dp))
 
-                // GUARDAR
                 Button(
 
                     onClick = {
@@ -354,7 +350,6 @@ fun CaregiverServiceScreen(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                // CANCELAR
                 OutlinedButton(
 
                     onClick = {
@@ -383,7 +378,6 @@ fun CaregiverServiceScreen(
 
         } else {
 
-            // LISTA DE SERVICIOS
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
