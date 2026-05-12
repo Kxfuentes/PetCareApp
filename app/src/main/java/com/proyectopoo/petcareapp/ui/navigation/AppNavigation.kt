@@ -152,9 +152,6 @@ fun AppNavigation(
                 },
                 onGoToProfile = {
                     navController.navigate(Profile)
-                },
-                onGoToServices = {
-                    navController.navigate(CaregiverServices)
                 }
             )
         }
