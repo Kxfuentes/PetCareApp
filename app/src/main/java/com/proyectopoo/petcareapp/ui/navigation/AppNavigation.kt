@@ -108,18 +108,24 @@ fun AppNavigation(
 
         composable<OwnerHome> {
             OwnerHomeScreen(
+                onGoToFeed = {
+                    navController.navigate(OwnerFeed)
+                },
                 onGoToCreate = {
                     navController.navigate(CreateService)
                 },
                 onEditPets = {
                     navController.navigate(DogInfo)
+                },
+                onGoToProfile = {
+                    navController.navigate(Profile)
                 }
             )
         }
 
         composable<OwnerFeed> {
             OwnerFeedScreen(
-                onGoToProfile = { _ ->
+                onGoToProfile = { cuidadorId ->
                     navController.navigate(Profile)
                 }
             )
@@ -135,6 +141,15 @@ fun AppNavigation(
 
         composable<CaregiverHome> {
             CaregiverHomeScreen(
+                onGoToFeed = {
+                    navController.navigate(CaregiverFeed)
+                },
+                onGoToCreate = {
+                    navController.navigate(CreateService)
+                },
+                onGoToServices = {
+                    navController.navigate(CaregiverService)
+                },
                 onGoToProfile = {
                     navController.navigate(Profile)
                 },
@@ -155,7 +170,7 @@ fun AppNavigation(
             )
         }
 
-        composable<CaregiverServices> {
+        composable<CaregiverService> {
             CaregiverServiceScreen(
                 onBack = {
                     navController.popBackStack()

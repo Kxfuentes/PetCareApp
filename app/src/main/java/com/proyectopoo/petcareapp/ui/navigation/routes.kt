@@ -27,7 +27,7 @@ object CaregiverHome
 object CaregiverFeed
 
 @Serializable
-object CaregiverServices
+object CaregiverService
 
 @Serializable
 object CreateService

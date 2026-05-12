@@ -278,6 +278,10 @@ fun CaregiverServiceScreen(
 
                 Spacer(modifier = Modifier.height(18.dp))
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> b9845b938f63bc72ac99dec0eecb94089508c2a4
                 Row(
                     verticalAlignment = Alignment.CenterVertically
                 ) {

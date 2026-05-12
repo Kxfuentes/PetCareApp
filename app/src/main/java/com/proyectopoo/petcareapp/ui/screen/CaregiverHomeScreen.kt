@@ -18,10 +18,11 @@ import com.proyectopoo.petcareapp.ui.theme.*
 
 @Composable
 fun CaregiverHomeScreen(
-    onGoToProfile: () -> Unit,
-    onGoToServices: () -> Unit
+    onGoToFeed: () -> Unit,
+    onGoToCreate: () -> Unit,
+    onGoToServices: () -> Unit,
+    onGoToProfile: () -> Unit
 ) {
-
     var available by remember {
         mutableStateOf(true)
     }
@@ -31,12 +32,10 @@ fun CaregiverHomeScreen(
             .fillMaxSize()
             .background(Color.White)
     ) {
-
         Surface(
             color = CafeOscuro,
             modifier = Modifier.fillMaxWidth()
         ) {
-
             Text(
                 text = "Bienvenido",
                 color = Color.White,
@@ -49,45 +48,24 @@ fun CaregiverHomeScreen(
         Column(
             modifier = Modifier.padding(20.dp)
         ) {
-
             Row {
-
                 AssistChip(
-                    onClick = {
-                        available = !available
-                    },
-
+                    onClick = { available = !available },
                     label = {
-
                         Text(
-                            if (available)
-                                "Disponible"
-                            else
-                                "No disponible"
+                            if (available) "Disponible"
+                            else "No disponible"
                         )
                     },
-
                     colors = AssistChipDefaults.assistChipColors(
-                        containerColor =
-                            if (available)
-                                CafeMedio
-                            else
-                                CafeClaro,
-
-                        labelColor =
-                            if (available)
-                                Color.White
-                            else
-                                CafeOscuro
+                        containerColor = if (available) CafeMedio else CafeClaro,
+                        labelColor = if (available) Color.White else CafeOscuro
                     )
                 )
 
                 Spacer(modifier = Modifier.width(10.dp))
 
-                IconButton(
-                    onClick = { }
-                ) {
-
+                IconButton(onClick = { }) {
                     Icon(
                         Icons.Default.Edit,
                         contentDescription = "Editar",
@@ -108,31 +86,19 @@ fun CaregiverHomeScreen(
             Spacer(modifier = Modifier.height(18.dp))
 
             Card(
-                colors = CardDefaults.cardColors(
-                    containerColor = FondoClaro
-                ),
+                colors = CardDefaults.cardColors(containerColor = FondoClaro),
                 shape = RoundedCornerShape(22.dp),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .border(
-                        2.dp,
-                        CafeClaro,
-                        RoundedCornerShape(22.dp)
-                    )
+                    .border(2.dp, CafeClaro, RoundedCornerShape(22.dp))
             ) {
-
-                Row(
-                    modifier = Modifier.padding(20.dp)
-                ) {
-
+                Row(modifier = Modifier.padding(20.dp)) {
                     Icon(
                         Icons.Default.DirectionsWalk,
                         contentDescription = null,
                         tint = CafeMedio
                     )
-
                     Spacer(modifier = Modifier.width(12.dp))
-
                     Text(
                         text = "Paseo con Max · Hoy 3PM",
                         color = CafeOscuro,
@@ -146,15 +112,29 @@ fun CaregiverHomeScreen(
             Button(
                 onClick = onGoToServices,
                 modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = CafeMedio
-                )
+                colors = ButtonDefaults.buttonColors(containerColor = CafeMedio)
             ) {
+                Text(text = "Gestionar mis servicios", color = Color.White)
+            }
 
-                Text(
-                    text = "Gestionar mis servicios",
-                    color = Color.White
-                )
+            Spacer(modifier = Modifier.height(14.dp))
+
+            OutlinedButton(
+                onClick = onGoToFeed,
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = CafeMedio)
+            ) {
+                Text("Buscar solicitudes")
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            OutlinedButton(
+                onClick = onGoToCreate,
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = CafeMedio)
+            ) {
+                Text("Crear publicación")
             }
 
             Spacer(modifier = Modifier.height(14.dp))
@@ -163,11 +143,8 @@ fun CaregiverHomeScreen(
                 onClick = onGoToProfile,
                 modifier = Modifier.fillMaxWidth(),
                 border = ButtonDefaults.outlinedButtonBorder,
-                colors = ButtonDefaults.outlinedButtonColors(
-                    contentColor = CafeMedio
-                )
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = CafeMedio)
             ) {
-
                 Text("Ver mi perfil público")
             }
         }
