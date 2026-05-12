@@ -280,7 +280,7 @@ fun CaregiverServiceScreen(
 
                 Spacer(modifier = Modifier.height(18.dp))
 
-                // SWITCH
+
                 Row(
                     verticalAlignment = Alignment.CenterVertically
                 ) {

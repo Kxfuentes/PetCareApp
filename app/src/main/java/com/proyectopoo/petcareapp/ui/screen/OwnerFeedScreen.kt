@@ -83,7 +83,7 @@ fun OwnerFeedScreen(
             .background(FondoClaro)
     ) {
 
-        // TOP BAR
+
         TopAppBar(
 
             title = {
@@ -119,7 +119,7 @@ fun OwnerFeedScreen(
                 .padding(20.dp)
         ) {
 
-            // FILTRO
+
             ExposedDropdownMenuBox(
                 expanded = expanded,
                 onExpandedChange = {
@@ -173,7 +173,7 @@ fun OwnerFeedScreen(
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            // LISTA DE CUIDADORES
+
             LazyColumn(
                 verticalArrangement = Arrangement.spacedBy(18.dp)
             ) {
@@ -202,12 +202,10 @@ fun OwnerFeedScreen(
                             modifier = Modifier.padding(20.dp)
                         ) {
 
-                            // HEADER
                             Row(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
 
-                                // AVATAR
                                 Surface(
                                     shape = CircleShape,
                                     color = CafeOscuro,
@@ -271,7 +269,7 @@ fun OwnerFeedScreen(
 
                             Spacer(modifier = Modifier.height(16.dp))
 
-                            // UBICACIÓN
+
                             Row(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
@@ -293,7 +291,7 @@ fun OwnerFeedScreen(
 
                             Spacer(modifier = Modifier.height(12.dp))
 
-                            // PRECIO
+
                             Text(
                                 text = "Precio: ${cuidador.precio}",
                                 color = CafeOscuro,
@@ -303,7 +301,7 @@ fun OwnerFeedScreen(
 
                             Spacer(modifier = Modifier.height(14.dp))
 
-                            // CHIPS SERVICIOS
+
                             Row(
                                 horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
@@ -327,7 +325,6 @@ fun OwnerFeedScreen(
 
                             Spacer(modifier = Modifier.height(16.dp))
 
-                            // RESEÑA
                             Text(
                                 text = "\"${cuidador.resena}\"",
                                 color = TextoSuave,
@@ -337,7 +334,6 @@ fun OwnerFeedScreen(
 
                             Spacer(modifier = Modifier.height(20.dp))
 
-                            // BOTÓN
                             OutlinedButton(
                                 onClick = {
                                 },

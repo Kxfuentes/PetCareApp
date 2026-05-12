@@ -20,7 +20,10 @@ import com.proyectopoo.petcareapp.ui.theme.*
 
 @Composable
 fun OwnerHomeScreen(
-    onGoToCreate: () -> Unit
+    onGoToCreate: () -> Unit,
+    onGoToFeed: () -> Unit,
+    onGoToProfile: () -> Unit
+
 ) {
 
     val services = listOf(

@@ -18,7 +18,12 @@ import com.proyectopoo.petcareapp.ui.theme.*
 
 @Composable
 fun CaregiverHomeScreen(
+    onGoToFeed: () -> Unit,
+    // Temporal
+    onGoToCreate: () -> Unit,
+    onGoToServices: () -> Unit,
     onGoToProfile: () -> Unit
+
 ) {
 
     var available by remember {
@@ -142,8 +147,9 @@ fun CaregiverHomeScreen(
 
             Spacer(modifier = Modifier.height(30.dp))
 
+
             Button(
-                onClick = { },
+                onClick = onGoToServices,
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = CafeMedio
@@ -157,6 +163,35 @@ fun CaregiverHomeScreen(
             }
 
             Spacer(modifier = Modifier.height(14.dp))
+
+
+            OutlinedButton(
+                onClick = onGoToFeed,
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.outlinedButtonColors(
+                    contentColor = CafeMedio
+                )
+            ) {
+
+                Text("Buscar solicitudes")
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            // Temporal
+            OutlinedButton(
+                onClick = onGoToCreate,
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.outlinedButtonColors(
+                    contentColor = CafeMedio
+                )
+            ) {
+
+                Text("Crear publicación")
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
+
 
             OutlinedButton(
                 onClick = onGoToProfile,
