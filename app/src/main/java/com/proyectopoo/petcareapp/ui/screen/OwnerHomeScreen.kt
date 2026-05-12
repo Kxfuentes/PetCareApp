@@ -20,7 +20,8 @@ import com.proyectopoo.petcareapp.ui.theme.*
 
 @Composable
 fun OwnerHomeScreen(
-    onGoToCreate: () -> Unit
+    onGoToCreate: () -> Unit,
+    onEditPets: () -> Unit
 ) {
 
     val services = listOf(
@@ -84,7 +85,7 @@ fun OwnerHomeScreen(
                     Spacer(modifier = Modifier.height(10.dp))
 
                     TextButton(
-                        onClick = { }
+                        onClick = onEditPets
                     ) {
 
                         Text(

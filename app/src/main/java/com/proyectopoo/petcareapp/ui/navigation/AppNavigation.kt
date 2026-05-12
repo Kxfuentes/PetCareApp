@@ -48,11 +48,15 @@ fun AppNavigation(
         composable<Login> {
             LoginScreen(
                 onRoleSelection = {
-                    if (userRole != null) {
-                        when (userRole) {
-                            UserRole.OWNER -> navController.navigate(OwnerHome)
-                            UserRole.CAREGIVER -> navController.navigate(CaregiverHome)
-                            else -> navController.navigate(RoleSection)
+                    val currentRole = userRoleViewModel.userRole.value
+                    if (currentRole != null) {
+                        when (currentRole) {
+                            UserRole.OWNER -> navController.navigate(OwnerHome) {
+                                popUpTo(Login) { inclusive = true }
+                            }
+                            UserRole.CAREGIVER -> navController.navigate(CaregiverHome) {
+                                popUpTo(Login) { inclusive = true }
+                            }
                         }
                     } else {
                         navController.navigate(RoleSection)
@@ -67,14 +71,8 @@ fun AppNavigation(
         composable<Register> {
             RegisterScreen(
                 onRegisterSuccess = {
-                    if (userRole != null) {
-                        when (userRole) {
-                            UserRole.OWNER -> navController.navigate(OwnerHome)
-                            UserRole.CAREGIVER -> navController.navigate(CaregiverHome)
-                            else -> navController.navigate(RoleSection)
-                        }
-                    } else {
-                        navController.navigate(RoleSection)
+                    navController.navigate(RoleSection) {
+                        popUpTo(Register) { inclusive = true }
                     }
                 },
                 onBack = {
@@ -91,7 +89,9 @@ fun AppNavigation(
                 },
                 onCaregiverSelected = {
                     userRoleViewModel.setRole(UserRole.CAREGIVER)
-                    navController.navigate(CaregiverHome)
+                    navController.navigate(CaregiverHome) {
+                        popUpTo(RoleSection) { inclusive = true }
+                    }
                 }
             )
         }
@@ -99,7 +99,9 @@ fun AppNavigation(
         composable<DogInfo> {
             DogInfoScreen(
                 onFinish = {
-                    navController.navigate(OwnerHome)
+                    navController.navigate(OwnerHome) {
+                        popUpTo(DogInfo) { inclusive = true }
+                    }
                 }
             )
         }
@@ -108,6 +110,9 @@ fun AppNavigation(
             OwnerHomeScreen(
                 onGoToCreate = {
                     navController.navigate(CreateService)
+                },
+                onEditPets = {
+                    navController.navigate(DogInfo)
                 }
             )
         }
@@ -132,6 +137,9 @@ fun AppNavigation(
             CaregiverHomeScreen(
                 onGoToProfile = {
                     navController.navigate(Profile)
+                },
+                onGoToServices = {
+                    navController.navigate(CaregiverServices)
                 }
             )
         }
@@ -161,6 +169,7 @@ fun AppNavigation(
                     navController.popBackStack()
                 },
                 onLogout = {
+                    userRoleViewModel.clearRole()
                     navController.navigate(Login) {
                         popUpTo(0) { inclusive = true }
                     }

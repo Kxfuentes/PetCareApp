@@ -43,15 +43,6 @@ fun LoginScreen(
             .fillMaxSize()
             .background(FondoCrema)
     ) {
-        Text(
-            text = "",
-            fontSize = 120.sp,
-            color = CafeClaro.copy(alpha = 0.12f),
-            modifier = Modifier
-                .align(Alignment.TopStart)
-                .padding(20.dp)
-        )
-
         Card(
             modifier = Modifier
                 .fillMaxWidth(0.88f)
@@ -124,7 +115,6 @@ fun LoginScreen(
 
                 Button(
                     onClick = {
-                        // VALIDACIÓN DE USUARIOS DEFAULT
                         when {
                             correo == "kelly@petcare.com" && password == "kelly123" -> {
                                 userRoleViewModel.setRole(UserRole.OWNER)
@@ -138,8 +128,6 @@ fun LoginScreen(
                                 errorMessage = "Por favor, completa todos los campos"
                             }
                             else -> {
-                                // Si no son los usuarios default, permitimos el flujo normal
-                                // pero sin asignar rol automáticamente (irá a RoleSection)
                                 onRoleSelection()
                             }
                         }
@@ -157,12 +145,23 @@ fun LoginScreen(
                     Text("¿No tienes cuenta? Regístrate", color = CafeOscuro)
                 }
 
+                Spacer(modifier = Modifier.height(10.dp))
+
+                // Tip Interactivo
                 Text(
-                    text = "Tip: Usa kelly@petcare.com o vanessa@petcare.com",
-                    fontSize = 10.sp,
-                    color = TextoSuave,
-                    modifier = Modifier.padding(top = 10.dp)
+                    text = "Autocompletar (Pruebas):",
+                    fontSize = 11.sp,
+                    color = TextoSuave
                 )
+                
+                Row {
+                    TextButton(onClick = { correo = "kelly@petcare.com"; password = "kelly123" }) {
+                        Text("Dueño", fontSize = 12.sp, color = CafeMedio)
+                    }
+                    TextButton(onClick = { correo = "vanessa@petcare.com"; password = "vanessa123" }) {
+                        Text("Cuidador", fontSize = 12.sp, color = CafeMedio)
+                    }
+                }
             }
         }
     }

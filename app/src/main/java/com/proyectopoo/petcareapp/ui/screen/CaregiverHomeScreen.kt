@@ -18,7 +18,8 @@ import com.proyectopoo.petcareapp.ui.theme.*
 
 @Composable
 fun CaregiverHomeScreen(
-    onGoToProfile: () -> Unit
+    onGoToProfile: () -> Unit,
+    onGoToServices: () -> Unit
 ) {
 
     var available by remember {
@@ -143,7 +144,7 @@ fun CaregiverHomeScreen(
             Spacer(modifier = Modifier.height(30.dp))
 
             Button(
-                onClick = { },
+                onClick = onGoToServices,
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = CafeMedio
