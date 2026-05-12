@@ -37,7 +37,7 @@ fun CaregiverHomeScreen(
         ) {
 
             Text(
-                text = "🐾 Bienvenido",
+                text = "Bienvenido",
                 color = Color.White,
                 fontSize = 26.sp,
                 fontWeight = FontWeight.Bold,

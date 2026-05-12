@@ -44,7 +44,7 @@ fun OwnerHomeScreen(
         ) {
 
             Text(
-                text = "🐾 ¡Hola!",
+                text = "¡Hola!",
                 color = Color.White,
                 fontSize = 26.sp,
                 fontWeight = FontWeight.Bold,

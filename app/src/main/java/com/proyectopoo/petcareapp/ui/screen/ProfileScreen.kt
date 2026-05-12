@@ -1,18 +1,18 @@
 package com.proyectopoo.petcareapp.ui.screen
 
-import androidx.compose.foundation.layout.Column
-import androidx.compose.material3.Button
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.proyectopoo.petcareapp.LocalUserRoleViewModel
 
 @Composable
 fun ProfileScreen(
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onLogout: () -> Unit = {}
 ) {
+    val userRoleViewModel = LocalUserRoleViewModel.current
 
     Column(
         modifier = Modifier
@@ -66,6 +66,21 @@ fun ProfileScreen(
             modifier = Modifier.fillMaxWidth()
         ) {
             Text("Volver")
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        OutlinedButton(
+            onClick = {
+                userRoleViewModel.clearRole()
+                onLogout()
+            },
+            modifier = Modifier.fillMaxWidth(),
+            colors = ButtonDefaults.outlinedButtonColors(
+                contentColor = MaterialTheme.colorScheme.error
+            )
+        ) {
+            Text("Cerrar Sesión")
         }
     }
 }
