@@ -21,11 +21,10 @@ import com.proyectopoo.petcareapp.ui.theme.*
 @Composable
 fun OwnerHomeScreen(
     onGoToCreate: () -> Unit,
+    onEditPets: () -> Unit,
     onGoToFeed: () -> Unit,
     onGoToProfile: () -> Unit
-
 ) {
-
     val services = listOf(
         "Alojamiento" to Icons.Default.NightShelter,
         "Guardería" to Icons.Default.ChildCare,
@@ -40,14 +39,12 @@ fun OwnerHomeScreen(
             .fillMaxSize()
             .background(Color.White)
     ) {
-
         Surface(
             color = CafeOscuro,
             modifier = Modifier.fillMaxWidth()
         ) {
-
             Text(
-                text = "🐾 ¡Hola!",
+                text = "¡Hola!",
                 color = Color.White,
                 fontSize = 26.sp,
                 fontWeight = FontWeight.Bold,
@@ -58,7 +55,6 @@ fun OwnerHomeScreen(
         Column(
             modifier = Modifier.padding(20.dp)
         ) {
-
             Card(
                 colors = CardDefaults.cardColors(
                     containerColor = FondoClaro
@@ -72,26 +68,21 @@ fun OwnerHomeScreen(
                         RoundedCornerShape(22.dp)
                     )
             ) {
-
                 Column(
                     modifier = Modifier.padding(20.dp)
                 ) {
-
                     Text(
                         text = "Max, Golden Retriever · Tamaño M",
                         color = CafeOscuro,
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold
                     )
-
                     Spacer(modifier = Modifier.height(10.dp))
-
                     TextButton(
-                        onClick = { }
+                        onClick = onEditPets
                     ) {
-
                         Text(
-                            text = "✏Editar mascotas",
+                            text = "✏ Editar mascotas",
                             color = CafeMedio
                         )
                     }
@@ -115,9 +106,7 @@ fun OwnerHomeScreen(
                 horizontalArrangement = Arrangement.spacedBy(14.dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
-
                 items(services) { service ->
-
                     Card(
                         onClick = onGoToCreate,
                         colors = CardDefaults.cardColors(
@@ -130,23 +119,19 @@ fun OwnerHomeScreen(
                             RoundedCornerShape(20.dp)
                         )
                     ) {
-
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(20.dp),
                             verticalArrangement = Arrangement.Center
                         ) {
-
                             Icon(
                                 imageVector = service.second,
                                 contentDescription = service.first,
                                 tint = CafeMedio,
                                 modifier = Modifier.size(34.dp)
                             )
-
                             Spacer(modifier = Modifier.height(12.dp))
-
                             Text(
                                 text = service.first,
                                 color = CafeOscuro,
@@ -172,7 +157,6 @@ fun OwnerHomeScreen(
                 headlineContent = {
                     Text("Paseo para Max - Mañana 4PM")
                 },
-
                 leadingContent = {
                     Icon(
                         Icons.Default.AccessTime,
