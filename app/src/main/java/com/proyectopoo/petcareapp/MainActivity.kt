@@ -13,6 +13,7 @@ import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
@@ -21,6 +22,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.proyectopoo.petcareapp.ui.components.PetCareNavigationBar
 import com.proyectopoo.petcareapp.ui.navigation.*
+import com.proyectopoo.petcareapp.ui.screen.UserRole
 import com.proyectopoo.petcareapp.ui.screen.UserRoleViewModel
 import com.proyectopoo.petcareapp.ui.theme.PetCareAppTheme
 
@@ -44,6 +46,9 @@ class MainActivity : ComponentActivity() {
                     }
                 )
 
+                val userRole by userRoleViewModel.userRole.collectAsStateWithLifecycle()
+                val isOwner = userRole == UserRole.OWNER
+
                 CompositionLocalProvider(
                     LocalUserRoleViewModel provides userRoleViewModel
                 ) {
@@ -59,7 +64,10 @@ class MainActivity : ComponentActivity() {
                         modifier = Modifier.fillMaxSize(),
                         bottomBar = {
                             if (showBar) {
-                                PetCareNavigationBar(navController)
+                                PetCareNavigationBar(
+                                    navController = navController,
+                                    isOwner = isOwner
+                                )
                             }
                         }
                     ) { innerPadding ->

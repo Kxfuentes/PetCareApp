@@ -19,7 +19,8 @@ class UserRoleViewModel(private val prefs: SharedPreferences) : ViewModel() {
     private val _userRole = MutableStateFlow<UserRole?>(null)
     val userRole: StateFlow<UserRole?> = _userRole.asStateFlow()
 
-    private var isRoleLoaded = false
+    private val _isRoleLoaded = MutableStateFlow(false)
+    val isRoleLoaded: StateFlow<Boolean> = _isRoleLoaded.asStateFlow()
 
     init {
         loadRoleFromPreferences()
@@ -34,7 +35,7 @@ class UserRoleViewModel(private val prefs: SharedPreferences) : ViewModel() {
                 else -> null
             }
             _userRole.value = role
-            isRoleLoaded = true
+            _isRoleLoaded.value = true
         }
     }
 
@@ -51,6 +52,4 @@ class UserRoleViewModel(private val prefs: SharedPreferences) : ViewModel() {
             _userRole.value = null
         }
     }
-
-    fun isRoleLoaded(): Boolean = isRoleLoaded
 }
