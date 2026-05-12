@@ -16,11 +16,6 @@ val TextoSuave = Color(0xFF8A6A55)
 
 
 
-val Celeste     = Color(0xFFA7EBF2)
-val Aqua        = Color(0xFF54ACBF)
-val Azul        = Color(0xFF26658C)
-val Marino      = Color(0xFF023859)
-val Oscuro      = Color(0xFF011C40)
 
 
 val Blanco= Color(0xFFFFFFFF)

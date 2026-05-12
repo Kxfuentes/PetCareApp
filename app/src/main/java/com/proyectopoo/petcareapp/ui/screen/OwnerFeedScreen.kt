@@ -29,7 +29,6 @@ import com.proyectopoo.petcareapp.ui.theme.*
 fun OwnerFeedScreen(
     onGoToProfile: (Int) -> Unit
 ) {
-
     val tiposServicio = listOf(
         "Todos", "Alojamiento", "Guardería", "Paseo", "Taxi", "Peluquería", "Visitante"
     )
@@ -80,7 +79,11 @@ fun OwnerFeedScreen(
             colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
         )
 
-        Column(modifier = Modifier.padding(20.dp)) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(20.dp)
+        ) {
             ExposedDropdownMenuBox(
                 expanded = expanded,
                 onExpandedChange = { expanded = !expanded }
@@ -115,7 +118,9 @@ fun OwnerFeedScreen(
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(18.dp)) {
+            LazyColumn(
+                verticalArrangement = Arrangement.spacedBy(18.dp)
+            ) {
                 items(filteredCaregivers) { cuidador ->
                     Card(
                         modifier = Modifier
@@ -125,11 +130,26 @@ fun OwnerFeedScreen(
                         shape = RoundedCornerShape(24.dp),
                         colors = CardDefaults.cardColors(containerColor = Color.White)
                     ) {
-                        Column(modifier = Modifier.padding(20.dp)) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Surface(shape = CircleShape, color = CafeOscuro, modifier = Modifier.size(56.dp)) {
-                                    Box(contentAlignment = Alignment.Center) {
-                                        Text(cuidador.nombre.first().toString(), color = Color.White, fontWeight = FontWeight.Bold, fontSize = 22.sp)
+                        Column(
+                            modifier = Modifier.padding(20.dp)
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Surface(
+                                    shape = CircleShape,
+                                    color = CafeOscuro,
+                                    modifier = Modifier.size(56.dp)
+                                ) {
+                                    Box(
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(
+                                            text = cuidador.nombre.first().toString(),
+                                            color = Color.White,
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 22.sp
+                                        )
                                     }
                                 }
                                 Spacer(modifier = Modifier.width(16.dp))
@@ -144,17 +164,38 @@ fun OwnerFeedScreen(
                             }
 
                             Spacer(modifier = Modifier.height(16.dp))
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.LocationOn, null, tint = CafeMedio, modifier = Modifier.size(20.dp))
-                                Text(cuidador.ubicacion, color = CafeOscuro)
+
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.LocationOn,
+                                    contentDescription = "Ubicación",
+                                    tint = CafeMedio,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = cuidador.ubicacion,
+                                    color = CafeOscuro
+                                )
                             }
                             
                             Spacer(modifier = Modifier.height(12.dp))
-                            Text("Desde ${cuidador.precio}", color = CafeOscuro, fontWeight = FontWeight.Bold)
+
+                            Text(
+                                text = "Precio: ${cuidador.precio}",
+                                color = CafeOscuro,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 16.sp
+                            )
 
                             Spacer(modifier = Modifier.height(14.dp))
-                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                cuidador.servicios.take(2).forEach { servicio ->
+
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                cuidador.servicios.forEach { servicio ->
                                     AssistChip(
                                         onClick = { },
                                         label = { Text(servicio) },
@@ -163,9 +204,19 @@ fun OwnerFeedScreen(
                                 }
                             }
 
+                            Spacer(modifier = Modifier.height(16.dp))
+
+                            Text(
+                                text = "\"${cuidador.resena}\"",
+                                color = TextoSuave,
+                                fontStyle = FontStyle.Italic,
+                                fontSize = 15.sp
+                            )
+
                             Spacer(modifier = Modifier.height(20.dp))
+
                             OutlinedButton(
-                                onClick = { onGoToProfile(0) }, // Ahora funciona la navegación
+                                onClick = { onGoToProfile(0) }, // navegación temporal con ID fijo
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(16.dp),
                                 colors = ButtonDefaults.outlinedButtonColors(contentColor = CafeMedio)
