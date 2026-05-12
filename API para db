@@ -1,0 +1,4 @@
+https://github.com/VanessaA1A/petcare-services.git
+
+git de la Api q conecta la database con el proyecto en android studio, la api aunque esta conectada a la base de datos aun no esta conectada a la aplicacion
+hasta ahora la api es un modelo inicial sin un final completamente satisfactorio para la app
