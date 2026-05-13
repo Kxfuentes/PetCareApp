@@ -33,6 +33,7 @@ fun AppNavigation(
         return
     }
 
+    // El startDestination se basa en el rol activo (null al iniciar para ir a Login)
     val startDestination = when (userRole) {
         UserRole.OWNER -> OwnerHome
         UserRole.CAREGIVER -> CaregiverHome
@@ -48,19 +49,7 @@ fun AppNavigation(
         composable<Login> {
             LoginScreen(
                 onRoleSelection = {
-                    val currentRole = userRoleViewModel.userRole.value
-                    if (currentRole != null) {
-                        when (currentRole) {
-                            UserRole.OWNER -> navController.navigate(OwnerHome) {
-                                popUpTo(Login) { inclusive = true }
-                            }
-                            UserRole.CAREGIVER -> navController.navigate(CaregiverHome) {
-                                popUpTo(Login) { inclusive = true }
-                            }
-                        }
-                    } else {
-                        navController.navigate(RoleSection)
-                    }
+                    navController.navigate(RoleSection)
                 },
                 onGoToRegister = {
                     navController.navigate(Register)
@@ -108,78 +97,50 @@ fun AppNavigation(
 
         composable<OwnerHome> {
             OwnerHomeScreen(
-                onGoToFeed = {
-                    navController.navigate(OwnerFeed)
-                },
-                onGoToCreate = {
-                    navController.navigate(CreateService)
-                },
-                onEditPets = {
-                    navController.navigate(DogInfo)
-                },
-                onGoToProfile = {
-                    navController.navigate(Profile)
-                }
+                onGoToFeed = { navController.navigate(OwnerFeed) },
+                onGoToCreate = { navController.navigate(CreateService) },
+                onEditPets = { navController.navigate(DogInfo) },
+                onGoToProfile = { navController.navigate(Profile) }
             )
         }
 
         composable<OwnerFeed> {
             OwnerFeedScreen(
-                onGoToProfile = { cuidadorId ->
-                    navController.navigate(Profile)
-                }
+                onGoToProfile = { _ -> navController.navigate(Profile) }
             )
         }
 
         composable<CreateService> {
             CreateServiceScreen(
-                onBack = {
-                    navController.popBackStack()
-                }
+                onBack = { navController.popBackStack() }
             )
         }
 
         composable<CaregiverHome> {
             CaregiverHomeScreen(
-                onGoToFeed = {
-                    navController.navigate(CaregiverFeed)
-                },
-                onGoToCreate = {
-                    navController.navigate(CreateService)
-                },
-                onGoToServices = {
-                    navController.navigate(CaregiverService)
-                },
-                onGoToProfile = {
-                    navController.navigate(Profile)
-                }
+                onGoToFeed = { navController.navigate(CaregiverFeed) },
+                onGoToCreate = { navController.navigate(CreateService) },
+                onGoToServices = { navController.navigate(CaregiverService) },
+                onGoToProfile = { navController.navigate(Profile) }
             )
         }
 
         composable<CaregiverFeed> {
             CaregiverFeedScreen(
-                onGoToCreate = {
-                    navController.navigate(CreateService)
-                },
-                onGoToProfile = {
-                    navController.navigate(Profile)
-                }
+                onGoToCreate = { navController.navigate(CreateService) },
+                onGoToProfile = { navController.navigate(Profile) }
             )
         }
 
         composable<CaregiverService> {
             CaregiverServiceScreen(
-                onBack = {
-                    navController.popBackStack()
-                }
+                onBack = { navController.popBackStack() }
             )
         }
 
         composable<Profile> {
             ProfileScreen(
-                onBack = {
-                    navController.popBackStack()
-                },
+                onBack = { navController.popBackStack() },
                 onLogout = {
                     userRoleViewModel.clearRole()
                     navController.navigate(Login) {

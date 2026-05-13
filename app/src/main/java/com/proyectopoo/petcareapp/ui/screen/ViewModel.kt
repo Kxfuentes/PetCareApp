@@ -16,40 +16,37 @@ enum class UserRole {
 
 class UserRoleViewModel(private val prefs: SharedPreferences) : ViewModel() {
 
+    // Rol activo en la sesión
     private val _userRole = MutableStateFlow<UserRole?>(null)
     val userRole: StateFlow<UserRole?> = _userRole.asStateFlow()
+
+    // Rol que el usuario tiene asignado en su registro (simulado)
+    private val _registeredRole = MutableStateFlow<UserRole?>(null)
+    val registeredRole: StateFlow<UserRole?> = _registeredRole.asStateFlow()
 
     private val _isRoleLoaded = MutableStateFlow(false)
     val isRoleLoaded: StateFlow<Boolean> = _isRoleLoaded.asStateFlow()
 
     init {
-        loadRoleFromPreferences()
+        // Al iniciar, forzamos que no haya rol activo para ir a Login
+        _userRole.value = null
+        _isRoleLoaded.value = true
     }
 
-    private fun loadRoleFromPreferences() {
-        viewModelScope.launch {
-            val roleName = prefs.getString("user_role", null)
-            val role = when (roleName) {
-                "OWNER" -> UserRole.OWNER
-                "CAREGIVER" -> UserRole.CAREGIVER
-                else -> null
-            }
-            _userRole.value = role
-            _isRoleLoaded.value = true
-        }
+    fun setRegisteredRole(role: UserRole?) {
+        _registeredRole.value = role
     }
 
-    fun setRole(role: UserRole) {
+    fun setRole(role: UserRole?) {
         viewModelScope.launch {
-            prefs.edit { putString("user_role", role.name) }
             _userRole.value = role
         }
     }
 
     fun clearRole() {
         viewModelScope.launch {
-            prefs.edit { remove("user_role") }
             _userRole.value = null
+            _registeredRole.value = null
         }
     }
 }
