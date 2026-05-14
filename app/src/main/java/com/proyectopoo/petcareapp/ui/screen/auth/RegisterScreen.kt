@@ -60,7 +60,15 @@ fun RegisterScreen(
 
         if (email.isBlank()) return "El correo es requerido"
         if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) return "Formato de correo inválido"
+        
         if (password.isBlank()) return "La contraseña es requerida"
+        if (password.length < 6) return "La contraseña debe tener al menos 6 caracteres"
+        
+        val hasSpecial = password.any { !it.isLetterOrDigit() }
+        if (!hasSpecial) {
+            return "La contraseña debe contener al menos un carácter especial (ej. !@#\$%)"
+        }
+
         if (password != confirmPassword) return "Las contraseñas no coinciden"
         return null
     }
@@ -79,7 +87,7 @@ fun RegisterScreen(
                     username = username,
                     email = email,
                     password = password,
-                    rol = null // El rol se definirá en un paso posterior
+                    rol = null
                 )
                 val response = RetrofitClient.apiService.registerUser(request)
 

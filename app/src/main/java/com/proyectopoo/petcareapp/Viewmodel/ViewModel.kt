@@ -15,11 +15,9 @@ enum class UserRole {
 
 class UserRoleViewModel(private val prefs: SharedPreferences) : ViewModel() {
 
-    // Rol activo en la sesión
     private val _userRole = MutableStateFlow<UserRole?>(null)
     val userRole: StateFlow<UserRole?> = _userRole.asStateFlow()
 
-    // Rol que el usuario tiene asignado en su registro (simulado)
     private val _registeredRole = MutableStateFlow<UserRole?>(null)
     val registeredRole: StateFlow<UserRole?> = _registeredRole.asStateFlow()
 
@@ -27,7 +25,6 @@ class UserRoleViewModel(private val prefs: SharedPreferences) : ViewModel() {
     val isRoleLoaded: StateFlow<Boolean> = _isRoleLoaded.asStateFlow()
 
     init {
-        // Al iniciar, forzamos que no haya rol activo para ir a Login
         _userRole.value = null
         _isRoleLoaded.value = true
     }
