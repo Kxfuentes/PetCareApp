@@ -47,8 +47,7 @@ fun RoleSectionScreen(
             return
         }
 
-        // Se usa "propietario" y "cuidador" para coincidir con la lógica de negocio y backend esperado
-        val apiRole = if (selectedRole == "Dueño") "propietario" else "cuidador"
+        val apiRole = if (selectedRole == "Dueño") "propietario" else "gestor"
 
         scope.launch {
             isLoading = true
