@@ -1,4 +1,4 @@
-package com.proyectopoo.petcareapp.ui.screen
+package com.proyectopoo.petcareapp.ui.screen.caregiver
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -181,7 +181,7 @@ fun CaregiverFeedScreen(
                                 Spacer(modifier = Modifier.width(10.dp))
 
                                 Text(
-                                    text = "🐶 ${servicio.nombreMascota}, Golden Retriever · Tamaño M",
+                                    text = "${servicio.nombreMascota}, Golden Retriever · Tamaño M",
                                     color = CafeOscuro,
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 17.sp

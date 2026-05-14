@@ -1,4 +1,4 @@
-package com.proyectopoo.petcareapp.ui.screen
+package com.proyectopoo.petcareapp.ui.screen.auth
 
 import android.util.Patterns
 import android.widget.Toast
@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.proyectopoo.petcareapp.data.network.ErrorResponse
 import com.proyectopoo.petcareapp.data.network.RegisterRequest
+import com.proyectopoo.petcareapp.data.network.RegisterResponse
 import com.proyectopoo.petcareapp.data.network.RetrofitClient
 import com.proyectopoo.petcareapp.ui.theme.BordeCampo
 import com.proyectopoo.petcareapp.ui.theme.CafeMedio
@@ -36,13 +37,12 @@ import java.io.IOException
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RegisterScreen(
-    onRegisterSuccess: () -> Unit,
+    onRegisterSuccess: (RegisterResponse, String) -> Unit,
     onBack: () -> Unit
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
-    // Estados para los campos requeridos por el servicio
     var username by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -50,11 +50,9 @@ fun RegisterScreen(
     
     var isLoading by remember { mutableStateOf(false) }
 
-    // Función de validación local
     fun validate(): String? {
         if (username.isBlank()) return "El nombre de usuario es requerido"
         
-        // Validación de username: mínimo 6 caracteres, sin espacios ni caracteres especiales
         if (username.length < 6) return "El nombre de usuario debe tener al menos 6 caracteres"
         if (!username.matches("^[a-zA-Z0-9]+$".toRegex())) {
             return "El nombre de usuario no puede contener espacios ni caracteres especiales"
@@ -62,12 +60,19 @@ fun RegisterScreen(
 
         if (email.isBlank()) return "El correo es requerido"
         if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) return "Formato de correo inválido"
+        
         if (password.isBlank()) return "La contraseña es requerida"
+        if (password.length < 6) return "La contraseña debe tener al menos 6 caracteres"
+        
+        val hasSpecial = password.any { !it.isLetterOrDigit() }
+        if (!hasSpecial) {
+            return "La contraseña debe contener al menos un carácter especial (ej. !@#\$%)"
+        }
+
         if (password != confirmPassword) return "Las contraseñas no coinciden"
         return null
     }
 
-    // Lógica de registro e integración con el servicio
     fun handleRegister() {
         val errorMessage = validate()
         if (errorMessage != null) {
@@ -78,20 +83,23 @@ fun RegisterScreen(
         scope.launch {
             isLoading = true
             try {
-                val response = RetrofitClient.apiService.registerUser(
-                    RegisterRequest(
-                        username = username,
-                        email = email,
-                        password = password,
-                        rol = null // El rol se definirá en un paso posterior
-                    )
+                val request = RegisterRequest(
+                    username = username,
+                    email = email,
+                    password = password,
+                    rol = null
                 )
+                val response = RetrofitClient.apiService.registerUser(request)
 
                 if (response.isSuccessful) {
-                    Toast.makeText(context, "Registro exitoso", Toast.LENGTH_SHORT).show()
-                    onRegisterSuccess()
+                    val registerResponse = response.body()
+                    if (registerResponse != null) {
+                        Toast.makeText(context, "Registro exitoso", Toast.LENGTH_SHORT).show()
+                        onRegisterSuccess(registerResponse, password)
+                    } else {
+                        Toast.makeText(context, "Error: Respuesta vacía", Toast.LENGTH_SHORT).show()
+                    }
                 } else {
-                    // Manejo de errores controlados del servicio (ej: campos faltantes, usuario duplicado)
                     val errorBody = response.errorBody()?.string()
                     val message = try {
                         if (errorBody != null) {
@@ -105,10 +113,8 @@ fun RegisterScreen(
                     Toast.makeText(context, message, Toast.LENGTH_LONG).show()
                 }
             } catch (e: IOException) {
-                // Error de conexión (offline, servidor apagado, etc.)
                 Toast.makeText(context, "No se pudo conectar con el servidor. Verifica tu conexión.", Toast.LENGTH_LONG).show()
             } catch (e: Exception) {
-                // Otros errores inesperados
                 Toast.makeText(context, "Ocurrió un error inesperado: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
             } finally {
                 isLoading = false
@@ -144,7 +150,6 @@ fun RegisterScreen(
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            // Username (Requerido)
             OutlinedTextField(
                 value = username,
                 onValueChange = { username = it },
@@ -161,7 +166,6 @@ fun RegisterScreen(
 
             Spacer(modifier = Modifier.height(18.dp))
 
-            // Email (Requerido)
             OutlinedTextField(
                 value = email,
                 onValueChange = { email = it },
@@ -178,7 +182,6 @@ fun RegisterScreen(
 
             Spacer(modifier = Modifier.height(18.dp))
 
-            // Password (Requerido)
             OutlinedTextField(
                 value = password,
                 onValueChange = { password = it },
@@ -196,7 +199,6 @@ fun RegisterScreen(
 
             Spacer(modifier = Modifier.height(18.dp))
 
-            // Confirmar Password (Validación local)
             OutlinedTextField(
                 value = confirmPassword,
                 onValueChange = { confirmPassword = it },

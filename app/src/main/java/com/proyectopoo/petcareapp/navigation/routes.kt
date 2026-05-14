@@ -9,7 +9,12 @@ object Login
 object Register
 
 @Serializable
-object RoleSection
+data class RoleSection(
+    val userId: Int,
+    val username: String,
+    val email: String,
+    val password: String
+)
 
 @Serializable
 object DogInfo

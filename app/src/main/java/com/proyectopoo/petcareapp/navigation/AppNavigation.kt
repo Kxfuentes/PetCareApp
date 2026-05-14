@@ -11,9 +11,20 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.toRoute
 import com.proyectopoo.petcareapp.LocalUserRoleViewModel
 import com.proyectopoo.petcareapp.Viewmodel.UserRole
 import com.proyectopoo.petcareapp.ui.screen.*
+import com.proyectopoo.petcareapp.ui.screen.auth.LoginScreen
+import com.proyectopoo.petcareapp.ui.screen.auth.RegisterScreen
+import com.proyectopoo.petcareapp.ui.screen.auth.RoleSectionScreen
+import com.proyectopoo.petcareapp.ui.screen.caregiver.CaregiverFeedScreen
+import com.proyectopoo.petcareapp.ui.screen.caregiver.CaregiverHomeScreen
+import com.proyectopoo.petcareapp.ui.screen.caregiver.CaregiverServiceScreen
+import com.proyectopoo.petcareapp.ui.screen.owner.CreateServiceScreen
+import com.proyectopoo.petcareapp.ui.screen.owner.DogInfoScreen
+import com.proyectopoo.petcareapp.ui.screen.owner.OwnerFeedScreen
+import com.proyectopoo.petcareapp.ui.screen.owner.OwnerHomeScreen
 
 @Composable
 fun AppNavigation(
@@ -34,7 +45,6 @@ fun AppNavigation(
         return
     }
 
-    // El startDestination se basa en el rol activo (null al iniciar para ir a Login)
     val startDestination = when (userRole) {
         UserRole.OWNER -> OwnerHome
         UserRole.CAREGIVER -> CaregiverHome
@@ -50,7 +60,7 @@ fun AppNavigation(
         composable<Login> {
             LoginScreen(
                 onRoleSelection = {
-                    navController.navigate(RoleSection)
+                    // Flujo básico de login
                 },
                 onGoToRegister = {
                     navController.navigate(Register)
@@ -60,9 +70,20 @@ fun AppNavigation(
 
         composable<Register> {
             RegisterScreen(
-                onRegisterSuccess = {
-                    navController.navigate(RoleSection) {
-                        popUpTo(Register) { inclusive = true }
+                onRegisterSuccess = { response, password ->
+                    // Manejo robusto de la respuesta (usando user o useer por posibles typos del server)
+                    val userData = response.user ?: response.useer
+                    if (userData != null) {
+                        navController.navigate(
+                            RoleSection(
+                                userId = userData.id ?: 0,
+                                username = userData.username ?: "",
+                                email = userData.email ?: "",
+                                password = password
+                            )
+                        ) {
+                            popUpTo(Register) { inclusive = true }
+                        }
                     }
                 },
                 onBack = {
@@ -71,8 +92,13 @@ fun AppNavigation(
             )
         }
 
-        composable<RoleSection> {
+        composable<RoleSection> { backStackEntry ->
+            val data = backStackEntry.toRoute<RoleSection>()
             RoleSectionScreen(
+                userId = data.userId,
+                username = data.username,
+                email = data.email,
+                password = data.password,
                 onOwnerSelected = {
                     userRoleViewModel.setRole(UserRole.OWNER)
                     navController.navigate(DogInfo)
@@ -80,7 +106,7 @@ fun AppNavigation(
                 onCaregiverSelected = {
                     userRoleViewModel.setRole(UserRole.CAREGIVER)
                     navController.navigate(CaregiverHome) {
-                        popUpTo(RoleSection) { inclusive = true }
+                        popUpTo(data) { inclusive = true }
                     }
                 }
             )
