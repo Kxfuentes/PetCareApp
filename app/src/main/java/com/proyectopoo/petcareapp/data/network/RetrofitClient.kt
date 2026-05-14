@@ -9,7 +9,6 @@ import retrofit2.Retrofit
 import retrofit2.converter.kotlinx.serialization.asConverterFactory
 
 object RetrofitClient {
-    // Usamos la URL definida en build.gradle.kts como variable de ambiente
     private val BASE_URL = BuildConfig.BASE_URL
 
     private val json = Json {

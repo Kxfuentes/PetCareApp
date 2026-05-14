@@ -1,5 +1,6 @@
 package com.proyectopoo.petcareapp.data.network
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -12,8 +13,10 @@ data class RegisterRequest(
 
 @Serializable
 data class RegisterResponse(
-    val user: UserDto,
-    val session: SessionDto
+    @SerialName("user") val user: UserDto? = null,
+    @SerialName("session") val session: SessionDto? = null,
+    @SerialName("useer") val useer: UserDto? = null,
+    @SerialName("sessions") val sessions: SessionDto? = null
 )
 
 @Serializable
@@ -21,17 +24,17 @@ data class UserDto(
     val id: Int,
     val username: String,
     val email: String,
-    val rol: String
+    val rol: String? = null
 )
 
 @Serializable
 data class SessionDto(
-    val id: Int,
-    val token_sesion: String,
-    val fecha_inicio: String
+    val id: Int? = null,
+    @SerialName("token_sesion") val tokenSesion: String? = null,
+    @SerialName("fecha_inicio") val fechaInicio: String? = null
 )
 
 @Serializable
 data class ErrorResponse(
-    val error: String
+    val error: String? = null
 )
