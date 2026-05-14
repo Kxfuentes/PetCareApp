@@ -17,6 +17,14 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        
+        // Manejamos la URL base como una variable que puede venir del sistema
+        // Si no se define BASE_URL en el sistema o gradle.properties, usa la del emulador por defecto
+        val baseUrl = project.findProperty("BASE_URL")?.toString() 
+                     ?: System.getenv("BASE_URL") 
+                     ?: "http://10.0.2.2:3000/"
+                     
+        buildConfigField("String", "BASE_URL", "\"$baseUrl\"")
     }
 
     buildTypes {
@@ -36,6 +44,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
     kotlinOptions {
         jvmTarget = "11"
@@ -57,6 +66,11 @@ dependencies {
 
     implementation(libs.androidx.navigation.compose)
     implementation(libs.kotlinx.serialization.json)
+
+    // Retrofit
+    implementation(libs.retrofit.core)
+    implementation(libs.retrofit.kotlin.serialization)
+    implementation(libs.okhttp.logging)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
