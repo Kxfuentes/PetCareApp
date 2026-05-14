@@ -1,4 +1,4 @@
-package com.proyectopoo.petcareapp.ui.screen
+package com.proyectopoo.petcareapp.ui.screen.auth
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*

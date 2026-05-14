@@ -15,6 +15,16 @@ import androidx.navigation.toRoute
 import com.proyectopoo.petcareapp.LocalUserRoleViewModel
 import com.proyectopoo.petcareapp.Viewmodel.UserRole
 import com.proyectopoo.petcareapp.ui.screen.*
+import com.proyectopoo.petcareapp.ui.screen.auth.LoginScreen
+import com.proyectopoo.petcareapp.ui.screen.auth.RegisterScreen
+import com.proyectopoo.petcareapp.ui.screen.auth.RoleSectionScreen
+import com.proyectopoo.petcareapp.ui.screen.caregiver.CaregiverFeedScreen
+import com.proyectopoo.petcareapp.ui.screen.caregiver.CaregiverHomeScreen
+import com.proyectopoo.petcareapp.ui.screen.caregiver.CaregiverServiceScreen
+import com.proyectopoo.petcareapp.ui.screen.owner.CreateServiceScreen
+import com.proyectopoo.petcareapp.ui.screen.owner.DogInfoScreen
+import com.proyectopoo.petcareapp.ui.screen.owner.OwnerFeedScreen
+import com.proyectopoo.petcareapp.ui.screen.owner.OwnerHomeScreen
 
 @Composable
 fun AppNavigation(

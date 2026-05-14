@@ -1,4 +1,4 @@
-package com.proyectopoo.petcareapp.ui.screen
+package com.proyectopoo.petcareapp.ui.screen.owner
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
