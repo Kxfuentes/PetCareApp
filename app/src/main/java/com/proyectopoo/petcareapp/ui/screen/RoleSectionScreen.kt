@@ -15,6 +15,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.proyectopoo.petcareapp.LocalUserRoleViewModel
+import com.proyectopoo.petcareapp.Viewmodel.UserRole
 import com.proyectopoo.petcareapp.ui.theme.CafeClaro
 import com.proyectopoo.petcareapp.ui.theme.CafeMedio
 import com.proyectopoo.petcareapp.ui.theme.CafeOscuro

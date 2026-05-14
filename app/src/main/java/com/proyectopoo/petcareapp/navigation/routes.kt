@@ -1,4 +1,4 @@
-package com.proyectopoo.petcareapp.ui.navigation
+package com.proyectopoo.petcareapp.navigation
 
 import kotlinx.serialization.Serializable
 

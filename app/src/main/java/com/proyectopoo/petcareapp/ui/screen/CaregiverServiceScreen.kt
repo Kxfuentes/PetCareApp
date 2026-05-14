@@ -24,7 +24,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.proyectopoo.petcareapp.ui.model.ServiceGiven
+import com.proyectopoo.petcareapp.model.ServiceGiven
 import com.proyectopoo.petcareapp.ui.theme.BordeCampo
 import com.proyectopoo.petcareapp.ui.theme.CafeClaro
 import com.proyectopoo.petcareapp.ui.theme.CafeMedio
