@@ -1,7 +1,6 @@
-package com.proyectopoo.petcareapp.ui.screen
+package com.proyectopoo.petcareapp.Viewmodel
 
 import android.content.SharedPreferences
-import androidx.core.content.edit
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow

@@ -1,6 +1,6 @@
-package com.proyectopoo.petcareapp.ui.data
+package com.proyectopoo.petcareapp.data
 
-import com.proyectopoo.petcareapp.ui.model.PetService
+import com.proyectopoo.petcareapp.model.PetService
 
 
 

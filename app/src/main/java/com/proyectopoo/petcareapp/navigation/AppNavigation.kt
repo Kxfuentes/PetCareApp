@@ -1,4 +1,4 @@
-package com.proyectopoo.petcareapp.ui.navigation
+package com.proyectopoo.petcareapp.navigation
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -12,6 +12,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.proyectopoo.petcareapp.LocalUserRoleViewModel
+import com.proyectopoo.petcareapp.Viewmodel.UserRole
 import com.proyectopoo.petcareapp.ui.screen.*
 
 @Composable

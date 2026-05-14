@@ -13,7 +13,12 @@ import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
-import com.proyectopoo.petcareapp.ui.navigation.*
+import com.proyectopoo.petcareapp.navigation.CaregiverFeed
+import com.proyectopoo.petcareapp.navigation.CaregiverHome
+import com.proyectopoo.petcareapp.navigation.CreateService
+import com.proyectopoo.petcareapp.navigation.OwnerFeed
+import com.proyectopoo.petcareapp.navigation.OwnerHome
+import com.proyectopoo.petcareapp.navigation.Profile
 import com.proyectopoo.petcareapp.ui.theme.CafeClaro
 import com.proyectopoo.petcareapp.ui.theme.CafeOscuro
 
