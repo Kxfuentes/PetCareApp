@@ -1,4 +1,4 @@
-package com.proyectopoo.petcareapp.ui.navigation
+package com.proyectopoo.petcareapp.navigation
 
 import kotlinx.serialization.Serializable
 
@@ -9,12 +9,7 @@ object Login
 object Register
 
 @Serializable
-data class RoleSection(
-    val userId: Int,
-    val username: String,
-    val email: String,
-    val password: String
-)
+object RoleSection
 
 @Serializable
 object DogInfo

@@ -1,17 +1,18 @@
 package com.proyectopoo.petcareapp.ui.screen
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -34,137 +35,126 @@ fun OwnerHomeScreen(
         "Visitante" to Icons.Default.House
     )
 
+    val scrollState = rememberScrollState()
+
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White)
+            .background(FondoClaro)
+            .verticalScroll(scrollState)
     ) {
+        // Header con diseño moderno
         Surface(
             color = CafeOscuro,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp)
         ) {
-            Text(
-                text = "¡Hola!",
-                color = Color.White,
-                fontSize = 26.sp,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(24.dp)
-            )
+            Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 32.dp)) {
+                Text(
+                    text = "¡Hola, Bienvenida!",
+                    color = Color.White,
+                    fontSize = 28.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = "¿Qué necesita tu mascota hoy?",
+                    color = CafeClaro,
+                    fontSize = 16.sp
+                )
+            }
         }
 
         Column(
-            modifier = Modifier.padding(20.dp)
+            modifier = Modifier.padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
+            // Card de Mascota optimizada
             Card(
-                colors = CardDefaults.cardColors(
-                    containerColor = FondoClaro
-                ),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
                 shape = RoundedCornerShape(22.dp),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .border(
-                        2.dp,
-                        CafeClaro,
-                        RoundedCornerShape(22.dp)
-                    )
+                    .shadow(4.dp, RoundedCornerShape(22.dp))
             ) {
-                Column(
-                    modifier = Modifier.padding(20.dp)
+                Row(
+                    modifier = Modifier.padding(20.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = "Max, Golden Retriever · Tamaño M",
-                        color = CafeOscuro,
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Spacer(modifier = Modifier.height(10.dp))
-                    TextButton(
-                        onClick = onEditPets
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = FondoCrema,
+                        modifier = Modifier.size(50.dp)
                     ) {
-                        Text(
-                            text = "✏ Editar mascotas",
-                            color = CafeMedio
-                        )
+                        Icon(Icons.Default.Pets, null, tint = CafeMedio, modifier = Modifier.padding(10.dp))
+                    }
+                    Spacer(Modifier.width(16.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(text = "Max", color = CafeOscuro, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                        Text(text = "Golden Retriever · Tamaño M", color = TextoSuave, fontSize = 14.sp)
+                    }
+                    IconButton(onClick = onEditPets) {
+                        Icon(Icons.Default.Edit, null, tint = CafeMedio)
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(30.dp))
+            // Acciones Rápidas
+            Text(text = "Servicios destacados", color = CafeOscuro, fontSize = 20.sp, fontWeight = FontWeight.Bold)
 
-            Text(
-                text = "Servicios rápidos",
-                color = CafeOscuro,
-                fontSize = 22.sp,
-                fontWeight = FontWeight.Bold
-            )
-
-            Spacer(modifier = Modifier.height(18.dp))
-
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(2),
-                modifier = Modifier.height(300.dp),
-                horizontalArrangement = Arrangement.spacedBy(14.dp),
-                verticalArrangement = Arrangement.spacedBy(14.dp)
-            ) {
-                items(services) { service ->
-                    Card(
-                        onClick = onGoToCreate,
-                        colors = CardDefaults.cardColors(
-                            containerColor = FondoCrema
-                        ),
-                        shape = RoundedCornerShape(20.dp),
-                        modifier = Modifier.border(
-                            2.dp,
-                            CafeClaro,
-                            RoundedCornerShape(20.dp)
-                        )
+            // Grid optimizado manualmente
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                services.chunked(2).forEach { rowServices ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(20.dp),
-                            verticalArrangement = Arrangement.Center
-                        ) {
-                            Icon(
-                                imageVector = service.second,
-                                contentDescription = service.first,
-                                tint = CafeMedio,
-                                modifier = Modifier.size(34.dp)
-                            )
-                            Spacer(modifier = Modifier.height(12.dp))
-                            Text(
-                                text = service.first,
-                                color = CafeOscuro,
-                                fontWeight = FontWeight.Bold
-                            )
+                        rowServices.forEach { service ->
+                            Card(
+                                onClick = onGoToCreate,
+                                modifier = Modifier.weight(1f),
+                                colors = CardDefaults.cardColors(containerColor = Color.White),
+                                shape = RoundedCornerShape(20.dp),
+                                border = BorderStroke(1.dp, CafeClaro.copy(alpha = 0.3f))
+                            ) {
+                                Column(
+                                    modifier = Modifier.padding(16.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    Icon(service.second, null, tint = CafeMedio, modifier = Modifier.size(28.dp))
+                                    Spacer(Modifier.height(8.dp))
+                                    Text(service.first, color = CafeOscuro, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                }
+                            }
                         }
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
-
-            Text(
-                text = "Tus últimas solicitudes",
-                color = CafeOscuro,
-                fontSize = 22.sp,
-                fontWeight = FontWeight.Bold
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            ListItem(
-                headlineContent = {
-                    Text("Paseo para Max - Mañana 4PM")
-                },
-                leadingContent = {
-                    Icon(
-                        Icons.Default.AccessTime,
-                        contentDescription = null,
-                        tint = CafeMedio
-                    )
+            // Banner Informativo
+            Card(
+                colors = CardDefaults.cardColors(containerColor = CafeMedio),
+                shape = RoundedCornerShape(20.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier.padding(20.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("¿Buscas paseadores?", color = Color.White, fontWeight = FontWeight.Bold)
+                        Text("Encuentra a los mejores cerca de ti", color = Color.White.copy(alpha = 0.8f), fontSize = 12.sp)
+                    }
+                    Button(
+                        onClick = onGoToFeed,
+                        colors = ButtonDefaults.buttonColors(containerColor = Color.White),
+                        contentPadding = PaddingValues(horizontal = 16.dp)
+                    ) {
+                        Text("Explorar", color = CafeMedio, fontSize = 12.sp)
+                    }
                 }
-            )
+            }
+            
+            Spacer(modifier = Modifier.height(20.dp))
         }
     }
 }

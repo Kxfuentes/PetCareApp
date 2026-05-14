@@ -20,10 +20,14 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.proyectopoo.petcareapp.navigation.AppNavigation
+import com.proyectopoo.petcareapp.navigation.DogInfo
+import com.proyectopoo.petcareapp.navigation.Login
+import com.proyectopoo.petcareapp.navigation.Register
+import com.proyectopoo.petcareapp.navigation.RoleSection
 import com.proyectopoo.petcareapp.ui.components.PetCareNavigationBar
-import com.proyectopoo.petcareapp.ui.navigation.*
-import com.proyectopoo.petcareapp.ui.screen.UserRole
-import com.proyectopoo.petcareapp.ui.screen.UserRoleViewModel
+import com.proyectopoo.petcareapp.Viewmodel.UserRole
+import com.proyectopoo.petcareapp.Viewmodel.UserRoleViewModel
 import com.proyectopoo.petcareapp.ui.theme.PetCareAppTheme
 
 val LocalUserRoleViewModel = compositionLocalOf<UserRoleViewModel> {
@@ -57,8 +61,8 @@ class MainActivity : ComponentActivity() {
                     val currentDestination = navBackStackEntry?.destination
 
                     val showBar = currentDestination?.let { dest ->
-                        !dest.hasRoute<Login>() && 
-                        !dest.hasRoute<Register>() && 
+                        !dest.hasRoute<Login>() &&
+                        !dest.hasRoute<Register>() &&
                         !dest.hasRoute<RoleSection>() &&
                         !dest.hasRoute<DogInfo>()
                     } ?: false

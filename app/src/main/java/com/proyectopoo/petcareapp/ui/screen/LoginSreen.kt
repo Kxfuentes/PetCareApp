@@ -21,11 +21,9 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.proyectopoo.petcareapp.LocalUserRoleViewModel
-import com.proyectopoo.petcareapp.ui.theme.CafeClaro
 import com.proyectopoo.petcareapp.ui.theme.CafeMedio
 import com.proyectopoo.petcareapp.ui.theme.CafeOscuro
 import com.proyectopoo.petcareapp.ui.theme.FondoCrema
-import com.proyectopoo.petcareapp.ui.theme.TextoSuave
 
 @Composable
 fun LoginScreen(
@@ -115,21 +113,13 @@ fun LoginScreen(
 
                 Button(
                     onClick = {
-                        when {
-                            correo == "kelly@petcare.com" && password == "kelly123" -> {
-                                userRoleViewModel.setRole(UserRole.OWNER)
-                                onRoleSelection()
-                            }
-                            correo == "vanessa@petcare.com" && password == "vanessa123" -> {
-                                userRoleViewModel.setRole(UserRole.CAREGIVER)
-                                onRoleSelection()
-                            }
-                            correo.isBlank() || password.isBlank() -> {
-                                errorMessage = "Por favor, completa todos los campos"
-                            }
-                            else -> {
-                                onRoleSelection()
-                            }
+                        if (correo.isNotBlank() && password.isNotBlank()) {
+                            // Al no haber backend, permitimos avanzar a la selección de rol
+                            // Limpiamos cualquier rol previo
+                            userRoleViewModel.setRegisteredRole(null)
+                            onRoleSelection()
+                        } else {
+                            errorMessage = "Por favor, completa todos los campos"
                         }
                     },
                     modifier = Modifier.fillMaxWidth().height(55.dp),
@@ -143,23 +133,6 @@ fun LoginScreen(
 
                 TextButton(onClick = onGoToRegister) {
                     Text("¿No tienes cuenta? Regístrate", color = CafeOscuro)
-                }
-
-                Spacer(modifier = Modifier.height(10.dp))
-
-                Text(
-                    text = "Autocompletar (Pruebas):",
-                    fontSize = 11.sp,
-                    color = TextoSuave
-                )
-                
-                Row {
-                    TextButton(onClick = { correo = "kelly@petcare.com"; password = "kelly123" }) {
-                        Text("Dueño", fontSize = 12.sp, color = CafeMedio)
-                    }
-                    TextButton(onClick = { correo = "vanessa@petcare.com"; password = "vanessa123" }) {
-                        Text("Cuidador", fontSize = 12.sp, color = CafeMedio)
-                    }
                 }
             }
         }

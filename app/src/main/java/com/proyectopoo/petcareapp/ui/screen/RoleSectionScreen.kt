@@ -13,6 +13,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.proyectopoo.petcareapp.LocalUserRoleViewModel
+import com.proyectopoo.petcareapp.Viewmodel.UserRole
 import com.proyectopoo.petcareapp.ui.theme.CafeClaro
 import com.proyectopoo.petcareapp.ui.theme.CafeMedio
 import com.proyectopoo.petcareapp.ui.theme.CafeOscuro
@@ -23,8 +26,11 @@ fun RoleSectionScreen(
     onOwnerSelected: () -> Unit,
     onCaregiverSelected: () -> Unit
 ) {
-
+    val userRoleViewModel = LocalUserRoleViewModel.current
+    val registeredRole by userRoleViewModel.registeredRole.collectAsStateWithLifecycle()
+    
     var selectedRole by remember { mutableStateOf("") }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
 
     Column(
         modifier = Modifier
@@ -50,6 +56,7 @@ fun RoleSectionScreen(
                 .fillMaxWidth()
                 .clickable {
                     selectedRole = "Dueño"
+                    errorMessage = null
                 },
             shape = RoundedCornerShape(24.dp),
             colors = CardDefaults.cardColors(
@@ -97,6 +104,7 @@ fun RoleSectionScreen(
                 .fillMaxWidth()
                 .clickable {
                     selectedRole = "Cuidador"
+                    errorMessage = null
                 },
             shape = RoundedCornerShape(24.dp),
             colors = CardDefaults.cardColors(
@@ -136,16 +144,31 @@ fun RoleSectionScreen(
             }
         }
 
+        if (errorMessage != null) {
+            Spacer(modifier = Modifier.height(20.dp))
+            Text(
+                text = errorMessage!!,
+                color = MaterialTheme.colorScheme.error,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium
+            )
+        }
+
         Spacer(modifier = Modifier.weight(1f))
 
         Button(
             onClick = {
-
-                when (selectedRole) {
-
-                    "Dueño" -> onOwnerSelected()
-
-                    "Cuidador" -> onCaregiverSelected()
+                val chosenRole = if (selectedRole == "Dueño") UserRole.OWNER else UserRole.CAREGIVER
+                
+                // VALIDACIÓN: El rol seleccionado debe coincidir con el registrado
+                if (registeredRole != null && chosenRole != registeredRole) {
+                    errorMessage = "Error: Tu cuenta está registrada como ${if (registeredRole == UserRole.OWNER) "Dueño" else "Cuidador"}. No puedes entrar con otro rol."
+                } else {
+                    if (chosenRole == UserRole.OWNER) {
+                        onOwnerSelected()
+                    } else {
+                        onCaregiverSelected()
+                    }
                 }
             },
             enabled = selectedRole.isNotEmpty(),
