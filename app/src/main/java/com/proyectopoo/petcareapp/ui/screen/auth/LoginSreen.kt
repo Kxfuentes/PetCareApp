@@ -21,6 +21,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.proyectopoo.petcareapp.LocalUserRoleViewModel
+import com.proyectopoo.petcareapp.ui.theme.Blanco
 import com.proyectopoo.petcareapp.ui.theme.CafeMedio
 import com.proyectopoo.petcareapp.ui.theme.CafeOscuro
 import com.proyectopoo.petcareapp.ui.theme.FondoCrema
@@ -28,7 +29,8 @@ import com.proyectopoo.petcareapp.ui.theme.FondoCrema
 @Composable
 fun LoginScreen(
     onRoleSelection: () -> Unit,
-    onGoToRegister: () -> Unit = {}
+    onGoToRegister: () -> Unit = {},
+    onGoToPasswordRecovery: () -> Unit
 ) {
     val userRoleViewModel = LocalUserRoleViewModel.current
     var correo by remember { mutableStateOf("") }
@@ -56,11 +58,21 @@ fun LoginScreen(
                     .padding(28.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Header Logo
+
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Outlined.Pets, "Logo", tint = CafeOscuro, modifier = Modifier.size(34.dp))
+                    Icon(
+                        Icons.Outlined.Pets,
+                        "Logo",
+                        tint = CafeOscuro,
+                        modifier = Modifier.size(34.dp)
+                    )
                     Spacer(Modifier.width(8.dp))
-                    Text("PetCare", fontSize = 30.sp, fontWeight = FontWeight.Bold, color = CafeOscuro)
+                    Text(
+                        "PetCare",
+                        fontSize = 30.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = CafeOscuro
+                    )
                 }
 
                 Spacer(modifier = Modifier.height(30.dp))
@@ -89,7 +101,8 @@ fun LoginScreen(
                     label = { Text("Contraseña") },
                     leadingIcon = { Icon(Icons.Outlined.Lock, null, tint = CafeMedio) },
                     trailingIcon = {
-                        val image = if (passwordVisible) Icons.Outlined.Visibility else Icons.Outlined.VisibilityOff
+                        val image =
+                            if (passwordVisible) Icons.Outlined.Visibility else Icons.Outlined.VisibilityOff
                         IconButton(onClick = { passwordVisible = !passwordVisible }) {
                             Icon(imageVector = image, contentDescription = null, tint = CafeMedio)
                         }
@@ -114,8 +127,6 @@ fun LoginScreen(
                 Button(
                     onClick = {
                         if (correo.isNotBlank() && password.isNotBlank()) {
-                            // Al no haber backend, permitimos avanzar a la selección de rol
-                            // Limpiamos cualquier rol previo
                             userRoleViewModel.setRegisteredRole(null)
                             onRoleSelection()
                         } else {
@@ -126,13 +137,27 @@ fun LoginScreen(
                     shape = RoundedCornerShape(18.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = CafeMedio)
                 ) {
-                    Text("Entrar", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                    Text(
+                        "Entrar",
+                        color = Blanco,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
 
                 Spacer(modifier = Modifier.height(15.dp))
 
+
                 TextButton(onClick = onGoToRegister) {
                     Text("¿No tienes cuenta? Regístrate", color = CafeOscuro)
+                }
+
+
+                TextButton(onClick = onGoToPasswordRecovery) {
+                    Text(
+                        "¿Olvidaste tu contraseña? Recupérala aquí",
+                        color = CafeOscuro
+                    )
                 }
             }
         }
