@@ -61,12 +61,16 @@ fun AppNavigation(
         composable<Login> {
             LoginScreen(
                 onRoleSelection = {
-                    // Flujo básico de login
+                    navController.navigate(OwnerHome) {
+                        popUpTo(Login) { inclusive = true }
+
+                     //  navController.navigate(CaregiverHome) {
+                      //      popUpTo(Login) { inclusive = true }
+                    }
                 },
                 onGoToRegister = {
                     navController.navigate(Register)
                 },
-
                 onGoToPasswordRecovery = {
                     navController.navigate(PasswordRecovery)
                 }
