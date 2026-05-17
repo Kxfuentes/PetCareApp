@@ -62,22 +62,9 @@ fun AppNavigation(
 
         composable<Login> {
             LoginScreen(
-                onRoleSelection = {
-                    // Temporal, Solo para pruebas de UI
-                   // navController.navigate(OwnerHome) {  //Para que vaya directo a lo de los dueños
-                   //     popUpTo(Login) { inclusive = true }
-                  //  }
-
-                    navController.navigate(CaregiverHome) {  //Para que vaya directo a lo de los cuiudaores
-                       popUpTo(Login) { inclusive = true }
-                   }
-                },
-                onGoToRegister = {
-                    navController.navigate(Register)
-                },
-                onGoToPasswordRecovery = {
-                    navController.navigate(PasswordRecovery)
-                }
+                onRoleSelection = { /* Temporal */ },
+                onGoToRegister = { navController.navigate(Register) },
+                onGoToPasswordRecovery = { navController.navigate(PasswordRecovery) }
             )
         }
 
@@ -116,7 +103,7 @@ fun AppNavigation(
                 onCaregiverSelected = {
                     userRoleViewModel.setRole(UserRole.CAREGIVER)
                     navController.navigate(CaregiverHome) {
-                        popUpTo(data) { inclusive = true }
+                        popUpTo(data) { inclusive = true }  // Corregido
                     }
                 }
             )
