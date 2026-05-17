@@ -1,4 +1,4 @@
-package com.proyectopoo.petcareapp.ui.navigation
+package com.proyectopoo.petcareapp.navigation
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -11,8 +11,21 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.toRoute
 import com.proyectopoo.petcareapp.LocalUserRoleViewModel
+import com.proyectopoo.petcareapp.Viewmodel.UserRole
 import com.proyectopoo.petcareapp.ui.screen.*
+import com.proyectopoo.petcareapp.ui.screen.auth.LoginScreen
+import com.proyectopoo.petcareapp.ui.screen.auth.PasswordRecoveryScreen
+import com.proyectopoo.petcareapp.ui.screen.auth.RegisterScreen
+import com.proyectopoo.petcareapp.ui.screen.auth.RoleSectionScreen
+import com.proyectopoo.petcareapp.ui.screen.caregiver.CaregiverFeedScreen
+import com.proyectopoo.petcareapp.ui.screen.caregiver.CaregiverHomeScreen
+import com.proyectopoo.petcareapp.ui.screen.caregiver.CaregiverServiceScreen
+import com.proyectopoo.petcareapp.ui.screen.owner.CreateServiceScreen
+import com.proyectopoo.petcareapp.ui.screen.owner.DogInfoScreen
+import com.proyectopoo.petcareapp.ui.screen.owner.OwnerFeedScreen
+import com.proyectopoo.petcareapp.ui.screen.owner.OwnerHomeScreen
 
 @Composable
 fun AppNavigation(
@@ -48,31 +61,38 @@ fun AppNavigation(
         composable<Login> {
             LoginScreen(
                 onRoleSelection = {
-                    val currentRole = userRoleViewModel.userRole.value
-                    if (currentRole != null) {
-                        when (currentRole) {
-                            UserRole.OWNER -> navController.navigate(OwnerHome) {
-                                popUpTo(Login) { inclusive = true }
-                            }
-                            UserRole.CAREGIVER -> navController.navigate(CaregiverHome) {
-                                popUpTo(Login) { inclusive = true }
-                            }
-                        }
-                    } else {
-                        navController.navigate(RoleSection)
+                    navController.navigate(OwnerHome) {
+                        popUpTo(Login) { inclusive = true }
+
+                     //  navController.navigate(CaregiverHome) {
+                      //      popUpTo(Login) { inclusive = true }
                     }
                 },
                 onGoToRegister = {
                     navController.navigate(Register)
+                },
+                onGoToPasswordRecovery = {
+                    navController.navigate(PasswordRecovery)
                 }
             )
         }
 
         composable<Register> {
             RegisterScreen(
-                onRegisterSuccess = {
-                    navController.navigate(RoleSection) {
-                        popUpTo(Register) { inclusive = true }
+                onRegisterSuccess = { response, password ->
+                    // Manejo robusto de la respuesta (usando user o useer por posibles typos del server)
+                    val userData = response.user ?: response.useer
+                    if (userData != null) {
+                        navController.navigate(
+                            RoleSection(
+                                userId = userData.id ?: 0,
+                                username = userData.username ?: "",
+                                email = userData.email ?: "",
+                                password = password
+                            )
+                        ) {
+                            popUpTo(Register) { inclusive = true }
+                        }
                     }
                 },
                 onBack = {
@@ -81,8 +101,13 @@ fun AppNavigation(
             )
         }
 
-        composable<RoleSection> {
+        composable<RoleSection> { backStackEntry ->
+            val data = backStackEntry.toRoute<RoleSection>()
             RoleSectionScreen(
+                userId = data.userId,
+                username = data.username,
+                email = data.email,
+                password = data.password,
                 onOwnerSelected = {
                     userRoleViewModel.setRole(UserRole.OWNER)
                     navController.navigate(DogInfo)
@@ -90,7 +115,7 @@ fun AppNavigation(
                 onCaregiverSelected = {
                     userRoleViewModel.setRole(UserRole.CAREGIVER)
                     navController.navigate(CaregiverHome) {
-                        popUpTo(RoleSection) { inclusive = true }
+                        popUpTo(data) { inclusive = true }
                     }
                 }
             )
@@ -108,78 +133,50 @@ fun AppNavigation(
 
         composable<OwnerHome> {
             OwnerHomeScreen(
-                onGoToFeed = {
-                    navController.navigate(OwnerFeed)
-                },
-                onGoToCreate = {
-                    navController.navigate(CreateService)
-                },
-                onEditPets = {
-                    navController.navigate(DogInfo)
-                },
-                onGoToProfile = {
-                    navController.navigate(Profile)
-                }
+                onGoToFeed = { navController.navigate(OwnerFeed) },
+                onGoToCreate = { navController.navigate(CreateService) },
+                onEditPets = { navController.navigate(DogInfo) },
+                onGoToProfile = { navController.navigate(Profile) }
             )
         }
 
         composable<OwnerFeed> {
             OwnerFeedScreen(
-                onGoToProfile = { cuidadorId ->
-                    navController.navigate(Profile)
-                }
+                onGoToProfile = { _ -> navController.navigate(Profile) }
             )
         }
 
         composable<CreateService> {
             CreateServiceScreen(
-                onBack = {
-                    navController.popBackStack()
-                }
+                onBack = { navController.popBackStack() }
             )
         }
 
         composable<CaregiverHome> {
             CaregiverHomeScreen(
-                onGoToFeed = {
-                    navController.navigate(CaregiverFeed)
-                },
-                onGoToCreate = {
-                    navController.navigate(CreateService)
-                },
-                onGoToServices = {
-                    navController.navigate(CaregiverService)
-                },
-                onGoToProfile = {
-                    navController.navigate(Profile)
-                }
+                onGoToFeed = { navController.navigate(CaregiverFeed) },
+                onGoToCreate = { navController.navigate(CreateService) },
+                onGoToServices = { navController.navigate(CaregiverService) },
+                onGoToProfile = { navController.navigate(Profile) }
             )
         }
 
         composable<CaregiverFeed> {
             CaregiverFeedScreen(
-                onGoToCreate = {
-                    navController.navigate(CreateService)
-                },
-                onGoToProfile = {
-                    navController.navigate(Profile)
-                }
+                onGoToCreate = { navController.navigate(CreateService) },
+                onGoToProfile = { navController.navigate(Profile) }
             )
         }
 
         composable<CaregiverService> {
             CaregiverServiceScreen(
-                onBack = {
-                    navController.popBackStack()
-                }
+                onBack = { navController.popBackStack() }
             )
         }
 
         composable<Profile> {
             ProfileScreen(
-                onBack = {
-                    navController.popBackStack()
-                },
+                onBack = { navController.popBackStack() },
                 onLogout = {
                     userRoleViewModel.clearRole()
                     navController.navigate(Login) {
@@ -188,5 +185,12 @@ fun AppNavigation(
                 }
             )
         }
+
+        composable<PasswordRecovery> {
+            PasswordRecoveryScreen(
+                onBackToLogin = { navController.navigate(Login) }
+            )
+        }
+
     }
 }

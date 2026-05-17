@@ -1,4 +1,4 @@
-package com.proyectopoo.petcareapp.ui.screen
+package com.proyectopoo.petcareapp.ui.screen.auth
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -21,16 +21,16 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.proyectopoo.petcareapp.LocalUserRoleViewModel
-import com.proyectopoo.petcareapp.ui.theme.CafeClaro
+import com.proyectopoo.petcareapp.ui.theme.Blanco
 import com.proyectopoo.petcareapp.ui.theme.CafeMedio
 import com.proyectopoo.petcareapp.ui.theme.CafeOscuro
 import com.proyectopoo.petcareapp.ui.theme.FondoCrema
-import com.proyectopoo.petcareapp.ui.theme.TextoSuave
 
 @Composable
 fun LoginScreen(
     onRoleSelection: () -> Unit,
-    onGoToRegister: () -> Unit = {}
+    onGoToRegister: () -> Unit = {},
+    onGoToPasswordRecovery: () -> Unit
 ) {
     val userRoleViewModel = LocalUserRoleViewModel.current
     var correo by remember { mutableStateOf("") }
@@ -58,11 +58,21 @@ fun LoginScreen(
                     .padding(28.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Header Logo
+
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Outlined.Pets, "Logo", tint = CafeOscuro, modifier = Modifier.size(34.dp))
+                    Icon(
+                        Icons.Outlined.Pets,
+                        "Logo",
+                        tint = CafeOscuro,
+                        modifier = Modifier.size(34.dp)
+                    )
                     Spacer(Modifier.width(8.dp))
-                    Text("PetCare", fontSize = 30.sp, fontWeight = FontWeight.Bold, color = CafeOscuro)
+                    Text(
+                        "PetCare",
+                        fontSize = 30.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = CafeOscuro
+                    )
                 }
 
                 Spacer(modifier = Modifier.height(30.dp))
@@ -91,7 +101,8 @@ fun LoginScreen(
                     label = { Text("Contraseña") },
                     leadingIcon = { Icon(Icons.Outlined.Lock, null, tint = CafeMedio) },
                     trailingIcon = {
-                        val image = if (passwordVisible) Icons.Outlined.Visibility else Icons.Outlined.VisibilityOff
+                        val image =
+                            if (passwordVisible) Icons.Outlined.Visibility else Icons.Outlined.VisibilityOff
                         IconButton(onClick = { passwordVisible = !passwordVisible }) {
                             Icon(imageVector = image, contentDescription = null, tint = CafeMedio)
                         }
@@ -115,51 +126,38 @@ fun LoginScreen(
 
                 Button(
                     onClick = {
-                        when {
-                            correo == "kelly@petcare.com" && password == "kelly123" -> {
-                                userRoleViewModel.setRole(UserRole.OWNER)
-                                onRoleSelection()
-                            }
-                            correo == "vanessa@petcare.com" && password == "vanessa123" -> {
-                                userRoleViewModel.setRole(UserRole.CAREGIVER)
-                                onRoleSelection()
-                            }
-                            correo.isBlank() || password.isBlank() -> {
-                                errorMessage = "Por favor, completa todos los campos"
-                            }
-                            else -> {
-                                onRoleSelection()
-                            }
+                        if (correo.isNotBlank() && password.isNotBlank()) {
+                            userRoleViewModel.setRegisteredRole(null)
+                            onRoleSelection()
+                        } else {
+                            errorMessage = "Por favor, completa todos los campos"
                         }
                     },
                     modifier = Modifier.fillMaxWidth().height(55.dp),
                     shape = RoundedCornerShape(18.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = CafeMedio)
                 ) {
-                    Text("Entrar", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                    Text(
+                        "Entrar",
+                        color = Blanco,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
 
                 Spacer(modifier = Modifier.height(15.dp))
+
 
                 TextButton(onClick = onGoToRegister) {
                     Text("¿No tienes cuenta? Regístrate", color = CafeOscuro)
                 }
 
-                Spacer(modifier = Modifier.height(10.dp))
 
-                Text(
-                    text = "Autocompletar (Pruebas):",
-                    fontSize = 11.sp,
-                    color = TextoSuave
-                )
-                
-                Row {
-                    TextButton(onClick = { correo = "kelly@petcare.com"; password = "kelly123" }) {
-                        Text("Dueño", fontSize = 12.sp, color = CafeMedio)
-                    }
-                    TextButton(onClick = { correo = "vanessa@petcare.com"; password = "vanessa123" }) {
-                        Text("Cuidador", fontSize = 12.sp, color = CafeMedio)
-                    }
+                TextButton(onClick = onGoToPasswordRecovery) {
+                    Text(
+                        "¿Olvidaste tu contraseña? Recupérala aquí",
+                        color = CafeOscuro
+                    )
                 }
             }
         }

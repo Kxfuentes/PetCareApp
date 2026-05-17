@@ -1,4 +1,4 @@
-package com.proyectopoo.petcareapp.ui.model
+package com.proyectopoo.petcareapp.model
 
 data class ServiceGiven(
 

@@ -1,4 +1,4 @@
-package com.proyectopoo.petcareapp.ui.screen
+package com.proyectopoo.petcareapp.ui.screen.owner
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -21,7 +21,7 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.proyectopoo.petcareapp.ui.model.Cuidador
+import com.proyectopoo.petcareapp.model.Cuidador
 import com.proyectopoo.petcareapp.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
