@@ -80,7 +80,6 @@ fun AppNavigation(
         composable<Register> {
             RegisterScreen(
                 onRegisterSuccess = { response, password ->
-                    // Manejo robusto de la respuesta (usando user o useer por posibles typos del server)
                     val userData = response.user ?: response.useer
                     if (userData != null) {
                         navController.navigate(
