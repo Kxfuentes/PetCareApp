@@ -38,7 +38,10 @@ object CaregiverService
 object CreateService
 
 @Serializable
-object Profile
+object OwnerProfile
+
+@Serializable
+object CaregiverProfile
 
 @Serializable
 object PasswordRecovery
