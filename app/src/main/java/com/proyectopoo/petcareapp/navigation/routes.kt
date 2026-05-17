@@ -39,3 +39,6 @@ object CreateService
 
 @Serializable
 object Profile
+
+@Serializable
+object PasswordRecovery

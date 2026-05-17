@@ -98,10 +98,10 @@ fun OwnerHomeScreen(
                 }
             }
 
-            // Acciones Rápidas
+
             Text(text = "Servicios destacados", color = CafeOscuro, fontSize = 20.sp, fontWeight = FontWeight.Bold)
 
-            // Grid optimizado manualmente
+
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 services.chunked(2).forEach { rowServices ->
                     Row(
@@ -130,7 +130,7 @@ fun OwnerHomeScreen(
                 }
             }
 
-            // Banner Informativo
+
             Card(
                 colors = CardDefaults.cardColors(containerColor = CafeMedio),
                 shape = RoundedCornerShape(20.dp),

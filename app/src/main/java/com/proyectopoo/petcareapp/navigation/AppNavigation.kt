@@ -16,6 +16,7 @@ import com.proyectopoo.petcareapp.LocalUserRoleViewModel
 import com.proyectopoo.petcareapp.Viewmodel.UserRole
 import com.proyectopoo.petcareapp.ui.screen.*
 import com.proyectopoo.petcareapp.ui.screen.auth.LoginScreen
+import com.proyectopoo.petcareapp.ui.screen.auth.PasswordRecoveryScreen
 import com.proyectopoo.petcareapp.ui.screen.auth.RegisterScreen
 import com.proyectopoo.petcareapp.ui.screen.auth.RoleSectionScreen
 import com.proyectopoo.petcareapp.ui.screen.caregiver.CaregiverFeedScreen
@@ -60,10 +61,18 @@ fun AppNavigation(
         composable<Login> {
             LoginScreen(
                 onRoleSelection = {
-                    // Flujo básico de login
+                    navController.navigate(OwnerHome) {
+                        popUpTo(Login) { inclusive = true }
+
+                     //  navController.navigate(CaregiverHome) {
+                      //      popUpTo(Login) { inclusive = true }
+                    }
                 },
                 onGoToRegister = {
                     navController.navigate(Register)
+                },
+                onGoToPasswordRecovery = {
+                    navController.navigate(PasswordRecovery)
                 }
             )
         }
@@ -71,7 +80,6 @@ fun AppNavigation(
         composable<Register> {
             RegisterScreen(
                 onRegisterSuccess = { response, password ->
-                    // Manejo robusto de la respuesta (usando user o useer por posibles typos del server)
                     val userData = response.user ?: response.useer
                     if (userData != null) {
                         navController.navigate(
@@ -176,5 +184,12 @@ fun AppNavigation(
                 }
             )
         }
+
+        composable<PasswordRecovery> {
+            PasswordRecoveryScreen(
+                onBackToLogin = { navController.navigate(Login) }
+            )
+        }
+
     }
 }
