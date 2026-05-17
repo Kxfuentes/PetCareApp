@@ -24,7 +24,7 @@ fun OwnerHomeScreen(
     onGoToCreate: () -> Unit,
     onEditPets: () -> Unit,
     onGoToFeed: () -> Unit,
-    onGoToProfile: () -> Unit
+    onGoToOwnerProfile: () -> Unit
 ) {
     val services = listOf(
         "Alojamiento" to Icons.Default.NightShelter,

@@ -26,7 +26,7 @@ import com.proyectopoo.petcareapp.ui.theme.*
 @Composable
 fun CaregiverFeedScreen(
     onGoToCreate: () -> Unit,
-    onGoToProfile: () -> Unit
+    onGoToCaregiverProfile: () -> Unit
 ) {
 
     val tiposServicio = listOf(

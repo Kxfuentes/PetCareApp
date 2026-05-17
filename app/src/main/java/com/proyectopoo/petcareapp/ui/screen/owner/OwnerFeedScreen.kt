@@ -27,7 +27,7 @@ import com.proyectopoo.petcareapp.ui.theme.*
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OwnerFeedScreen(
-    onGoToProfile: (Int) -> Unit
+    onGoToOwnerProfile: (Int) -> Unit
 ) {
     val tiposServicio = listOf(
         "Todos", "Alojamiento", "Guardería", "Paseo", "Taxi", "Peluquería", "Visitante"
@@ -216,7 +216,7 @@ fun OwnerFeedScreen(
                             Spacer(modifier = Modifier.height(20.dp))
 
                             OutlinedButton(
-                                onClick = { onGoToProfile(0) }, // navegación temporal con ID fijo
+                                onClick = { onGoToOwnerProfile(0) }, // navegación temporal con ID fijo
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(16.dp),
                                 colors = ButtonDefaults.outlinedButtonColors(contentColor = CafeMedio)

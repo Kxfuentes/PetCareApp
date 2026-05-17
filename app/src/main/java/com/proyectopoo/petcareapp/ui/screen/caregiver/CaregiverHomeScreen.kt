@@ -25,7 +25,7 @@ fun CaregiverHomeScreen(
     onGoToFeed: () -> Unit,
     onGoToCreate: () -> Unit,
     onGoToServices: () -> Unit,
-    onGoToProfile: () -> Unit
+    onGoToCaregiverProfile: () -> Unit
 ) {
     var available by remember { mutableStateOf(true) }
     val scrollState = rememberScrollState()
@@ -149,7 +149,7 @@ fun CaregiverHomeScreen(
                 ActionCard(
                     title = "Mi Perfil",
                     icon = Icons.Default.Person,
-                    onClick = onGoToProfile,
+                    onClick = onGoToCaregiverProfile,
                     modifier = Modifier.weight(1f)
                 )
             }
