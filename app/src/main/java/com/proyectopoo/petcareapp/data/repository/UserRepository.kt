@@ -2,9 +2,11 @@ package com.proyectopoo.petcareapp.data.repository
 
 import com.proyectopoo.petcareapp.data.local.dao.UserDao
 import com.proyectopoo.petcareapp.data.local.entity.UserEntity
+import com.proyectopoo.petcareapp.data.session.SessionManager
 
 class UserRepository(
-    private val userDao: UserDao
+    private val userDao: UserDao,
+    private val sessionManager: SessionManager
 ) {
 
     suspend fun insertUser(user: UserEntity) {
@@ -25,10 +27,39 @@ class UserRepository(
 
     suspend fun login(
         email: String,
-        password: String
+        password: String,
+        rememberSession: Boolean
     ): UserEntity? {
 
-        return userDao.login(email, password)
+        val user = userDao.login(email, password)
+
+        if (user != null && rememberSession) {
+            sessionManager.saveSession(
+                userId = user.userId,
+                email = user.email,
+                role = user.role
+            )
+        }
+
+        return user
+    }
+
+    fun isLoggedIn(): Boolean {
+        return sessionManager.isLoggedIn()
+    }
+
+    fun getCurrentUserId(): Int {
+        return sessionManager.getUserId()
+    }
+
+    fun getCurrentUserEmail(): String? {
+        return sessionManager.getEmail()
+    }
+
+    fun getCurrentUserRole() = sessionManager.getRole()
+
+    fun logout() {
+        sessionManager.clearSession()
     }
 
     suspend fun updateUser(user: UserEntity) {

@@ -26,8 +26,8 @@ import com.proyectopoo.petcareapp.navigation.Login
 import com.proyectopoo.petcareapp.navigation.Register
 import com.proyectopoo.petcareapp.navigation.RoleSection
 import com.proyectopoo.petcareapp.ui.components.PetCareNavigationBar
-import com.proyectopoo.petcareapp.Viewmodel.UserRole
-import com.proyectopoo.petcareapp.Viewmodel.UserRoleViewModel
+import com.proyectopoo.petcareapp.viewmodel.UserRole
+import com.proyectopoo.petcareapp.viewmodel.UserRoleViewModel
 import com.proyectopoo.petcareapp.ui.theme.PetCareAppTheme
 
 val LocalUserRoleViewModel = compositionLocalOf<UserRoleViewModel> {

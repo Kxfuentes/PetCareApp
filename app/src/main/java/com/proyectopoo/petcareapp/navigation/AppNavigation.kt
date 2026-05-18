@@ -13,7 +13,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
 import com.proyectopoo.petcareapp.LocalUserRoleViewModel
-import com.proyectopoo.petcareapp.Viewmodel.UserRole
+import com.proyectopoo.petcareapp.viewmodel.UserRole
 import com.proyectopoo.petcareapp.ui.screen.*
 import com.proyectopoo.petcareapp.ui.screen.auth.LoginScreen
 import com.proyectopoo.petcareapp.ui.screen.auth.PasswordRecoveryScreen

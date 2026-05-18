@@ -37,6 +37,7 @@ fun LoginScreen(
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    var rememberSession by remember { mutableStateOf(false) }
 
     Box(
         modifier = Modifier
@@ -119,6 +120,20 @@ fun LoginScreen(
                         color = MaterialTheme.colorScheme.error,
                         fontSize = 12.sp,
                         modifier = Modifier.padding(top = 8.dp)
+                    )
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Checkbox(
+                        checked = rememberSession,
+                        onCheckedChange = { rememberSession = it }
+                    )
+
+                    Text(
+                        text = "Recordarme",
+                        color = CafeOscuro
                     )
                 }
 

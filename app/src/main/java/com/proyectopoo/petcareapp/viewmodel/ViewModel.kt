@@ -1,4 +1,4 @@
-package com.proyectopoo.petcareapp.Viewmodel
+package com.proyectopoo.petcareapp.viewmodel
 
 import android.content.SharedPreferences
 import androidx.lifecycle.ViewModel
