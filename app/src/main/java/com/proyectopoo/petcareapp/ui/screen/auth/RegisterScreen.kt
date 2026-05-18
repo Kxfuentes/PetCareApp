@@ -66,7 +66,7 @@ fun RegisterScreen(
         
         val hasSpecial = password.any { !it.isLetterOrDigit() }
         if (!hasSpecial) {
-            return "La contraseña debe contener al menos un carácter especial (ej. !@#\$%)"
+            return "La contraseña debe contener al menos un carácter especial (ej. !@#$%)"
         }
 
         if (password != confirmPassword) return "Las contraseñas no coinciden"
@@ -83,11 +83,12 @@ fun RegisterScreen(
         scope.launch {
             isLoading = true
             try {
+                // Se envía el rol como la cadena "null" para cumplir con el requerimiento del backend
                 val request = RegisterRequest(
                     username = username,
                     email = email,
                     password = password,
-                    rol = null
+                    rol = "null"
                 )
                 val response = RetrofitClient.apiService.registerUser(request)
 
@@ -110,7 +111,7 @@ fun RegisterScreen(
                     } catch (e: Exception) {
                         "Error del servidor: ${response.code()}"
                     }
-                    Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+                    Toast.makeText(context, message ?: "Error desconocido", Toast.LENGTH_LONG).show()
                 }
             } catch (e: IOException) {
                 Toast.makeText(context, "No se pudo conectar con el servidor. Verifica tu conexión.", Toast.LENGTH_LONG).show()
