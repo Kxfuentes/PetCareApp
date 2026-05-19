@@ -20,10 +20,19 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.proyectopoo.petcareapp.navigation.*
+import com.proyectopoo.petcareapp.navigation.AppNavigation
+import com.proyectopoo.petcareapp.navigation.DogInfo
+import com.proyectopoo.petcareapp.navigation.Login
+import com.proyectopoo.petcareapp.navigation.Register
+import com.proyectopoo.petcareapp.navigation.RoleSection
 import com.proyectopoo.petcareapp.ui.components.PetCareNavigationBar
-import com.proyectopoo.petcareapp.Viewmodel.UserRoleViewModel
+import com.proyectopoo.petcareapp.viewmodel.UserRole
+import com.proyectopoo.petcareapp.viewmodel.UserRoleViewModel
 import com.proyectopoo.petcareapp.ui.theme.PetCareAppTheme
+import androidx.compose.runtime.LaunchedEffect
+import com.proyectopoo.petcareapp.data.session.SessionManager
+import com.proyectopoo.petcareapp.navigation.CaregiverHome
+import com.proyectopoo.petcareapp.navigation.OwnerHome
 
 val LocalUserRoleViewModel = compositionLocalOf<UserRoleViewModel> {
     error("No UserRoleViewModel provided")
@@ -33,11 +42,9 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-
         setContent {
             PetCareAppTheme {
                 val context = LocalContext.current
-
                 val userRoleViewModel: UserRoleViewModel = viewModel(
                     factory = viewModelFactory {
                         initializer {
@@ -48,19 +55,47 @@ class MainActivity : ComponentActivity() {
                 )
 
                 val userRole by userRoleViewModel.userRole.collectAsStateWithLifecycle()
+                val isOwner = userRole == UserRole.OWNER
 
                 CompositionLocalProvider(
                     LocalUserRoleViewModel provides userRoleViewModel
+
                 ) {
+
                     val navController = rememberNavController()
+
+                    LaunchedEffect(Unit) {
+                        val sessionManager = SessionManager(context)
+
+                        if (sessionManager.isLoggedIn()) {
+                            val savedRole = sessionManager.getRole()
+
+                            when (savedRole?.name) {
+                                "CAREGIVER" -> {
+                                    userRoleViewModel.setRole(UserRole.CAREGIVER)
+                                    navController.navigate(CaregiverHome) {
+                                        popUpTo(0) { inclusive = true }
+                                    }
+                                }
+
+                                "OWNER" -> {
+                                    userRoleViewModel.setRole(UserRole.OWNER)
+                                    navController.navigate(OwnerHome) {
+                                        popUpTo(0) { inclusive = true }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
                     val navBackStackEntry by navController.currentBackStackEntryAsState()
                     val currentDestination = navBackStackEntry?.destination
 
                     val showBar = currentDestination?.let { dest ->
                         !dest.hasRoute<Login>() &&
-                                !dest.hasRoute<Register>() &&
-                                !dest.hasRoute<RoleSection>() &&
-                                !dest.hasRoute<DogInfo>()
+                        !dest.hasRoute<Register>() &&
+                        !dest.hasRoute<RoleSection>() &&
+                        !dest.hasRoute<DogInfo>()
                     } ?: false
 
                     Scaffold(
@@ -69,7 +104,7 @@ class MainActivity : ComponentActivity() {
                             if (showBar) {
                                 PetCareNavigationBar(
                                     navController = navController,
-                                    userRole = userRole
+                                    isOwner = isOwner
                                 )
                             }
                         }

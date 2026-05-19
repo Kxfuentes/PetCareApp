@@ -13,7 +13,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
 import com.proyectopoo.petcareapp.LocalUserRoleViewModel
-import com.proyectopoo.petcareapp.Viewmodel.UserRole
+import com.proyectopoo.petcareapp.viewmodel.UserRole
+import com.proyectopoo.petcareapp.ui.screen.*
 import com.proyectopoo.petcareapp.ui.screen.auth.LoginScreen
 import com.proyectopoo.petcareapp.ui.screen.auth.PasswordRecoveryScreen
 import com.proyectopoo.petcareapp.ui.screen.auth.RegisterScreen
@@ -25,8 +26,17 @@ import com.proyectopoo.petcareapp.ui.screen.owner.CreateServiceScreen
 import com.proyectopoo.petcareapp.ui.screen.owner.DogInfoScreen
 import com.proyectopoo.petcareapp.ui.screen.owner.OwnerFeedScreen
 import com.proyectopoo.petcareapp.ui.screen.owner.OwnerHomeScreen
-import com.proyectopoo.petcareapp.ui.screen.caregiver.CaregiverProfileScreen
-import com.proyectopoo.petcareapp.ui.screen.owner.OwnerProfileScreen
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
+import com.proyectopoo.petcareapp.data.local.database.PetCareDatabase
+import com.proyectopoo.petcareapp.data.network.RetrofitClient
+import com.proyectopoo.petcareapp.data.repository.UserRepository
+import com.proyectopoo.petcareapp.data.session.SessionManager
+import com.proyectopoo.petcareapp.viewmodel.LoginViewModel
+
 
 @Composable
 fun AppNavigation(
@@ -59,18 +69,65 @@ fun AppNavigation(
         modifier = modifier
     ) {
 
-
         composable<Login> {
+            val context = LocalContext.current
+            val database = PetCareDatabase.getDatabase(context)
+            val sessionManager = SessionManager(context)
+
+            val loginViewModel: LoginViewModel = viewModel(
+                factory = viewModelFactory {
+                    initializer {
+                        LoginViewModel(
+                            UserRepository(
+                                userDao = database.userDao(),
+                                sessionManager = sessionManager,
+                                apiService = RetrofitClient.apiService
+                            )
+                        )
+                    }
+                }
+            )
+
+            val loggedUser by loginViewModel.loggedUser.collectAsStateWithLifecycle()
+
+            LaunchedEffect(loggedUser) {
+                loggedUser?.let { user ->
+                    val role = when (user.role.name) {
+                        "CAREGIVER" -> UserRole.CAREGIVER
+                        else -> UserRole.OWNER
+                    }
+
+                    userRoleViewModel.setRole(role)
+
+                    navController.navigate(
+                        if (role == UserRole.CAREGIVER) CaregiverHome else OwnerHome
+                    ) {
+                        popUpTo(Login) { inclusive = true }
+                    }
+                }
+            }
+
             LoginScreen(
-                onRoleSelection = { /* Temporal */ },
-                onGoToRegister = { navController.navigate(Register) },
-                onGoToPasswordRecovery = { navController.navigate(PasswordRecovery) }
+                onLoginClick = { username, password, rememberSession ->
+                    loginViewModel.login(
+                        email = username,
+                        password = password,
+                        rememberSession = rememberSession
+                    )
+                },
+                onGoToRegister = {
+                    navController.navigate(Register)
+                },
+                onGoToPasswordRecovery = {
+                    navController.navigate(PasswordRecovery)
+                }
             )
         }
 
         composable<Register> {
             RegisterScreen(
                 onRegisterSuccess = { response, password ->
+                    // Manejo robusto de la respuesta (usando user o useer por posibles typos del server)
                     val userData = response.user ?: response.useer
                     if (userData != null) {
                         navController.navigate(
@@ -85,7 +142,9 @@ fun AppNavigation(
                         }
                     }
                 },
-                onBack = { navController.popBackStack() }
+                onBack = {
+                    navController.popBackStack()
+                }
             )
         }
 
@@ -103,12 +162,11 @@ fun AppNavigation(
                 onCaregiverSelected = {
                     userRoleViewModel.setRole(UserRole.CAREGIVER)
                     navController.navigate(CaregiverHome) {
-                        popUpTo(data) { inclusive = true }  // Corregido
+                        popUpTo(data) { inclusive = true }
                     }
                 }
             )
         }
-
 
         composable<DogInfo> {
             DogInfoScreen(
@@ -125,13 +183,13 @@ fun AppNavigation(
                 onGoToFeed = { navController.navigate(OwnerFeed) },
                 onGoToCreate = { navController.navigate(CreateService) },
                 onEditPets = { navController.navigate(DogInfo) },
-                onGoToOwnerProfile = { navController.navigate(OwnerProfile) }
+                onGoToProfile = { navController.navigate(Profile) }
             )
         }
 
         composable<OwnerFeed> {
             OwnerFeedScreen(
-                onGoToOwnerProfile = { navController.navigate(OwnerProfile) }
+                onGoToProfile = { _ -> navController.navigate(Profile) }
             )
         }
 
@@ -146,14 +204,14 @@ fun AppNavigation(
                 onGoToFeed = { navController.navigate(CaregiverFeed) },
                 onGoToCreate = { navController.navigate(CreateService) },
                 onGoToServices = { navController.navigate(CaregiverService) },
-                onGoToCaregiverProfile = { navController.navigate(CaregiverProfile) }
+                onGoToProfile = { navController.navigate(Profile) }
             )
         }
 
         composable<CaregiverFeed> {
             CaregiverFeedScreen(
                 onGoToCreate = { navController.navigate(CreateService) },
-                onGoToCaregiverProfile = { navController.navigate(CaregiverProfile) }
+                onGoToProfile = { navController.navigate(Profile) }
             )
         }
 
@@ -163,23 +221,15 @@ fun AppNavigation(
             )
         }
 
-        composable<OwnerProfile> {
-            OwnerProfileScreen(
+        composable<Profile> {
+            ProfileScreen(
                 onBack = { navController.popBackStack() },
                 onLogout = {
-                    userRoleViewModel.clearRole()
-                    navController.navigate(Login) {
-                        popUpTo(0) { inclusive = true }
-                    }
-                }
-            )
-        }
+                    val sessionManager = SessionManager(navController.context)
+                    sessionManager.clearSession()
 
-        composable<CaregiverProfile> {
-            CaregiverProfileScreen(
-                onBack = { navController.popBackStack() },
-                onLogout = {
                     userRoleViewModel.clearRole()
+
                     navController.navigate(Login) {
                         popUpTo(0) { inclusive = true }
                     }
@@ -192,5 +242,6 @@ fun AppNavigation(
                 onBackToLogin = { navController.navigate(Login) }
             )
         }
+
     }
 }
