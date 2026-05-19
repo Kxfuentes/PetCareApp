@@ -1,7 +1,11 @@
 package com.proyectopoo.petcareapp.model
 
+/**
+ * Entidad de Dominio (Model)
+ * Representa los datos puros del usuario.
+ */
 data class User(
-    val nombre: String,
+    val username: String,
     val email: String,
-    val rol: String
+    val role: String
 )

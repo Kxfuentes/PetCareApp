@@ -28,7 +28,7 @@ fun OwnerProfileScreen(
         Spacer(modifier = Modifier.height(24.dp))
 
         UserBasicInfoCard(
-            name = user?.nombre ?: "Nombre del Usuario",
+            name = user?.username ?: "Nombre del Usuario",
             email = user?.email ?: "correo@ejemplo.com",
             role = "Dueño de Mascotas"
         )
