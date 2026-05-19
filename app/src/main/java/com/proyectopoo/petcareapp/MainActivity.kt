@@ -26,10 +26,11 @@ import com.proyectopoo.petcareapp.navigation.Login
 import com.proyectopoo.petcareapp.navigation.Register
 import com.proyectopoo.petcareapp.navigation.RoleSection
 import com.proyectopoo.petcareapp.ui.components.PetCareNavigationBar
-import com.proyectopoo.petcareapp.viewmodel.UserRole
+import com.proyectopoo.petcareapp.model.UserRole
 import com.proyectopoo.petcareapp.viewmodel.UserRoleViewModel
 import com.proyectopoo.petcareapp.ui.theme.PetCareAppTheme
 import androidx.compose.runtime.LaunchedEffect
+import com.proyectopoo.petcareapp.data.local.entity.UserRoleType
 import com.proyectopoo.petcareapp.data.session.SessionManager
 import com.proyectopoo.petcareapp.navigation.CaregiverHome
 import com.proyectopoo.petcareapp.navigation.OwnerHome
@@ -55,11 +56,9 @@ class MainActivity : ComponentActivity() {
                 )
 
                 val userRole by userRoleViewModel.userRole.collectAsStateWithLifecycle()
-                val isOwner = userRole == UserRole.OWNER
 
                 CompositionLocalProvider(
                     LocalUserRoleViewModel provides userRoleViewModel
-
                 ) {
 
                     val navController = rememberNavController()
@@ -68,21 +67,18 @@ class MainActivity : ComponentActivity() {
                         val sessionManager = SessionManager(context)
 
                         if (sessionManager.isLoggedIn()) {
-                            val savedRole = sessionManager.getRole()
+                            val savedRoleType = sessionManager.getRole()
+                            val savedRole = when (savedRoleType) {
+                                UserRoleType.CAREGIVER -> UserRole.CAREGIVER
+                                UserRoleType.OWNER -> UserRole.OWNER
+                                null -> null
+                            }
 
-                            when (savedRole?.name) {
-                                "CAREGIVER" -> {
-                                    userRoleViewModel.setRole(UserRole.CAREGIVER)
-                                    navController.navigate(CaregiverHome) {
-                                        popUpTo(0) { inclusive = true }
-                                    }
-                                }
-
-                                "OWNER" -> {
-                                    userRoleViewModel.setRole(UserRole.OWNER)
-                                    navController.navigate(OwnerHome) {
-                                        popUpTo(0) { inclusive = true }
-                                    }
+                            savedRole?.let { role ->
+                                userRoleViewModel.setRole(role)
+                                val destination = if (role == UserRole.CAREGIVER) CaregiverHome else OwnerHome
+                                navController.navigate(destination) {
+                                    popUpTo(0) { inclusive = true }
                                 }
                             }
                         }
@@ -104,7 +100,7 @@ class MainActivity : ComponentActivity() {
                             if (showBar) {
                                 PetCareNavigationBar(
                                     navController = navController,
-                                    isOwner = isOwner
+                                    userRole = userRole
                                 )
                             }
                         }
