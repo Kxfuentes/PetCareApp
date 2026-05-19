@@ -21,6 +21,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.proyectopoo.petcareapp.LocalUserRoleViewModel
+import com.proyectopoo.petcareapp.model.UserRole
 import com.proyectopoo.petcareapp.ui.theme.Blanco
 import com.proyectopoo.petcareapp.ui.theme.CafeMedio
 import com.proyectopoo.petcareapp.ui.theme.CafeOscuro
@@ -28,7 +29,7 @@ import com.proyectopoo.petcareapp.ui.theme.FondoCrema
 
 @Composable
 fun LoginScreen(
-    onRoleSelection: () -> Unit,
+    onLoginClick: (String, String, Boolean) -> Unit,
     onGoToRegister: () -> Unit = {},
     onGoToPasswordRecovery: () -> Unit
 ) {
@@ -37,6 +38,7 @@ fun LoginScreen(
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    var rememberSession by remember { mutableStateOf(false) }
 
     Box(
         modifier = Modifier
@@ -121,6 +123,20 @@ fun LoginScreen(
                         modifier = Modifier.padding(top = 8.dp)
                     )
                 }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Checkbox(
+                        checked = rememberSession,
+                        onCheckedChange = { rememberSession = it }
+                    )
+
+                    Text(
+                        text = "Recordarme",
+                        color = CafeOscuro
+                    )
+                }
 
                 Spacer(modifier = Modifier.height(30.dp))
 
@@ -128,7 +144,7 @@ fun LoginScreen(
                     onClick = {
                         if (correo.isNotBlank() && password.isNotBlank()) {
                             userRoleViewModel.setRegisteredRole(null)
-                            onRoleSelection()
+                            onLoginClick(correo, password, rememberSession)
                         } else {
                             errorMessage = "Por favor, completa todos los campos"
                         }

@@ -15,4 +15,9 @@ interface ApiService {
         @Path("id") userId: Int,
         @Body request: RegisterRequest
     ): Response<RegisterResponse>
+
+    @POST("api/auth/login")
+    suspend fun login(
+        @Body request: LoginRequest
+    ): Response<LoginResponse>
 }

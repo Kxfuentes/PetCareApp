@@ -13,7 +13,7 @@ import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
-import com.proyectopoo.petcareapp.Viewmodel.UserRole
+import com.proyectopoo.petcareapp.model.UserRole
 import com.proyectopoo.petcareapp.navigation.*
 import com.proyectopoo.petcareapp.ui.theme.CafeClaro
 import com.proyectopoo.petcareapp.ui.theme.CafeOscuro
@@ -63,7 +63,7 @@ fun PetCareNavigationBar(
             )
         }
 
-        // Perfil → Ahora navega según el rol
+        // Perfil
         NavigationBarItem(
             selected = currentDestination?.hierarchy?.any {
                 it.hasRoute(getProfileRoute(currentRole)::class)

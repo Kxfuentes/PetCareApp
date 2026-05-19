@@ -10,7 +10,11 @@ data class RegisterRequest(
     val password: String,
     val rol: String? = null
 )
-
+@Serializable
+data class LoginRequest(
+    val email: String,
+    val password: String
+)
 @Serializable
 data class RegisterResponse(
     @SerialName("user") val user: UserDto? = null,
@@ -19,6 +23,12 @@ data class RegisterResponse(
     @SerialName("sessions") val sessions: SessionDto? = null
 )
 
+@Serializable
+data class LoginResponse(
+    val user: UserDto? = null,
+    val session: SessionDto? = null,
+    val error: String? = null
+)
 @Serializable
 data class UserDto(
     val id: Int,
