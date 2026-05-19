@@ -26,6 +26,17 @@ import com.proyectopoo.petcareapp.ui.screen.owner.CreateServiceScreen
 import com.proyectopoo.petcareapp.ui.screen.owner.DogInfoScreen
 import com.proyectopoo.petcareapp.ui.screen.owner.OwnerFeedScreen
 import com.proyectopoo.petcareapp.ui.screen.owner.OwnerHomeScreen
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
+import com.proyectopoo.petcareapp.data.local.database.PetCareDatabase
+import com.proyectopoo.petcareapp.data.network.RetrofitClient
+import com.proyectopoo.petcareapp.data.repository.UserRepository
+import com.proyectopoo.petcareapp.data.session.SessionManager
+import com.proyectopoo.petcareapp.viewmodel.LoginViewModel
+
 
 @Composable
 fun AppNavigation(
@@ -59,14 +70,50 @@ fun AppNavigation(
     ) {
 
         composable<Login> {
-            LoginScreen(
-                onRoleSelection = {
-                    navController.navigate(OwnerHome) {
-                        popUpTo(Login) { inclusive = true }
+            val context = LocalContext.current
+            val database = PetCareDatabase.getDatabase(context)
+            val sessionManager = SessionManager(context)
 
-                     //  navController.navigate(CaregiverHome) {
-                      //      popUpTo(Login) { inclusive = true }
+            val loginViewModel: LoginViewModel = viewModel(
+                factory = viewModelFactory {
+                    initializer {
+                        LoginViewModel(
+                            UserRepository(
+                                userDao = database.userDao(),
+                                sessionManager = sessionManager,
+                                apiService = RetrofitClient.apiService
+                            )
+                        )
                     }
+                }
+            )
+
+            val loggedUser by loginViewModel.loggedUser.collectAsStateWithLifecycle()
+
+            LaunchedEffect(loggedUser) {
+                loggedUser?.let { user ->
+                    val role = when (user.role.name) {
+                        "CAREGIVER" -> UserRole.CAREGIVER
+                        else -> UserRole.OWNER
+                    }
+
+                    userRoleViewModel.setRole(role)
+
+                    navController.navigate(
+                        if (role == UserRole.CAREGIVER) CaregiverHome else OwnerHome
+                    ) {
+                        popUpTo(Login) { inclusive = true }
+                    }
+                }
+            }
+
+            LoginScreen(
+                onLoginClick = { username, password, rememberSession ->
+                    loginViewModel.login(
+                        email = username,
+                        password = password,
+                        rememberSession = rememberSession
+                    )
                 },
                 onGoToRegister = {
                     navController.navigate(Register)
@@ -178,7 +225,11 @@ fun AppNavigation(
             ProfileScreen(
                 onBack = { navController.popBackStack() },
                 onLogout = {
+                    val sessionManager = SessionManager(navController.context)
+                    sessionManager.clearSession()
+
                     userRoleViewModel.clearRole()
+
                     navController.navigate(Login) {
                         popUpTo(0) { inclusive = true }
                     }

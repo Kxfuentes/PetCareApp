@@ -2,11 +2,15 @@ package com.proyectopoo.petcareapp.data.repository
 
 import com.proyectopoo.petcareapp.data.local.dao.UserDao
 import com.proyectopoo.petcareapp.data.local.entity.UserEntity
+import com.proyectopoo.petcareapp.data.local.entity.UserRoleType
+import com.proyectopoo.petcareapp.data.network.ApiService
+import com.proyectopoo.petcareapp.data.network.LoginRequest
 import com.proyectopoo.petcareapp.data.session.SessionManager
 
 class UserRepository(
     private val userDao: UserDao,
-    private val sessionManager: SessionManager
+    private val sessionManager: SessionManager,
+    private val apiService: ApiService
 ) {
 
     suspend fun insertUser(user: UserEntity) {
@@ -30,10 +34,38 @@ class UserRepository(
         password: String,
         rememberSession: Boolean
     ): UserEntity? {
+        val response = apiService.login(
+            LoginRequest(
+                email = email,
+                password = password
+            )
+        )
 
-        val user = userDao.login(email, password)
+        if (!response.isSuccessful) {
+            return null
+        }
 
-        if (user != null && rememberSession) {
+        val body = response.body() ?: return null
+        val userDto = body.user ?: return null
+
+        val role = when (userDto.rol?.uppercase()) {
+            "OWNER", "DUENO", "DUEÑO" -> UserRoleType.OWNER
+            "CAREGIVER", "CUIDADOR" -> UserRoleType.CAREGIVER
+            else -> UserRoleType.OWNER
+        }
+
+        val user = UserEntity(
+            userId = userDto.id,
+            fullName = userDto.username,
+            email = userDto.email,
+            phone = null,
+            password = null,
+            role = role
+        )
+
+        userDao.insertUser(user)
+
+        if (rememberSession) {
             sessionManager.saveSession(
                 userId = user.userId,
                 email = user.email,

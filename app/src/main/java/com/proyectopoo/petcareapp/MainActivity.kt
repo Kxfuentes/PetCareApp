@@ -29,6 +29,10 @@ import com.proyectopoo.petcareapp.ui.components.PetCareNavigationBar
 import com.proyectopoo.petcareapp.viewmodel.UserRole
 import com.proyectopoo.petcareapp.viewmodel.UserRoleViewModel
 import com.proyectopoo.petcareapp.ui.theme.PetCareAppTheme
+import androidx.compose.runtime.LaunchedEffect
+import com.proyectopoo.petcareapp.data.session.SessionManager
+import com.proyectopoo.petcareapp.navigation.CaregiverHome
+import com.proyectopoo.petcareapp.navigation.OwnerHome
 
 val LocalUserRoleViewModel = compositionLocalOf<UserRoleViewModel> {
     error("No UserRoleViewModel provided")
@@ -55,8 +59,35 @@ class MainActivity : ComponentActivity() {
 
                 CompositionLocalProvider(
                     LocalUserRoleViewModel provides userRoleViewModel
+
                 ) {
+
                     val navController = rememberNavController()
+
+                    LaunchedEffect(Unit) {
+                        val sessionManager = SessionManager(context)
+
+                        if (sessionManager.isLoggedIn()) {
+                            val savedRole = sessionManager.getRole()
+
+                            when (savedRole?.name) {
+                                "CAREGIVER" -> {
+                                    userRoleViewModel.setRole(UserRole.CAREGIVER)
+                                    navController.navigate(CaregiverHome) {
+                                        popUpTo(0) { inclusive = true }
+                                    }
+                                }
+
+                                "OWNER" -> {
+                                    userRoleViewModel.setRole(UserRole.OWNER)
+                                    navController.navigate(OwnerHome) {
+                                        popUpTo(0) { inclusive = true }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
                     val navBackStackEntry by navController.currentBackStackEntryAsState()
                     val currentDestination = navBackStackEntry?.destination
 

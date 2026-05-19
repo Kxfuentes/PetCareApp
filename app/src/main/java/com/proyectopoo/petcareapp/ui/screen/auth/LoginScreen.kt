@@ -28,7 +28,7 @@ import com.proyectopoo.petcareapp.ui.theme.FondoCrema
 
 @Composable
 fun LoginScreen(
-    onRoleSelection: () -> Unit,
+    onLoginClick: (String, String, Boolean) -> Unit,
     onGoToRegister: () -> Unit = {},
     onGoToPasswordRecovery: () -> Unit
 ) {
@@ -143,7 +143,7 @@ fun LoginScreen(
                     onClick = {
                         if (correo.isNotBlank() && password.isNotBlank()) {
                             userRoleViewModel.setRegisteredRole(null)
-                            onRoleSelection()
+                            onLoginClick(correo, password, rememberSession)
                         } else {
                             errorMessage = "Por favor, completa todos los campos"
                         }
