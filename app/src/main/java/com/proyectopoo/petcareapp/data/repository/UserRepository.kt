@@ -46,11 +46,12 @@ class UserRepository(
         }
 
         val body = response.body() ?: return null
-        val userDto = body.user ?: return null
+        
+        val userDto = body.user ?: body.useer ?: return null
 
-        val role = when (userDto.rol?.uppercase()) {
-            "OWNER", "DUENO", "DUEÑO" -> UserRoleType.OWNER
-            "CAREGIVER", "CUIDADOR" -> UserRoleType.CAREGIVER
+        val mappedRole = when (userDto.role?.uppercase()) {
+            "OWNER", "DUENO", "DUEÑO", "PROPIETARIO" -> UserRoleType.OWNER
+            "CAREGIVER", "CUIDADOR", "GESTOR" -> UserRoleType.CAREGIVER
             else -> UserRoleType.OWNER
         }
 
@@ -60,7 +61,7 @@ class UserRepository(
             email = userDto.email,
             phone = null,
             password = null,
-            role = role
+            role = mappedRole
         )
 
         userDao.insertUser(user)

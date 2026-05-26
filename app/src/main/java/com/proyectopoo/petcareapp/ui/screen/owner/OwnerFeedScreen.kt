@@ -41,7 +41,7 @@ fun OwnerFeedScreen(
             rating = 4.8,
             reviews = 4,
             servicios = listOf("Paseo", "Guardería"),
-            resena = "Muy amable y atento con las mascotas."
+            review = "Muy amable y atento con las mascotas."
         ),
         Cuidador(
             nombre = "Valeria López",
@@ -50,7 +50,7 @@ fun OwnerFeedScreen(
             rating = 4.9,
             reviews = 8,
             servicios = listOf("Alojamiento", "Peluquería"),
-            resena = "Excelente experiencia y mucho cariño hacia los perros."
+            review = "Excelente experiencia y mucho cariño hacia los perros."
         )
     )
 
@@ -207,7 +207,7 @@ fun OwnerFeedScreen(
                             Spacer(modifier = Modifier.height(16.dp))
 
                             Text(
-                                text = "\"${cuidador.resena}\"",
+                                text = "\"${cuidador.review}\"",
                                 color = TextoSuave,
                                 fontStyle = FontStyle.Italic,
                                 fontSize = 15.sp

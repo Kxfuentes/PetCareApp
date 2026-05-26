@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.TypeConverters
 import com.proyectopoo.petcareapp.data.local.entity.AvailabilityEntity
 import com.proyectopoo.petcareapp.data.local.entity.CaregiverEntity
 import com.proyectopoo.petcareapp.data.local.entity.NotificationEntity
@@ -41,9 +42,8 @@ import com.proyectopoo.petcareapp.data.local.dao.UserDao
     version = 1,
     exportSchema = true
 )
-
+@TypeConverters(Converters::class)
 abstract class PetCareDatabase : RoomDatabase() {
-     // agregamos los Dao
     abstract fun userDao(): UserDao
     abstract fun ownerDao(): OwnerDao
     abstract fun caregiverDao(): CaregiverDao
