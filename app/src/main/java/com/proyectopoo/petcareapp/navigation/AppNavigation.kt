@@ -59,15 +59,9 @@ fun AppNavigation(
         return
     }
 
-    val startDestination = when (userRole) {
-        UserRole.OWNER -> OwnerHome
-        UserRole.CAREGIVER -> CaregiverHome
-        null -> Login
-    }
-
     NavHost(
         navController = navController,
-        startDestination = startDestination,
+        startDestination = Login,
         modifier = modifier
     ) {
 
@@ -163,7 +157,7 @@ fun AppNavigation(
                 onCaregiverSelected = {
                     userRoleViewModel.setRole(UserRole.CAREGIVER)
                     navController.navigate(CaregiverHome) {
-                        popUpTo(data) { inclusive = true }
+                        popUpTo(Login) { inclusive = true }
                     }
                 }
             )
@@ -190,11 +184,12 @@ fun AppNavigation(
 
         composable<OwnerFeed> {
             OwnerFeedScreen(
-                onGoToOwnerProfile = { navController.navigate(OwnerProfile) }
+                onGoToOwnerProfile = { _ -> navController.navigate(OwnerProfile) }
             )
         }
 
         composable<CreateService> {
+
             CreateServiceScreen(
                 onBack = { navController.popBackStack() }
             )
