@@ -191,7 +191,8 @@ fun AppNavigation(
         composable<CreateService> {
 
             CreateServiceScreen(
-                onBack = { navController.popBackStack() }
+                onBack = { navController.popBackStack() },
+                onPublish = { navController.navigate(OwnerHome) },
             )
         }
 

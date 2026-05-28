@@ -6,10 +6,11 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.graphics.Color
 
 private val LightColorScheme = lightColorScheme(
     primary = CafeMedio,
-    onPrimary = CafeOscuro,
+    onPrimary = Blanco,
 
     secondary = CafeClaro,
     onSecondary = CafeOscuro,
@@ -18,7 +19,21 @@ private val LightColorScheme = lightColorScheme(
     onBackground = CafeOscuro,
 
     surface = FondoCampo,
-    onSurface = CafeOscuro
+    onSurface = CafeOscuro,
+    surfaceVariant = FondoCrema,
+    onSurfaceVariant = TextoSuave,
+
+    outline = BordeCampo,
+    outlineVariant = BordeCampo.copy(alpha = 0.5f),
+
+    error = ErrorRed,
+    onError = Blanco,
+
+    primaryContainer = CafeClaro,
+    onPrimaryContainer = CafeOscuro,
+
+    secondaryContainer = FondoCrema,
+    onSecondaryContainer = CafeOscuro
 )
 
 private val DarkColorScheme = darkColorScheme(
@@ -26,7 +41,19 @@ private val DarkColorScheme = darkColorScheme(
     onPrimary = CafeOscuro,
 
     secondary = CafeMedio,
-    onSecondary = CafeOscuro
+    onSecondary = Blanco,
+
+    background = Color(0xFF2C2119),
+    onBackground = Color(0xFFEAE0D5),
+
+    surface = Color(0xFF3B2E24),
+    onSurface = Color(0xFFEAE0D5),
+    surfaceVariant = Color(0xFF4A3A2F),
+    onSurfaceVariant = Color(0xFFD4C3B5),
+
+    outline = Color(0xFF8A6A55),
+    error = ErrorRed,
+    onError = Blanco
 )
 
 @Composable

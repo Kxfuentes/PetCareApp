@@ -1,7 +1,5 @@
 package com.proyectopoo.petcareapp.ui.screen.owner
 
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -13,11 +11,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.proyectopoo.petcareapp.ui.theme.*
 
 @Composable
 fun OwnerHomeScreen(
@@ -37,124 +32,156 @@ fun OwnerHomeScreen(
 
     val scrollState = rememberScrollState()
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(FondoClaro)
-            .verticalScroll(scrollState)
-    ) {
-        // Header con diseño moderno
-        Surface(
-            color = CafeOscuro,
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp)
-        ) {
-            Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 32.dp)) {
-                Text(
-                    text = "¡Hola, Bienvenida!",
-                    color = Color.White,
-                    fontSize = 28.sp,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    text = "¿Qué necesita tu mascota hoy?",
-                    color = CafeClaro,
-                    fontSize = 16.sp
-                )
-            }
-        }
-
+    Scaffold(
+        containerColor = MaterialTheme.colorScheme.background
+    ) { paddingValues ->
         Column(
-            modifier = Modifier.padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(20.dp)
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .verticalScroll(scrollState)
         ) {
-            // Card de Mascota optimizada
-            Card(
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                shape = RoundedCornerShape(22.dp),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .shadow(4.dp, RoundedCornerShape(22.dp))
+            // Header
+            Surface(
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp)
             ) {
-                Row(
-                    modifier = Modifier.padding(20.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                Column(
+                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 40.dp)
                 ) {
-                    Surface(
-                        shape = RoundedCornerShape(12.dp),
-                        color = FondoCrema,
-                        modifier = Modifier.size(50.dp)
-                    ) {
-                        Icon(Icons.Default.Pets, null, tint = CafeMedio, modifier = Modifier.padding(10.dp))
-                    }
-                    Spacer(Modifier.width(16.dp))
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(text = "Max", color = CafeOscuro, fontSize = 20.sp, fontWeight = FontWeight.Bold)
-                        Text(text = "Golden Retriever · Tamaño M", color = TextoSuave, fontSize = 14.sp)
-                    }
-                    IconButton(onClick = onEditPets) {
-                        Icon(Icons.Default.Edit, null, tint = CafeMedio)
-                    }
+                    Text(
+                        text = "¡Hola, Bienvenido!",
+                        style = MaterialTheme.typography.headlineMedium,
+                        color = MaterialTheme.colorScheme.onPrimary
+                    )
+                    Text(
+                        text = "¿Qué necesita tu mascota hoy?",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f)
+                    )
                 }
             }
 
-
-            Text(text = "Servicios destacados", color = CafeOscuro, fontSize = 20.sp, fontWeight = FontWeight.Bold)
-
-
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                services.chunked(2).forEach { rowServices ->
+            Column(
+                modifier = Modifier.padding(20.dp),
+                verticalArrangement = Arrangement.spacedBy(20.dp)
+            ) {
+                // Card Mascota Actual
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    shape = RoundedCornerShape(22.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .shadow(4.dp, RoundedCornerShape(22.dp))
+                ) {
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        modifier = Modifier.padding(20.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        rowServices.forEach { service ->
-                            Card(
-                                onClick = onGoToCreate,
-                                modifier = Modifier.weight(1f),
-                                colors = CardDefaults.cardColors(containerColor = Color.White),
-                                shape = RoundedCornerShape(20.dp),
-                                border = BorderStroke(1.dp, CafeClaro.copy(alpha = 0.3f))
-                            ) {
-                                Column(
-                                    modifier = Modifier.padding(16.dp),
-                                    horizontalAlignment = Alignment.CenterHorizontally
+                        Surface(
+                            shape = RoundedCornerShape(12.dp),
+                            color = MaterialTheme.colorScheme.surfaceVariant,
+                            modifier = Modifier.size(56.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.Pets,
+                                null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.padding(12.dp)
+                            )
+                        }
+                        Spacer(Modifier.width(16.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Max",
+                                style = MaterialTheme.typography.titleLarge
+                            )
+                            Text(
+                                text = "Golden Retriever · Tamaño M",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        IconButton(onClick = onEditPets) {
+                            Icon(Icons.Default.Edit, null, tint = MaterialTheme.colorScheme.primary)
+                        }
+                    }
+                }
+
+                Text(
+                    text = "Servicios destacados",
+                    style = MaterialTheme.typography.titleLarge
+                )
+
+                // Servicios en grid
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    services.chunked(2).forEach { rowServices ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            rowServices.forEach { (serviceName, icon) ->
+                                Card(
+                                    onClick = onGoToCreate,
+                                    modifier = Modifier.weight(1f),
+                                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                                    shape = RoundedCornerShape(20.dp),
+                                    border = CardDefaults.outlinedCardBorder()
                                 ) {
-                                    Icon(service.second, null, tint = CafeMedio, modifier = Modifier.size(28.dp))
-                                    Spacer(Modifier.height(8.dp))
-                                    Text(service.first, color = CafeOscuro, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                    Column(
+                                        modifier = Modifier.padding(20.dp),
+                                        horizontalAlignment = Alignment.CenterHorizontally
+                                    ) {
+                                        Icon(
+                                            icon,
+                                            null,
+                                            tint = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.size(32.dp)
+                                        )
+                                        Spacer(Modifier.height(12.dp))
+                                        Text(
+                                            text = serviceName,
+                                            style = MaterialTheme.typography.titleSmall
+                                        )
+                                    }
                                 }
                             }
                         }
                     }
                 }
-            }
 
-
-            Card(
-                colors = CardDefaults.cardColors(containerColor = CafeMedio),
-                shape = RoundedCornerShape(20.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Row(
-                    modifier = Modifier.padding(20.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                // Card Promocional
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary),
+                    shape = RoundedCornerShape(20.dp),
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text("¿Buscas paseadores?", color = Color.White, fontWeight = FontWeight.Bold)
-                        Text("Encuentra a los mejores cerca de ti", color = Color.White.copy(alpha = 0.8f), fontSize = 12.sp)
-                    }
-                    Button(
-                        onClick = onGoToFeed,
-                        colors = ButtonDefaults.buttonColors(containerColor = Color.White),
-                        contentPadding = PaddingValues(horizontal = 16.dp)
+                    Row(
+                        modifier = Modifier.padding(20.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text("Explorar", color = CafeMedio, fontSize = 12.sp)
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                "¿Buscas paseadores?",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.onPrimary
+                            )
+                            Text(
+                                "Encuentra a los mejores cerca de ti",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f)
+                            )
+                        }
+                        Button(
+                            onClick = onGoToFeed,
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.onPrimary)
+                        ) {
+                            Text("Explorar", color = MaterialTheme.colorScheme.primary)
+                        }
                     }
                 }
             }
-            
-            Spacer(modifier = Modifier.height(20.dp))
         }
     }
 }
