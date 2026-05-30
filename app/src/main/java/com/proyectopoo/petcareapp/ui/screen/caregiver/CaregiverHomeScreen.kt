@@ -12,13 +12,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.proyectopoo.petcareapp.ui.theme.*
 
 @Composable
 fun CaregiverHomeScreen(
@@ -33,25 +30,26 @@ fun CaregiverHomeScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(FondoClaro)
+            .background(MaterialTheme.colorScheme.background)
             .verticalScroll(scrollState)
     ) {
-        // Header Moderno
+
+        // Header
         Surface(
-            color = CafeOscuro,
+            color = MaterialTheme.colorScheme.primary,
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp)
         ) {
             Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 32.dp)) {
                 Text(
                     text = "Panel de Cuidador",
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onPrimary,
                     fontSize = 28.sp,
                     fontWeight = FontWeight.Bold
                 )
                 Text(
                     text = "Gestiona tus servicios y solicitudes",
-                    color = CafeClaro,
+                    color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f),
                     fontSize = 16.sp
                 )
             }
@@ -61,21 +59,28 @@ fun CaregiverHomeScreen(
             modifier = Modifier.padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
-            // Estado de Disponibilidad
+
+
             Card(
-                colors = CardDefaults.cardColors(containerColor = Color.White),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                ),
                 shape = RoundedCornerShape(22.dp),
-                modifier = Modifier.fillMaxWidth().shadow(2.dp, RoundedCornerShape(22.dp))
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
             ) {
                 Row(
                     modifier = Modifier.padding(16.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("Estado actual", color = TextoSuave, fontSize = 14.sp)
+                        Text(
+                            "Estado actual",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontSize = 14.sp
+                        )
                         Text(
                             text = if (available) "Disponible para trabajar" else "En descanso",
-                            color = CafeOscuro,
+                            color = MaterialTheme.colorScheme.onSurface,
                             fontWeight = FontWeight.Bold,
                             fontSize = 18.sp
                         )
@@ -84,47 +89,86 @@ fun CaregiverHomeScreen(
                         checked = available,
                         onCheckedChange = { available = it },
                         colors = SwitchDefaults.colors(
-                            checkedThumbColor = Color.White,
-                            checkedTrackColor = CafeMedio
+                            checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
+                            checkedTrackColor = MaterialTheme.colorScheme.primary
                         )
                     )
                 }
             }
 
-            // Próximo Servicio
-            Text(text = "Próximo compromiso", color = CafeOscuro, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+
+            Text(
+                text = "Próximo compromiso",
+                color = MaterialTheme.colorScheme.onBackground,
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold
+            )
 
             Card(
-                colors = CardDefaults.cardColors(containerColor = Color.White),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                ),
                 shape = RoundedCornerShape(22.dp),
-                modifier = Modifier.fillMaxWidth().shadow(4.dp, RoundedCornerShape(22.dp)),
-                border = BorderStroke(1.dp, CafeClaro.copy(alpha = 0.5f))
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                border = BorderStroke(
+                    1.dp,
+                    MaterialTheme.colorScheme.outlineVariant
+                )
             ) {
-                Row(modifier = Modifier.padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    modifier = Modifier.padding(20.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     Surface(
                         shape = RoundedCornerShape(12.dp),
-                        color = FondoCrema,
+                        color = MaterialTheme.colorScheme.surfaceVariant,
                         modifier = Modifier.size(50.dp)
                     ) {
-                        Icon(Icons.Default.DirectionsWalk, null, tint = CafeMedio, modifier = Modifier.padding(10.dp))
+                        Icon(
+                            Icons.Default.DirectionsWalk,
+                            contentDescription = "Paseo",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(10.dp)
+                        )
                     }
                     Spacer(modifier = Modifier.width(16.dp))
                     Column {
-                        Text(text = "Paseo con Max", color = CafeOscuro, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                        Text(
+                            text = "Paseo con Max",
+                            color = MaterialTheme.colorScheme.onSurface,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 18.sp
+                        )
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.AccessTime, null, tint = TextoSuave, modifier = Modifier.size(14.dp))
+                            Icon(
+                                Icons.Default.AccessTime,
+                                contentDescription = "Hora",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(14.dp)
+                            )
                             Spacer(Modifier.width(4.dp))
-                            Text(text = "Hoy, 3:00 PM", color = TextoSuave, fontSize = 14.sp)
+                            Text(
+                                text = "Hoy, 3:00 PM",
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                fontSize = 14.sp
+                            )
                         }
                     }
                 }
             }
 
-            // Gestión de Servicios
-            Text(text = "Tu actividad", color = CafeOscuro, fontSize = 20.sp, fontWeight = FontWeight.Bold)
 
-            // Grid de acciones
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text(
+                text = "Tu actividad",
+                color = MaterialTheme.colorScheme.onBackground,
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold
+            )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
                 ActionCard(
                     title = "Mis Servicios",
                     icon = Icons.Default.List,
@@ -139,7 +183,10 @@ fun CaregiverHomeScreen(
                 )
             }
 
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
                 ActionCard(
                     title = "Publicar",
                     icon = Icons.Default.AddCircle,
@@ -153,8 +200,6 @@ fun CaregiverHomeScreen(
                     modifier = Modifier.weight(1f)
                 )
             }
-            
-            Spacer(modifier = Modifier.height(20.dp))
         }
     }
 }
@@ -169,18 +214,35 @@ fun ActionCard(
     Card(
         onClick = onClick,
         modifier = modifier.height(100.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
         shape = RoundedCornerShape(20.dp),
-        border = BorderStroke(1.dp, CafeClaro.copy(alpha = 0.3f))
+        border = BorderStroke(
+            1.dp,
+            MaterialTheme.colorScheme.outlineVariant
+        )
     ) {
         Column(
-            modifier = Modifier.fillMaxSize().padding(12.dp),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(12.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            Icon(icon, null, tint = CafeMedio, modifier = Modifier.size(28.dp))
+            Icon(
+                icon,
+                contentDescription = title,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(28.dp)
+            )
             Spacer(Modifier.height(8.dp))
-            Text(title, color = CafeOscuro, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+            Text(
+                title,
+                color = MaterialTheme.colorScheme.onSurface,
+                fontWeight = FontWeight.Bold,
+                fontSize = 14.sp
+            )
         }
     }
 }
