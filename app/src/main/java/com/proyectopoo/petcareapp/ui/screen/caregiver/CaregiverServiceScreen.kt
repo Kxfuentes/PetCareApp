@@ -107,7 +107,7 @@ fun CaregiverServiceScreen(
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // Dropdown
+
                 ExposedDropdownMenuBox(
                     expanded = expanded,
                     onExpandedChange = { expanded = !expanded }

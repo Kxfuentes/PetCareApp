@@ -6,13 +6,13 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.*
+import androidx.compose.material.icons.outlined.Favorite
+import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.Pets
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -20,10 +20,6 @@ import androidx.compose.ui.unit.sp
 import com.proyectopoo.petcareapp.data.network.ErrorResponse
 import com.proyectopoo.petcareapp.data.network.RegisterRequest
 import com.proyectopoo.petcareapp.data.network.RetrofitClient
-import com.proyectopoo.petcareapp.ui.theme.CafeClaro
-import com.proyectopoo.petcareapp.ui.theme.CafeMedio
-import com.proyectopoo.petcareapp.ui.theme.CafeOscuro
-import com.proyectopoo.petcareapp.ui.theme.FondoClaro
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import java.io.IOException
@@ -38,15 +34,20 @@ fun RoleSectionScreen(
     onOwnerSelected: () -> Unit,
     onCaregiverSelected: () -> Unit
 ) {
-    val context = LocalContext.current
+    val context = androidx.compose.ui.platform.LocalContext.current
     val scope = rememberCoroutineScope()
+    val colors = MaterialTheme.colorScheme
 
     var selectedRole by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
 
     fun handleRoleUpdate() {
         if (selectedRole.isEmpty()) {
-            Toast.makeText(context, "Por favor, selecciona un rol para continuar", Toast.LENGTH_SHORT).show()
+            Toast.makeText(
+                context,
+                "Por favor, selecciona un rol para continuar",
+                Toast.LENGTH_SHORT
+            ).show()
             return
         }
 
@@ -66,26 +67,22 @@ fun RoleSectionScreen(
 
                 if (response.isSuccessful) {
                     Toast.makeText(context, "Rol asignado correctamente", Toast.LENGTH_SHORT).show()
-                    if (apiRole == "propietario") {
-                        onOwnerSelected()
-                    } else {
-                        onCaregiverSelected()
-                    }
+                    if (apiRole == "propietario") onOwnerSelected()
+                    else onCaregiverSelected()
                 } else {
                     val errorBody = response.errorBody()?.string()
                     val message = try {
-                        if (errorBody != null) {
-                            Json.decodeFromString<ErrorResponse>(errorBody).error ?: "Error al actualizar el rol"
-                        } else {
-                            "Error al actualizar el rol"
+                        errorBody?.let {
+                            Json.decodeFromString<ErrorResponse>(it).error
                         }
                     } catch (e: Exception) {
                         "Error del servidor: ${response.code()}"
                     }
-                    Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+
+                    Toast.makeText(context, message ?: "Error desconocido", Toast.LENGTH_LONG).show()
                 }
             } catch (e: IOException) {
-                Toast.makeText(context, "Error de red: No se pudo contactar al servidor", Toast.LENGTH_LONG).show()
+                Toast.makeText(context, "Error de red", Toast.LENGTH_LONG).show()
             } catch (e: Exception) {
                 Toast.makeText(context, "Error: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
             } finally {
@@ -95,8 +92,9 @@ fun RoleSectionScreen(
     }
 
     Scaffold(
-        containerColor = FondoClaro
+        containerColor = colors.background
     ) { innerPadding ->
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -105,36 +103,42 @@ fun RoleSectionScreen(
                 .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+
             Spacer(modifier = Modifier.height(20.dp))
 
             Text(
                 text = "Elige tu rol",
                 fontSize = 32.sp,
                 fontWeight = FontWeight.Bold,
-                color = CafeOscuro,
+                color = colors.onBackground,
                 textAlign = TextAlign.Center
             )
+
             Spacer(modifier = Modifier.height(8.dp))
+
             Text(
                 text = "¿Cómo usarás PetCare?",
                 fontSize = 16.sp,
-                color = CafeOscuro.copy(alpha = 0.7f),
+                color = colors.onBackground.copy(alpha = 0.7f),
                 textAlign = TextAlign.Center
             )
+
             Spacer(modifier = Modifier.height(32.dp))
 
             RoleCard(
                 title = "Dueño",
-                description = "Busco a alguien que cuide de mi mejor amigo peludo",
+                description = "Busco a alguien que cuide de mi mascota",
                 icon = Icons.Outlined.Pets,
                 isSelected = selectedRole == "Dueño",
                 isLoading = isLoading,
                 onClick = { selectedRole = "Dueño" }
             )
+
             Spacer(modifier = Modifier.height(16.dp))
+
             RoleCard(
                 title = "Cuidador",
-                description = "Quiero ofrecer mis servicios para cuidar mascotas",
+                description = "Ofrezco servicios de cuidado de mascotas",
                 icon = Icons.Outlined.Favorite,
                 isSelected = selectedRole == "Cuidador",
                 isLoading = isLoading,
@@ -143,12 +147,9 @@ fun RoleSectionScreen(
 
             Spacer(modifier = Modifier.weight(1f))
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-
             Card(
                 colors = CardDefaults.cardColors(
-                    containerColor = CafeOscuro.copy(alpha = 0.08f)
+                    containerColor = colors.surfaceVariant.copy(alpha = 0.6f)
                 ),
                 shape = RoundedCornerShape(20.dp),
                 modifier = Modifier.fillMaxWidth()
@@ -160,20 +161,22 @@ fun RoleSectionScreen(
                 ) {
                     Icon(
                         Icons.Outlined.Info,
-                        contentDescription = "Info",
-                        tint = CafeMedio,
+                        contentDescription = null,
+                        tint = colors.primary,
                         modifier = Modifier.size(28.dp)
                     )
+
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
                             text = "Rol único y permanente",
                             fontWeight = FontWeight.Bold,
-                            color = CafeOscuro,
+                            color = colors.onSurface,
                             fontSize = 14.sp
                         )
+
                         Text(
-                            text = "Una vez que elijas tu rol no podrás cambiarlo. Esto garantiza la seguridad y confianza en nuestra comunidad.",
-                            color = CafeOscuro.copy(alpha = 0.8f),
+                            text = "Una vez elegido, no podrá cambiarse fácilmente para mantener la seguridad de la plataforma.",
+                            color = colors.onSurfaceVariant,
                             fontSize = 12.sp
                         )
                     }
@@ -183,7 +186,7 @@ fun RoleSectionScreen(
             Spacer(modifier = Modifier.height(24.dp))
 
             if (isLoading) {
-                CircularProgressIndicator(color = CafeMedio, modifier = Modifier.size(48.dp))
+                CircularProgressIndicator(color = colors.primary)
             } else {
                 Button(
                     onClick = { handleRoleUpdate() },
@@ -193,14 +196,13 @@ fun RoleSectionScreen(
                         .height(56.dp),
                     shape = RoundedCornerShape(28.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = CafeMedio,
-                        disabledContainerColor = CafeClaro
-                    ),
-                    elevation = ButtonDefaults.buttonElevation(4.dp)
+                        containerColor = colors.primary,
+                        disabledContainerColor = colors.surfaceVariant
+                    )
                 ) {
                     Text(
                         text = "Continuar",
-                        color = Color.White,
+                        color = colors.onPrimary,
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold
                     )

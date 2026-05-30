@@ -14,18 +14,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.proyectopoo.petcareapp.LocalUserRoleViewModel
-import com.proyectopoo.petcareapp.model.UserRole
-import com.proyectopoo.petcareapp.ui.theme.Blanco
-import com.proyectopoo.petcareapp.ui.theme.CafeMedio
-import com.proyectopoo.petcareapp.ui.theme.CafeOscuro
-import com.proyectopoo.petcareapp.ui.theme.FondoCrema
 
 @Composable
 fun LoginScreen(
@@ -34,6 +28,8 @@ fun LoginScreen(
     onGoToPasswordRecovery: () -> Unit
 ) {
     val userRoleViewModel = LocalUserRoleViewModel.current
+    val colors = MaterialTheme.colorScheme
+
     var correo by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
@@ -43,7 +39,7 @@ fun LoginScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(FondoCrema)
+            .background(colors.background)
     ) {
         Card(
             modifier = Modifier
@@ -52,7 +48,7 @@ fun LoginScreen(
                 .align(Alignment.Center)
                 .shadow(elevation = 10.dp, shape = RoundedCornerShape(28.dp)),
             shape = RoundedCornerShape(28.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White)
+            colors = CardDefaults.cardColors(containerColor = colors.surface)
         ) {
             Column(
                 modifier = Modifier
@@ -64,8 +60,8 @@ fun LoginScreen(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
                         Icons.Outlined.Pets,
-                        "Logo",
-                        tint = CafeOscuro,
+                        contentDescription = "Logo",
+                        tint = colors.primary,
                         modifier = Modifier.size(34.dp)
                     )
                     Spacer(Modifier.width(8.dp))
@@ -73,7 +69,7 @@ fun LoginScreen(
                         "PetCare",
                         fontSize = 30.sp,
                         fontWeight = FontWeight.Bold,
-                        color = CafeOscuro
+                        color = colors.primary
                     )
                 }
 
@@ -86,7 +82,9 @@ fun LoginScreen(
                         errorMessage = null
                     },
                     label = { Text("Correo electrónico") },
-                    leadingIcon = { Icon(Icons.Outlined.Email, null, tint = CafeMedio) },
+                    leadingIcon = {
+                        Icon(Icons.Outlined.Email, null, tint = colors.primary)
+                    },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(16.dp),
                     singleLine = true
@@ -101,15 +99,24 @@ fun LoginScreen(
                         errorMessage = null
                     },
                     label = { Text("Contraseña") },
-                    leadingIcon = { Icon(Icons.Outlined.Lock, null, tint = CafeMedio) },
+                    leadingIcon = {
+                        Icon(Icons.Outlined.Lock, null, tint = colors.primary)
+                    },
                     trailingIcon = {
                         val image =
                             if (passwordVisible) Icons.Outlined.Visibility else Icons.Outlined.VisibilityOff
                         IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                            Icon(imageVector = image, contentDescription = null, tint = CafeMedio)
+                            Icon(
+                                imageVector = image,
+                                contentDescription = null,
+                                tint = colors.primary
+                            )
                         }
                     },
-                    visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                    visualTransformation = if (passwordVisible)
+                        VisualTransformation.None
+                    else
+                        PasswordVisualTransformation(),
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(16.dp),
                     singleLine = true
@@ -118,11 +125,12 @@ fun LoginScreen(
                 if (errorMessage != null) {
                     Text(
                         text = errorMessage!!,
-                        color = MaterialTheme.colorScheme.error,
+                        color = colors.error,
                         fontSize = 12.sp,
                         modifier = Modifier.padding(top = 8.dp)
                     )
                 }
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
@@ -134,7 +142,7 @@ fun LoginScreen(
 
                     Text(
                         text = "Recordarme",
-                        color = CafeOscuro
+                        color = colors.onSurface
                     )
                 }
 
@@ -149,13 +157,14 @@ fun LoginScreen(
                             errorMessage = "Por favor, completa todos los campos"
                         }
                     },
-                    modifier = Modifier.fillMaxWidth().height(55.dp),
-                    shape = RoundedCornerShape(18.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = CafeMedio)
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(55.dp),
+                    shape = RoundedCornerShape(18.dp)
                 ) {
                     Text(
                         "Entrar",
-                        color = Blanco,
+                        color = colors.onPrimary,
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold
                     )
@@ -163,16 +172,17 @@ fun LoginScreen(
 
                 Spacer(modifier = Modifier.height(15.dp))
 
-
                 TextButton(onClick = onGoToRegister) {
-                    Text("¿No tienes cuenta? Regístrate", color = CafeOscuro)
+                    Text(
+                        "¿No tienes cuenta? Regístrate",
+                        color = colors.primary
+                    )
                 }
-
 
                 TextButton(onClick = onGoToPasswordRecovery) {
                     Text(
                         "¿Olvidaste tu contraseña? Recupérala aquí",
-                        color = CafeOscuro
+                        color = colors.primary
                     )
                 }
             }

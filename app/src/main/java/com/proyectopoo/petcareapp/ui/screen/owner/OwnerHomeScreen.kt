@@ -41,7 +41,7 @@ fun OwnerHomeScreen(
                 .padding(paddingValues)
                 .verticalScroll(scrollState)
         ) {
-            // Header
+
             Surface(
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.fillMaxWidth(),
@@ -67,7 +67,7 @@ fun OwnerHomeScreen(
                 modifier = Modifier.padding(20.dp),
                 verticalArrangement = Arrangement.spacedBy(20.dp)
             ) {
-                // Card Mascota Actual
+
                 Card(
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                     shape = RoundedCornerShape(22.dp),
@@ -114,7 +114,7 @@ fun OwnerHomeScreen(
                     style = MaterialTheme.typography.titleLarge
                 )
 
-                // Servicios en grid
+
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     services.chunked(2).forEach { rowServices ->
                         Row(
@@ -151,7 +151,7 @@ fun OwnerHomeScreen(
                     }
                 }
 
-                // Card Promocional
+
                 Card(
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary),
                     shape = RoundedCornerShape(20.dp),

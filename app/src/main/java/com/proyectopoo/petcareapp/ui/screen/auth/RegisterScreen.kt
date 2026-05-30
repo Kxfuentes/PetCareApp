@@ -15,21 +15,13 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.proyectopoo.petcareapp.data.network.ErrorResponse
-import com.proyectopoo.petcareapp.data.network.RegisterRequest
-import com.proyectopoo.petcareapp.data.network.RegisterResponse
-import com.proyectopoo.petcareapp.data.network.RetrofitClient
-import com.proyectopoo.petcareapp.ui.theme.BordeCampo
-import com.proyectopoo.petcareapp.ui.theme.CafeMedio
-import com.proyectopoo.petcareapp.ui.theme.CafeOscuro
-import com.proyectopoo.petcareapp.ui.theme.FondoCampo
-import com.proyectopoo.petcareapp.ui.theme.TextoSuave
+import com.proyectopoo.petcareapp.data.network.*
+import com.proyectopoo.petcareapp.ui.components.AuthTextField
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import java.io.IOException
@@ -42,34 +34,33 @@ fun RegisterScreen(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    val colors = MaterialTheme.colorScheme
 
     var username by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
-    
+
     var isLoading by remember { mutableStateOf(false) }
 
     fun validate(): String? {
         if (username.isBlank()) return "El nombre de usuario es requerido"
-        
-        if (username.length < 6) return "El nombre de usuario debe tener al menos 6 caracteres"
-        if (!username.matches("^[a-zA-Z0-9]+$".toRegex())) {
-            return "El nombre de usuario no puede contener espacios ni caracteres especiales"
-        }
+        if (username.length < 6) return "Debe tener al menos 6 caracteres"
+        if (!username.matches("^[a-zA-Z0-9]+$".toRegex()))
+            return "Sin espacios ni caracteres especiales"
 
         if (email.isBlank()) return "El correo es requerido"
-        if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) return "Formato de correo inválido"
-        
+        if (!Patterns.EMAIL_ADDRESS.matcher(email).matches())
+            return "Formato de correo inválido"
+
         if (password.isBlank()) return "La contraseña es requerida"
-        if (password.length < 6) return "La contraseña debe tener al menos 6 caracteres"
-        
+        if (password.length < 6) return "Mínimo 6 caracteres"
+
         val hasSpecial = password.any { !it.isLetterOrDigit() }
-        if (!hasSpecial) {
-            return "La contraseña debe contener al menos un carácter especial (ej. !@#$%)"
-        }
+        if (!hasSpecial) return "Debe incluir un carácter especial"
 
         if (password != confirmPassword) return "Las contraseñas no coinciden"
+
         return null
     }
 
@@ -83,30 +74,25 @@ fun RegisterScreen(
         scope.launch {
             isLoading = true
             try {
-                // Se envía el rol como la cadena "null" para cumplir con el requerimiento del backend
                 val request = RegisterRequest(
                     username = username,
                     email = email,
                     password = password,
                     rol = "null"
                 )
+
                 val response = RetrofitClient.apiService.registerUser(request)
 
                 if (response.isSuccessful) {
-                    val registerResponse = response.body()
-                    if (registerResponse != null) {
+                    response.body()?.let {
                         Toast.makeText(context, "Registro exitoso", Toast.LENGTH_SHORT).show()
-                        onRegisterSuccess(registerResponse, password)
-                    } else {
-                        Toast.makeText(context, "Error: Respuesta vacía", Toast.LENGTH_SHORT).show()
-                    }
+                        onRegisterSuccess(it, password)
+                    } ?: Toast.makeText(context, "Respuesta vacía", Toast.LENGTH_SHORT).show()
                 } else {
                     val errorBody = response.errorBody()?.string()
                     val message = try {
-                        if (errorBody != null) {
-                            Json.decodeFromString<ErrorResponse>(errorBody).error
-                        } else {
-                            "Error desconocido del servidor"
+                        errorBody?.let {
+                            Json.decodeFromString<ErrorResponse>(it).error
                         }
                     } catch (e: Exception) {
                         "Error del servidor: ${response.code()}"
@@ -114,9 +100,9 @@ fun RegisterScreen(
                     Toast.makeText(context, message ?: "Error desconocido", Toast.LENGTH_LONG).show()
                 }
             } catch (e: IOException) {
-                Toast.makeText(context, "No se pudo conectar con el servidor. Verifica tu conexión.", Toast.LENGTH_LONG).show()
+                Toast.makeText(context, "Sin conexión al servidor", Toast.LENGTH_LONG).show()
             } catch (e: Exception) {
-                Toast.makeText(context, "Ocurrió un error inesperado: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
+                Toast.makeText(context, "Error: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
             } finally {
                 isLoading = false
             }
@@ -126,18 +112,18 @@ fun RegisterScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White)
+            .background(colors.background)
     ) {
         TopAppBar(
             title = {
                 Text(
-                    text = "Crear cuenta",
-                    color = Color.White,
+                    "Crear cuenta",
+                    color = colors.onPrimary,
                     fontWeight = FontWeight.Bold
                 )
             },
             colors = TopAppBarDefaults.topAppBarColors(
-                containerColor = TextoSuave
+                containerColor = colors.primary
             )
         )
 
@@ -151,88 +137,61 @@ fun RegisterScreen(
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            OutlinedTextField(
+            AuthTextField(
                 value = username,
-                onValueChange = { username = it },
-                label = { Text("Username") },
-                leadingIcon = {
-                    Icon(imageVector = Icons.Outlined.Person, contentDescription = null, tint = CafeMedio)
-                },
-                singleLine = true,
-                shape = RoundedCornerShape(16.dp),
-                colors = textFieldColors(),
-                modifier = Modifier.fillMaxWidth(),
+                onChange = { username = it },
+                label = "Username",
+                icon = Icons.Outlined.Person,
                 enabled = !isLoading
             )
 
             Spacer(modifier = Modifier.height(18.dp))
 
-            OutlinedTextField(
+            AuthTextField(
                 value = email,
-                onValueChange = { email = it },
-                label = { Text("Email") },
-                leadingIcon = {
-                    Icon(imageVector = Icons.Outlined.Email, contentDescription = null, tint = CafeMedio)
-                },
-                singleLine = true,
-                shape = RoundedCornerShape(16.dp),
-                colors = textFieldColors(),
-                modifier = Modifier.fillMaxWidth(),
+                onChange = { email = it },
+                label = "Email",
+                icon = Icons.Outlined.Email,
                 enabled = !isLoading
             )
 
             Spacer(modifier = Modifier.height(18.dp))
 
-            OutlinedTextField(
+            AuthTextField(
                 value = password,
-                onValueChange = { password = it },
-                label = { Text("Contraseña") },
-                leadingIcon = {
-                    Icon(imageVector = Icons.Outlined.Lock, contentDescription = null, tint = CafeMedio)
-                },
-                visualTransformation = PasswordVisualTransformation(),
-                singleLine = true,
-                shape = RoundedCornerShape(16.dp),
-                colors = textFieldColors(),
-                modifier = Modifier.fillMaxWidth(),
+                onChange = { password = it },
+                label = "Contraseña",
+                icon = Icons.Outlined.Lock,
+                isPassword = true,
                 enabled = !isLoading
             )
 
             Spacer(modifier = Modifier.height(18.dp))
 
-            OutlinedTextField(
+            AuthTextField(
                 value = confirmPassword,
-                onValueChange = { confirmPassword = it },
-                label = { Text("Confirmar contraseña") },
-                leadingIcon = {
-                    Icon(imageVector = Icons.Outlined.Lock, contentDescription = null, tint = CafeMedio)
-                },
-                visualTransformation = PasswordVisualTransformation(),
-                singleLine = true,
-                shape = RoundedCornerShape(16.dp),
-                colors = textFieldColors(),
-                modifier = Modifier.fillMaxWidth(),
+                onChange = { confirmPassword = it },
+                label = "Confirmar contraseña",
+                icon = Icons.Outlined.Lock,
+                isPassword = true,
                 enabled = !isLoading
             )
 
             Spacer(modifier = Modifier.height(35.dp))
 
             if (isLoading) {
-                CircularProgressIndicator(color = CafeMedio)
+                CircularProgressIndicator(color = colors.primary)
             } else {
                 Button(
                     onClick = { handleRegister() },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(55.dp),
-                    shape = RoundedCornerShape(18.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = CafeMedio
-                    )
+                    shape = RoundedCornerShape(18.dp)
                 ) {
                     Text(
-                        text = "Registrar",
-                        color = Color.White,
+                        "Registrar",
+                        color = colors.onPrimary,
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold
                     )
@@ -248,12 +207,12 @@ fun RegisterScreen(
                     .height(55.dp),
                 shape = RoundedCornerShape(18.dp),
                 colors = ButtonDefaults.outlinedButtonColors(
-                    contentColor = CafeOscuro
+                    contentColor = colors.primary
                 ),
                 enabled = !isLoading
             ) {
                 Text(
-                    text = "Volver",
+                    "Volver",
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold
                 )
@@ -263,17 +222,3 @@ fun RegisterScreen(
         }
     }
 }
-
-@Composable
-private fun textFieldColors() = OutlinedTextFieldDefaults.colors(
-    focusedContainerColor = FondoCampo,
-    unfocusedContainerColor = FondoCampo,
-    disabledContainerColor = FondoCampo,
-    focusedBorderColor = CafeMedio,
-    unfocusedBorderColor = BordeCampo,
-    focusedLabelColor = CafeMedio,
-    unfocusedLabelColor = CafeOscuro,
-    cursorColor = CafeOscuro,
-    focusedTextColor = CafeOscuro,
-    unfocusedTextColor = CafeOscuro
-)

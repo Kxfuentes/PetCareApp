@@ -77,7 +77,7 @@ fun OwnerFeedScreen(
                 .padding(20.dp)
         ) {
 
-            // Filtro
+
             ExposedDropdownMenuBox(
                 expanded = expanded,
                 onExpandedChange = { expanded = !expanded }
