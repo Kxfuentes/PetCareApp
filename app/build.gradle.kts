@@ -23,7 +23,7 @@ android {
         // Si no se define BASE_URL en el sistema o gradle.properties, usa la del emulador por defecto
         val baseUrl = project.findProperty("BASE_URL")?.toString() 
                      ?: System.getenv("BASE_URL") 
-                     ?: "http://10.0.2.2:3000/"
+                     ?: "http://192.168.1.22:3000/"
                      
         buildConfigField("String", "BASE_URL", "\"$baseUrl\"")
     }
@@ -76,6 +76,7 @@ dependencies {
     // Room
     implementation("androidx.room:room-runtime:2.6.1")
     implementation("androidx.room:room-ktx:2.6.1")
+    implementation(libs.androidx.compose.material3.lint)
     kapt("androidx.room:room-compiler:2.6.1")
 
     testImplementation(libs.junit)
