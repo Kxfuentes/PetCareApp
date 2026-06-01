@@ -65,15 +65,16 @@ class MainActivity : ComponentActivity() {
                     val currentDestination = navBackStackEntry?.destination
 
                     val showBottomBar = currentDestination?.let { dest ->
-                        !dest.hasRoute<Login>() &&
+                                !dest.hasRoute<Login>() &&
                                 !dest.hasRoute<Register>() &&
                                 !dest.hasRoute<RoleSection>() &&
-                                !dest.hasRoute<DogInfo>()
+                                !dest.hasRoute<DogInfo>() &&
+                                !dest.hasRoute<PasswordRecovery>()
                     } ?: false
 
                     Scaffold(
                         modifier = Modifier.fillMaxSize(),
-                        containerColor = MaterialTheme.colorScheme.background,   // ← Buena práctica
+                        containerColor = MaterialTheme.colorScheme.background,
                         bottomBar = {
                             if (showBottomBar) {
                                 PetCareNavigationBar(

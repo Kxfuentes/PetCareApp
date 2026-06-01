@@ -85,6 +85,9 @@ fun AppNavigation(
             )
 
             val loggedUser by loginViewModel.loggedUser.collectAsStateWithLifecycle()
+            val errorMessage by loginViewModel.errorMessage.collectAsStateWithLifecycle()
+            val isLoading by loginViewModel.isLoading.collectAsStateWithLifecycle()
+
 
             LaunchedEffect(loggedUser) {
                 loggedUser?.let { user ->
@@ -104,19 +107,17 @@ fun AppNavigation(
             }
 
             LoginScreen(
-                onLoginClick = { username, password, rememberSession ->
+                onLoginClick = { email, password, rememberSession ->
                     loginViewModel.login(
-                        email = username,
+                        email = email,
                         password = password,
                         rememberSession = rememberSession
                     )
                 },
-                onGoToRegister = {
-                    navController.navigate(Register)
-                },
-                onGoToPasswordRecovery = {
-                    navController.navigate(PasswordRecovery)
-                }
+                onGoToRegister = { navController.navigate(Register) },
+                onGoToPasswordRecovery = { navController.navigate(PasswordRecovery) },
+                isLoading = isLoading,
+                errorMessage = errorMessage
             )
         }
 
@@ -238,7 +239,7 @@ fun AppNavigation(
 
         composable<PasswordRecovery> {
             PasswordRecoveryScreen(
-                onBackToLogin = { navController.navigate(Login) }
+                onBackToLogin = { navController.navigate(Login) },
             )
         }
 

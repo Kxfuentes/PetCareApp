@@ -9,14 +9,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.proyectopoo.petcareapp.ui.theme.CafeClaro
-import com.proyectopoo.petcareapp.ui.theme.CafeMedio
-import com.proyectopoo.petcareapp.ui.theme.CafeOscuro
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -25,7 +21,7 @@ fun RoleCard(
     description: String,
     icon: ImageVector,
     isSelected: Boolean,
-    isLoading: Boolean,
+    isLoading: Boolean = false,
     onClick: () -> Unit
 ) {
     Card(
@@ -33,15 +29,23 @@ fun RoleCard(
         modifier = Modifier
             .fillMaxWidth()
             .border(
-                width = if (isSelected) 3.dp else 1.dp,
-                color = if (isSelected) CafeMedio else CafeClaro,
+                width = if (isSelected) 3.dp else 1.5.dp,
+                color = if (isSelected)
+                    MaterialTheme.colorScheme.primary
+                else
+                    MaterialTheme.colorScheme.outline,
                 shape = RoundedCornerShape(24.dp)
             ),
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(
-            containerColor = Color.White
+            containerColor = if (isSelected)
+                MaterialTheme.colorScheme.primaryContainer
+            else
+                MaterialTheme.colorScheme.surface
         ),
-        elevation = CardDefaults.cardElevation(if (isSelected) 4.dp else 1.dp)
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = if (isSelected) 6.dp else 2.dp
+        )
     ) {
         Row(
             modifier = Modifier
@@ -51,35 +55,44 @@ fun RoleCard(
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Icon(
-                icon,
+                imageVector = icon,
                 contentDescription = title,
-                tint = if (isSelected) CafeMedio else CafeClaro,
-                modifier = Modifier.size(40.dp)
+                tint = if (isSelected)
+                    MaterialTheme.colorScheme.primary
+                else
+                    MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(42.dp)
             )
 
-            Column(
-                modifier = Modifier.weight(1f)
-            ) {
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = title,
-                    fontSize = 20.sp,
+                    style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
-                    color = CafeOscuro
+                    color = if (isSelected)
+                        MaterialTheme.colorScheme.onPrimaryContainer
+                    else
+                        MaterialTheme.colorScheme.onSurface
                 )
-                Spacer(modifier = Modifier.height(4.dp))
+
+                Spacer(modifier = Modifier.height(6.dp))
+
                 Text(
                     text = description,
-                    fontSize = 14.sp,
-                    color = CafeOscuro.copy(alpha = 0.7f)
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = if (isSelected)
+                        MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.85f)
+                    else
+                        MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
 
             if (isSelected) {
                 Icon(
-                    Icons.Outlined.CheckCircle,
+                    imageVector = Icons.Outlined.CheckCircle,
                     contentDescription = "Seleccionado",
-                    tint = CafeMedio,
-                    modifier = Modifier.size(28.dp)
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(32.dp)
                 )
             }
         }

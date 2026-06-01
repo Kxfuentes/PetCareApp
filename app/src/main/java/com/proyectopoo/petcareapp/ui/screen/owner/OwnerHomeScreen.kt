@@ -110,7 +110,7 @@ fun OwnerHomeScreen(
                 }
 
                 Text(
-                    text = "Servicios destacados",
+                    text = "Servicios disponibles",
                     style = MaterialTheme.typography.titleLarge
                 )
 

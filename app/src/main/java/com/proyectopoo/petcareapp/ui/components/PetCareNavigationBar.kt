@@ -30,7 +30,6 @@ fun PetCareNavigationBar(
 
     NavigationBar(containerColor = CafeOscuro) {
 
-        // Inicio
         NavigationBarItem(
             selected = currentDestination?.hierarchy?.any {
                 it.hasRoute(getHomeRoute(currentRole)::class)
@@ -41,7 +40,6 @@ fun PetCareNavigationBar(
             colors = navigationBarItemColors()
         )
 
-        // Buscar
         NavigationBarItem(
             selected = currentDestination?.hierarchy?.any {
                 it.hasRoute(getFeedRoute(currentRole)::class)
@@ -52,7 +50,6 @@ fun PetCareNavigationBar(
             colors = navigationBarItemColors()
         )
 
-        // Solo Dueños: Publicar
         if (currentRole == UserRole.OWNER) {
             NavigationBarItem(
                 selected = currentDestination?.hierarchy?.any { it.hasRoute<CreateService>() } == true,
@@ -63,7 +60,6 @@ fun PetCareNavigationBar(
             )
         }
 
-        // Perfil
         NavigationBarItem(
             selected = currentDestination?.hierarchy?.any {
                 it.hasRoute(getProfileRoute(currentRole)::class)

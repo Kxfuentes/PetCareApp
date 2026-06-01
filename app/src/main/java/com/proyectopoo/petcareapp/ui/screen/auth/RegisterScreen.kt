@@ -2,15 +2,17 @@ package com.proyectopoo.petcareapp.ui.screen.auth
 
 import android.util.Patterns
 import android.widget.Toast
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Email
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.outlined.Visibility
+import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -18,12 +20,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.proyectopoo.petcareapp.data.network.*
-import com.proyectopoo.petcareapp.ui.components.AuthTextField
+import com.proyectopoo.petcareapp.data.network.RegisterRequest
+import com.proyectopoo.petcareapp.data.network.RegisterResponse
+import com.proyectopoo.petcareapp.data.network.RetrofitClient
 import kotlinx.coroutines.launch
-import kotlinx.serialization.json.Json
 import java.io.IOException
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -34,191 +37,207 @@ fun RegisterScreen(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val colors = MaterialTheme.colorScheme
 
     var username by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
+    var passwordVisible by remember { mutableStateOf(false) }
+    var confirmPasswordVisible by remember { mutableStateOf(false) }
 
     var isLoading by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
 
     fun validate(): String? {
         if (username.isBlank()) return "El nombre de usuario es requerido"
-        if (username.length < 6) return "Debe tener al menos 6 caracteres"
+        if (username.length < 3) return "Debe tener al menos 3 caracteres"
         if (!username.matches("^[a-zA-Z0-9]+$".toRegex()))
-            return "Sin espacios ni caracteres especiales"
+            return "Solo letras y números permitidos"
 
         if (email.isBlank()) return "El correo es requerido"
         if (!Patterns.EMAIL_ADDRESS.matcher(email).matches())
             return "Formato de correo inválido"
 
         if (password.isBlank()) return "La contraseña es requerida"
-        if (password.length < 6) return "Mínimo 6 caracteres"
-
-        val hasSpecial = password.any { !it.isLetterOrDigit() }
-        if (!hasSpecial) return "Debe incluir un carácter especial"
+        if (password.length < 3) return "Mínimo 3 caracteres"
+        if (!password.any { !it.isLetterOrDigit() })
+            return "Debe incluir un carácter especial"
 
         if (password != confirmPassword) return "Las contraseñas no coinciden"
 
         return null
     }
 
-    fun handleRegister() {
-        val errorMessage = validate()
-        if (errorMessage != null) {
-            Toast.makeText(context, errorMessage, Toast.LENGTH_SHORT).show()
-            return
-        }
+    Scaffold(
+        containerColor = MaterialTheme.colorScheme.background
 
-        scope.launch {
-            isLoading = true
-            try {
-                val request = RegisterRequest(
-                    username = username,
-                    email = email,
-                    password = password,
-                    rol = "null"
-                )
-
-                val response = RetrofitClient.apiService.registerUser(request)
-
-                if (response.isSuccessful) {
-                    response.body()?.let {
-                        Toast.makeText(context, "Registro exitoso", Toast.LENGTH_SHORT).show()
-                        onRegisterSuccess(it, password)
-                    } ?: Toast.makeText(context, "Respuesta vacía", Toast.LENGTH_SHORT).show()
-                } else {
-                    val errorBody = response.errorBody()?.string()
-                    val message = try {
-                        errorBody?.let {
-                            Json.decodeFromString<ErrorResponse>(it).error
-                        }
-                    } catch (e: Exception) {
-                        "Error del servidor: ${response.code()}"
-                    }
-                    Toast.makeText(context, message ?: "Error desconocido", Toast.LENGTH_LONG).show()
-                }
-            } catch (e: IOException) {
-                Toast.makeText(context, "Sin conexión al servidor", Toast.LENGTH_LONG).show()
-            } catch (e: Exception) {
-                Toast.makeText(context, "Error: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
-            } finally {
-                isLoading = false
-            }
-        }
-    }
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(colors.background)
-    ) {
-        TopAppBar(
-            title = {
-                Text(
-                    "Crear cuenta",
-                    color = colors.onPrimary,
-                    fontWeight = FontWeight.Bold
-                )
-            },
-            colors = TopAppBarDefaults.topAppBarColors(
-                containerColor = colors.primary
-            )
-        )
+    ) { paddingValues ->
 
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .padding(paddingValues)
                 .padding(24.dp)
                 .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
 
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
-            AuthTextField(
+            Text(
+                text = "Únete a PetCare",
+                style = MaterialTheme.typography.headlineMedium
+            )
+            Text(
+                text = "Crea tu cuenta en segundos",
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            Spacer(modifier = Modifier.height(32.dp))
+
+
+            errorMessage?.let { error ->
+                Text(
+                    text = error,
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+            }
+
+
+            OutlinedTextField(
                 value = username,
-                onChange = { username = it },
-                label = "Username",
-                icon = Icons.Outlined.Person,
+                onValueChange = { username = it },
+                label = { Text("Nombre de usuario") },
+                leadingIcon = { Icon(Icons.Outlined.Person, null) },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                singleLine = true,
                 enabled = !isLoading
             )
 
             Spacer(modifier = Modifier.height(18.dp))
 
-            AuthTextField(
+            OutlinedTextField(
                 value = email,
-                onChange = { email = it },
-                label = "Email",
-                icon = Icons.Outlined.Email,
+                onValueChange = { email = it },
+                label = { Text("Correo electrónico") },
+                leadingIcon = { Icon(Icons.Outlined.Email, null) },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                singleLine = true,
                 enabled = !isLoading
             )
 
             Spacer(modifier = Modifier.height(18.dp))
 
-            AuthTextField(
+            OutlinedTextField(
                 value = password,
-                onChange = { password = it },
-                label = "Contraseña",
-                icon = Icons.Outlined.Lock,
-                isPassword = true,
+                onValueChange = { password = it },
+                label = { Text("Contraseña") },
+                leadingIcon = { Icon(Icons.Outlined.Lock, null) },
+                trailingIcon = {
+                    IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                        Icon(
+                            if (passwordVisible) Icons.Outlined.Visibility else Icons.Outlined.VisibilityOff,
+                            null
+                        )
+                    }
+                },
+                visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                singleLine = true,
                 enabled = !isLoading
             )
 
             Spacer(modifier = Modifier.height(18.dp))
 
-            AuthTextField(
+            OutlinedTextField(
                 value = confirmPassword,
-                onChange = { confirmPassword = it },
-                label = "Confirmar contraseña",
-                icon = Icons.Outlined.Lock,
-                isPassword = true,
+                onValueChange = { confirmPassword = it },
+                label = { Text("Confirmar contraseña") },
+                leadingIcon = { Icon(Icons.Outlined.Lock, null) },
+                trailingIcon = {
+                    IconButton(onClick = { confirmPasswordVisible = !confirmPasswordVisible }) {
+                        Icon(
+                            if (confirmPasswordVisible) Icons.Outlined.Visibility else Icons.Outlined.VisibilityOff,
+                            null
+                        )
+                    }
+                },
+                visualTransformation = if (confirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                singleLine = true,
                 enabled = !isLoading
             )
 
-            Spacer(modifier = Modifier.height(35.dp))
+            Spacer(modifier = Modifier.height(40.dp))
 
-            if (isLoading) {
-                CircularProgressIndicator(color = colors.primary)
-            } else {
-                Button(
-                    onClick = { handleRegister() },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(55.dp),
-                    shape = RoundedCornerShape(18.dp)
-                ) {
-                    Text(
-                        "Registrar",
-                        color = colors.onPrimary,
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.Bold
+            Button(
+                onClick = {
+                    val validationError = validate()
+                    if (validationError != null) {
+                        errorMessage = validationError
+                        return@Button
+                    }
+
+                    errorMessage = null
+                    isLoading = true
+
+                    scope.launch {
+                        try {
+                            val request = RegisterRequest(
+                                username = username,
+                                email = email,
+                                password = password,
+                                rol = "null"
+                            )
+
+                            val response = RetrofitClient.apiService.registerUser(request)
+
+                            if (response.isSuccessful) {
+                                response.body()?.let { registerResponse ->
+                                    onRegisterSuccess(registerResponse, password)
+                                }
+                            } else {
+                                errorMessage = "Error al registrar el usuario"
+                            }
+                        } catch (e: Exception) {
+                            errorMessage = "Error de conexión: ${e.localizedMessage}"
+                        } finally {
+                            isLoading = false
+                        }
+                    }
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                shape = RoundedCornerShape(16.dp),
+                enabled = !isLoading
+            ) {
+                if (isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        color = MaterialTheme.colorScheme.onPrimary
                     )
+                } else {
+                    Text("Crear cuenta", fontSize = 18.sp, fontWeight = FontWeight.Bold)
                 }
             }
 
-            Spacer(modifier = Modifier.height(14.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
             OutlinedButton(
                 onClick = onBack,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(55.dp),
-                shape = RoundedCornerShape(18.dp),
-                colors = ButtonDefaults.outlinedButtonColors(
-                    contentColor = colors.primary
-                ),
-                enabled = !isLoading
+                modifier = Modifier.fillMaxWidth().height(56.dp),
+                shape = RoundedCornerShape(16.dp)
             ) {
-                Text(
-                    "Volver",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold
-                )
+                Text("Volver")
             }
-
-            Spacer(modifier = Modifier.height(20.dp))
         }
     }
 }
