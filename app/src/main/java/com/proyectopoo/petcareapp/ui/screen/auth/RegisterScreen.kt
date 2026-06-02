@@ -61,7 +61,7 @@ fun RegisterScreen(
         if (password.isBlank()) return "La contraseña es requerida"
         if (password.length < 3) return "Mínimo 3 caracteres"
         if (!password.any { !it.isLetterOrDigit() })
-            return "Debe incluir un carácter especial"
+            return "La contraseña deebe incluir un carácter especial"
 
         if (password != confirmPassword) return "Las contraseñas no coinciden"
 

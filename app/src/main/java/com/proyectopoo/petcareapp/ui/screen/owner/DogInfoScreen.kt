@@ -1,130 +1,93 @@
 package com.proyectopoo.petcareapp.ui.screen.owner
 
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Pets
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import com.proyectopoo.petcareapp.data.local.entity.PetEntity
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun DogInfoScreen(
-    onFinish: () -> Unit
+    initialDog: PetEntity? = null,
+    onFinish: (PetEntity) -> Unit
 ) {
-    var dogName by remember { mutableStateOf("") }
-    var breed by remember { mutableStateOf("") }
-    var selectedSize by remember { mutableStateOf("") }
 
-    val sizes = listOf(
-        "XS (1-5 kg)", "S (5-10 kg)", "M (10-20 kg)",
-        "L (20-40 kg)", "XL (>40 kg)"
-    )
+    var name by remember { mutableStateOf(initialDog?.name ?: "") }
+    var breed by remember { mutableStateOf(initialDog?.breed ?: "") }
+    var size by remember { mutableStateOf(initialDog?.size ?: "") }
+
+    val sizes = listOf("XS", "S", "M", "L", "XL")
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background
-    ) { paddingValues ->
+    ) { padding ->
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
+                .padding(padding)
                 .padding(24.dp)
         ) {
-            Spacer(modifier = Modifier.height(40.dp))
 
             Text(
-                text = "Cuéntanos sobre tu perro",
-                style = MaterialTheme.typography.headlineMedium
+                text = if (initialDog == null) "Agregar mascota" else "Editar mascota",
+                style = MaterialTheme.typography.headlineSmall
             )
 
-            Spacer(modifier = Modifier.height(30.dp))
+            Spacer(Modifier.height(20.dp))
 
             OutlinedTextField(
-                value = dogName,
-                onValueChange = { dogName = it },
-                label = { Text("Nombre del perro") },
-                leadingIcon = {
-                    Icon(Icons.Outlined.Pets, null, tint = MaterialTheme.colorScheme.primary)
-                },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.outline
-                )
+                value = name,
+                onValueChange = { name = it },
+                label = { Text("Nombre") },
+                modifier = Modifier.fillMaxWidth()
             )
 
-            Spacer(modifier = Modifier.height(18.dp))
+            Spacer(Modifier.height(12.dp))
 
             OutlinedTextField(
                 value = breed,
                 onValueChange = { breed = it },
                 label = { Text("Raza") },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.outline
-                )
+                modifier = Modifier.fillMaxWidth()
             )
 
-            Spacer(modifier = Modifier.height(26.dp))
+            Spacer(Modifier.height(20.dp))
 
-            Text(
-                text = "Tamaño",
-                style = MaterialTheme.typography.titleMedium
-            )
+            Text("Tamaño")
 
-            Spacer(modifier = Modifier.height(18.dp))
+            Spacer(Modifier.height(10.dp))
 
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                sizes.forEach { size ->
-                    val isSelected = selectedSize == size
-
-                    Surface(
-                        modifier = Modifier.border(
-                            width = 2.dp,
-                            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
-                            shape = RoundedCornerShape(50.dp)
-                        ),
-                        shape = RoundedCornerShape(50.dp),
-                        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
-                        onClick = { selectedSize = size }
-                    ) {
-                        Text(
-                            text = size,
-                            modifier = Modifier.padding(horizontal = 18.dp, vertical = 12.dp),
-                            color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                    }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                sizes.forEach { s ->
+                    FilterChip(
+                        selected = size == s,
+                        onClick = { size = s },
+                        label = { Text(s) }
+                    )
                 }
             }
 
-            Spacer(modifier = Modifier.weight(1f))
+            Spacer(Modifier.weight(1f))
 
             Button(
-                onClick = onFinish,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(58.dp),
-                shape = RoundedCornerShape(18.dp)
+                onClick = {
+                    onFinish(
+                        PetEntity(
+                            petId = initialDog?.petId ?: System.currentTimeMillis().toInt(),
+                            ownerId = 1,
+                            name = name,
+                            breed = breed,
+                            size = size,
+                            species = "Dog"
+                        )
+                    )
+                },
+                modifier = Modifier.fillMaxWidth()
             ) {
-                Text(
-                    text = "Continuar",
-                    style = MaterialTheme.typography.labelLarge
-                )
+                Text(if (initialDog == null) "Crear mascota" else "Guardar cambios")
             }
         }
     }

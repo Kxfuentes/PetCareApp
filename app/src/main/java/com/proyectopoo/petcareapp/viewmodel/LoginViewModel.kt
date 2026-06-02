@@ -38,9 +38,9 @@ class LoginViewModel(
             return
         }
 
-        if (password.length < 6) {
+        if (password.length < 3) {
             _errorMessage.value =
-                "La contraseña debe tener al menos 6 caracteres"
+                "La contraseña debe tener al menos 3 caracteres"
             return
         }
 

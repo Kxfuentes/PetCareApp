@@ -33,9 +33,5 @@ data class PetEntity(
 
     val breed: String? = null,
 
-    val age: Int? = null,
-
-    val weight: Double? = null,
-
-    val notes: String? = null
+    val size: String?
 )

@@ -66,7 +66,7 @@ fun RoleSectionScreen(
 
 
             RoleCard(
-                title = "Soy dueño de perrito",
+                title = "Soy dueño de perritos",
                 description = "Busco de personas que me ayuden a birndarle el mejor cuidado a mi mascota",
                 icon = Icons.Outlined.Pets,
                 isSelected = selectedRole == "OWNER",

@@ -16,8 +16,6 @@ data class RoleSection(
     val password: String
 )
 
-@Serializable
-object DogInfo
 
 @Serializable
 object OwnerHome
@@ -45,3 +43,8 @@ object CaregiverProfile
 
 @Serializable
 object PasswordRecovery
+
+@Serializable
+data class DogInfo(
+    val petId: Int? = null
+)

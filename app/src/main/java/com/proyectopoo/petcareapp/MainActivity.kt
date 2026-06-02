@@ -86,7 +86,16 @@ class MainActivity : ComponentActivity() {
                     ) { innerPadding ->
                         AppNavigation(
                             navController = navController,
-                            modifier = Modifier.padding(innerPadding)
+                            modifier = Modifier.padding(innerPadding),
+                            sessionLogout = { nav, roleVM ->
+                                val sessionManager = SessionManager(nav.context)
+                                sessionManager.clearSession()
+                                roleVM.clearRole()
+
+                                nav.navigate(Login) {
+                                    popUpTo(0) { inclusive = true }
+                                }
+                            }
                         )
                     }
                 }
