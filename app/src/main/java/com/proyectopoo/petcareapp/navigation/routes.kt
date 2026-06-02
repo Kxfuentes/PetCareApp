@@ -46,5 +46,5 @@ object PasswordRecovery
 
 @Serializable
 data class DogInfo(
-    val petId: Int? = null
+    val petId: Int = -1
 )

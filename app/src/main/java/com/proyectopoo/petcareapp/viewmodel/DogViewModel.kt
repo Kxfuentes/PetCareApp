@@ -15,6 +15,8 @@ class DogViewModel : ViewModel() {
     }
 
     fun updateDog(updated: PetEntity) {
+        if (_dogs.value.none { it.petId == updated.petId }) return
+
         _dogs.value = _dogs.value.map {
             if (it.petId == updated.petId) updated else it
         }

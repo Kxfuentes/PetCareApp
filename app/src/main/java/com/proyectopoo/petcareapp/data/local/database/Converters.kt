@@ -1,49 +1,47 @@
 package com.proyectopoo.petcareapp.data.local.database
 
 import androidx.room.TypeConverter
-import com.proyectopoo.petcareapp.data.local.entity.UserRoleType
-import com.proyectopoo.petcareapp.data.local.entity.BookingStatus
-import com.proyectopoo.petcareapp.data.local.entity.ServiceRequestStatus
-import com.proyectopoo.petcareapp.data.local.entity.NotificationType
+import com.proyectopoo.petcareapp.data.local.entity.*
 
 class Converters {
+
     @TypeConverter
-    fun fromUserRoleType(value: UserRoleType): String {
-        return value.name
+    fun fromUserRoleType(value: UserRoleType?): String? {
+        return value?.name
     }
 
     @TypeConverter
-    fun toUserRoleType(value: String): UserRoleType {
-        return UserRoleType.valueOf(value)
+    fun toUserRoleType(value: String?): UserRoleType? {
+        return value?.let { UserRoleType.valueOf(it) }
     }
 
     @TypeConverter
-    fun fromBookingStatus(value: BookingStatus): String {
-        return value.name
+    fun fromBookingStatus(value: BookingStatus?): String? {
+        return value?.name
     }
 
     @TypeConverter
-    fun toBookingStatus(value: String): BookingStatus {
-        return BookingStatus.valueOf(value)
+    fun toBookingStatus(value: String?): BookingStatus? {
+        return value?.let { BookingStatus.valueOf(it) }
     }
 
     @TypeConverter
-    fun fromServiceRequestStatus(value: ServiceRequestStatus): String {
-        return value.name
+    fun fromServiceRequestStatus(value: ServiceRequestStatus?): String? {
+        return value?.name
     }
 
     @TypeConverter
-    fun toServiceRequestStatus(value: String): ServiceRequestStatus {
-        return ServiceRequestStatus.valueOf(value)
+    fun toServiceRequestStatus(value: String?): ServiceRequestStatus? {
+        return value?.let { ServiceRequestStatus.valueOf(it) }
     }
 
     @TypeConverter
-    fun fromNotificationType(value: NotificationType): String {
-        return value.name
+    fun fromNotificationType(value: NotificationType?): String? {
+        return value?.name
     }
 
     @TypeConverter
-    fun toNotificationType(value: String): NotificationType {
-        return NotificationType.valueOf(value)
+    fun toNotificationType(value: String?): NotificationType? {
+        return value?.let { NotificationType.valueOf(it) }
     }
 }

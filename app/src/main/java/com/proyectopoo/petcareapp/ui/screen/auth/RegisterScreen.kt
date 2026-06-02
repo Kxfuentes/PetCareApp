@@ -1,13 +1,11 @@
 package com.proyectopoo.petcareapp.ui.screen.auth
 
 import android.util.Patterns
-import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Email
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Person
@@ -27,7 +25,7 @@ import com.proyectopoo.petcareapp.data.network.RegisterRequest
 import com.proyectopoo.petcareapp.data.network.RegisterResponse
 import com.proyectopoo.petcareapp.data.network.RetrofitClient
 import kotlinx.coroutines.launch
-import java.io.IOException
+import java.net.SocketTimeoutException
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -194,7 +192,7 @@ fun RegisterScreen(
                                 username = username,
                                 email = email,
                                 password = password,
-                                rol = "null"
+                                rol = null
                             )
 
                             val response = RetrofitClient.apiService.registerUser(request)
@@ -206,8 +204,10 @@ fun RegisterScreen(
                             } else {
                                 errorMessage = "Error al registrar el usuario"
                             }
+                        } catch (e: SocketTimeoutException) {
+                            errorMessage = "No se pudo conectar con la API. Revisa que el servidor esté activo y que BASE_URL apunte a tu computadora."
                         } catch (e: Exception) {
-                            errorMessage = "Error de conexión: ${e.localizedMessage}"
+                            errorMessage = "Error de conexión: ${e.localizedMessage ?: "no se pudo contactar la API"}"
                         } finally {
                             isLoading = false
                         }
