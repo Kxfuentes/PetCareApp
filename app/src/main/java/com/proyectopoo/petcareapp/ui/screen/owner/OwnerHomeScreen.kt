@@ -22,7 +22,8 @@ fun OwnerHomeScreen(
     onEditPets: (PetEntity) -> Unit,
     onAddDog: () -> Unit,
     onGoToFeed: () -> Unit,
-    onGoToOwnerProfile: () -> Unit
+    onGoToOwnerProfile: () -> Unit,
+    ownerId: Int
 ) {
 
     val scrollState = rememberScrollState()

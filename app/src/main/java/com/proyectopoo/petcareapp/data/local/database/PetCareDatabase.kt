@@ -1,6 +1,7 @@
 package com.proyectopoo.petcareapp.data.local.database
 
 import android.content.Context
+import com.proyectopoo.petcareapp.data.local.dao.ServiceApplicationDao
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
@@ -25,6 +26,7 @@ import com.proyectopoo.petcareapp.data.local.dao.ServiceBookingDao
 import com.proyectopoo.petcareapp.data.local.dao.ServiceRequestDao
 import com.proyectopoo.petcareapp.data.local.dao.ServiceTypeDao
 import com.proyectopoo.petcareapp.data.local.dao.UserDao
+import com.proyectopoo.petcareapp.data.local.entity.ServiceApplicationEntity
 
 @Database(
     entities = [
@@ -37,7 +39,9 @@ import com.proyectopoo.petcareapp.data.local.dao.UserDao
         ServiceRequestEntity::class,
         ServiceBookingEntity::class,
         NotificationEntity::class,
-        AvailabilityEntity::class
+        AvailabilityEntity::class,
+        ServiceApplicationEntity::class
+
     ],
     version = 1,
     exportSchema = true
@@ -54,6 +58,9 @@ abstract class PetCareDatabase : RoomDatabase() {
     abstract fun serviceBookingDao(): ServiceBookingDao
     abstract fun notificationDao(): NotificationDao
     abstract fun availabilityDao(): AvailabilityDao
+
+    abstract fun serviceApplicationDao(): ServiceApplicationDao
+    
 
     companion object {
 

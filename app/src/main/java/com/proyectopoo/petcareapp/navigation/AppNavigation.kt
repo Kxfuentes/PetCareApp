@@ -46,6 +46,9 @@ fun AppNavigation(
     val userRoleViewModel = LocalUserRoleViewModel.current
     val dogViewModel: DogViewModel = viewModel()
 
+    // Colecciona los perros para poder pasarlos a OwnerHomeScreen
+    val dogs by dogViewModel.dogs.collectAsStateWithLifecycle()
+
     NavHost(
         navController = navController,
         startDestination = Login,
@@ -144,7 +147,7 @@ fun AppNavigation(
                 onOwnerSelected = {
                     userRoleViewModel.setRole(UserRole.OWNER)
 
-                    val destination = if (dogViewModel.dogs.value.isEmpty()) {
+                    val destination = if (dogs.isEmpty()) {
                         DogInfo()
                     } else {
                         OwnerHome
@@ -166,7 +169,6 @@ fun AppNavigation(
 
         composable<DogInfo> { backStackEntry ->
             val args = backStackEntry.toRoute<DogInfo>()
-            val dogs by dogViewModel.dogs.collectAsStateWithLifecycle()
             val editingDog = dogs.find { it.petId == args.petId }
 
             DogInfoScreen(
@@ -181,7 +183,7 @@ fun AppNavigation(
 
                     val pet = PetEntity(
                         petId = petId,
-                        ownerId = 1,
+                        ownerId = 1, // TODO: obtener del session manager
                         name = name,
                         breed = breed,
                         size = size,
@@ -204,16 +206,20 @@ fun AppNavigation(
             )
         }
 
+        // ✅ Pantalla OwnerHome corregida
         composable<OwnerHome> {
-            val dogs by dogViewModel.dogs.collectAsStateWithLifecycle()
+            val ownerId = 1 // TODO: desde SessionManager
 
             OwnerHomeScreen(
-                dogs = dogs,
+                dogs = dogs,                              // ← se pasa la lista real
+                onGoToCreate = { navController.navigate(CreateService) },
+                onEditPets = { pet: PetEntity ->         // ← ahora recibe PetEntity
+                    navController.navigate(DogInfo(petId = pet.petId))
+                },
                 onAddDog = { navController.navigate(DogInfo()) },
                 onGoToFeed = { navController.navigate(OwnerFeed) },
-                onGoToCreate = { navController.navigate(CreateService) },
-                onEditPets = { pet -> navController.navigate(DogInfo(petId = pet.petId)) },
-                onGoToOwnerProfile = { navController.navigate(OwnerProfile) }
+                onGoToOwnerProfile = { navController.navigate(OwnerProfile) },
+                ownerId = ownerId
             )
         }
 
@@ -234,12 +240,16 @@ fun AppNavigation(
             )
         }
 
+        // ✅ Pantalla CaregiverHome corregida
         composable<CaregiverHome> {
+            val caregiverId = 1 // TODO: desde SessionManager
+
             CaregiverHomeScreen(
                 onGoToFeed = { navController.navigate(CaregiverFeed) },
-                onGoToCreate = { navController.navigate(CreateService) },
+                onGoToCreate = { navController.navigate(CreateService) },   // ← se añade
                 onGoToServices = { navController.navigate(CaregiverService) },
-                onGoToCaregiverProfile = { navController.navigate(CaregiverProfile) }
+                onGoToCaregiverProfile = { navController.navigate(CaregiverProfile) },
+                caregiverId = caregiverId
             )
         }
 
