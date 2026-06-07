@@ -15,18 +15,26 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.proyectopoo.petcareapp.data.local.entity.ApplicationStatus
+import com.proyectopoo.petcareapp.data.local.relation.ServiceApplicationDetails
 import com.proyectopoo.petcareapp.ui.components.ActionCard
 
 @Composable
 fun CaregiverHomeScreen(
-    onGoToFeed: () -> Unit,
-    onGoToCreate: () -> Unit,
     onGoToServices: () -> Unit,
-    onGoToCaregiverProfile: () -> Unit,
+    ownerRequests: List<ServiceApplicationDetails>,
+    onAcceptApplication: (Int) -> Unit,
+    onRejectApplication: (Int) -> Unit,
     caregiverId: Int
 ) {
     var available by remember { mutableStateOf(true) }
     val scrollState = rememberScrollState()
+    val nextCommitment = ownerRequests
+        .filter { it.applicationStatus == ApplicationStatus.ACCEPTED }
+        .minByOrNull { it.requestedDate ?: "" }
+    val pendingRequests = ownerRequests.filter {
+        it.applicationStatus == ApplicationStatus.PENDING
+    }
 
     Column(
         modifier = Modifier
@@ -105,58 +113,7 @@ fun CaregiverHomeScreen(
                 fontWeight = FontWeight.Bold
             )
 
-            Card(
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                ),
-                shape = RoundedCornerShape(22.dp),
-                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-                border = BorderStroke(
-                    1.dp,
-                    MaterialTheme.colorScheme.outlineVariant
-                )
-            ) {
-                Row(
-                    modifier = Modifier.padding(20.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Surface(
-                        shape = RoundedCornerShape(12.dp),
-                        color = MaterialTheme.colorScheme.surfaceVariant,
-                        modifier = Modifier.size(50.dp)
-                    ) {
-                        Icon(
-                            Icons.Default.DirectionsWalk,
-                            contentDescription = "Paseo",
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.padding(10.dp)
-                        )
-                    }
-                    Spacer(modifier = Modifier.width(16.dp))
-                    Column {
-                        Text(
-                            text = "Paseo con Max",
-                            color = MaterialTheme.colorScheme.onSurface,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 18.sp
-                        )
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                Icons.Default.AccessTime,
-                                contentDescription = "Hora",
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(14.dp)
-                            )
-                            Spacer(Modifier.width(4.dp))
-                            Text(
-                                text = "Hoy, 3:00 PM",
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                fontSize = 14.sp
-                            )
-                        }
-                    }
-                }
-            }
+            CommitmentCard(commitment = nextCommitment)
 
 
             Text(
@@ -174,32 +131,124 @@ fun CaregiverHomeScreen(
                     title = "Mis Servicios",
                     icon = Icons.Default.List,
                     onClick = onGoToServices,
-                    modifier = Modifier.weight(1f)
-                )
-                ActionCard(
-                    title = "Solicitudes",
-                    icon = Icons.Default.Search,
-                    onClick = onGoToFeed,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.fillMaxWidth()
                 )
             }
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            Text(
+                text = "Dueños que solicitaron tus servicios",
+                color = MaterialTheme.colorScheme.onBackground,
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold
+            )
+
+            if (pendingRequests.isEmpty()) {
+                Text(
+                    text = "Aún no tienes solicitudes pendientes.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 14.sp
+                )
+            } else {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    pendingRequests.forEach { request ->
+                        Card(
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant
+                            ),
+                            shape = RoundedCornerShape(18.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(16.dp),
+                                verticalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
+                                Text(
+                                    text = request.ownerName ?: "Dueño",
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 17.sp
+                                )
+                                Text(
+                                    text = "${request.requestTitle} · ${request.petName ?: "Mascota"}",
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    fontSize = 14.sp
+                                )
+                                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                                    Button(
+                                        onClick = { onAcceptApplication(request.applicationId) },
+                                        modifier = Modifier.weight(1f)
+                                    ) {
+                                        Text("Aceptar")
+                                    }
+                                    OutlinedButton(
+                                        onClick = { onRejectApplication(request.applicationId) },
+                                        modifier = Modifier.weight(1f)
+                                    ) {
+                                        Text("Rechazar")
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun CommitmentCard(commitment: ServiceApplicationDetails?) {
+    Card(
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        shape = RoundedCornerShape(22.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        border = BorderStroke(
+            1.dp,
+            MaterialTheme.colorScheme.outlineVariant
+        )
+    ) {
+        Row(
+            modifier = Modifier.padding(20.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Surface(
+                shape = RoundedCornerShape(12.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant,
+                modifier = Modifier.size(50.dp)
             ) {
-                ActionCard(
-                    title = "Publicar",
-                    icon = Icons.Default.AddCircle,
-                    onClick = onGoToCreate,
-                    modifier = Modifier.weight(1f)
+                Icon(
+                    Icons.Default.EventAvailable,
+                    contentDescription = "Compromiso",
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(10.dp)
                 )
-                ActionCard(
-                    title = "Mi Perfil",
-                    icon = Icons.Default.Person,
-                    onClick = onGoToCaregiverProfile,
-                    modifier = Modifier.weight(1f)
+            }
+            Spacer(modifier = Modifier.width(16.dp))
+            Column {
+                Text(
+                    text = commitment?.let {
+                        "${it.requestTitle} con ${it.petName ?: "mascota"}"
+                    } ?: "Sin compromisos próximos",
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp
                 )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        Icons.Default.AccessTime,
+                        contentDescription = "Hora",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(14.dp)
+                    )
+                    Spacer(Modifier.width(4.dp))
+                    Text(
+                        text = commitment?.requestedDate ?: "Cuando aceptes una solicitud aparecerá aquí",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 14.sp
+                    )
+                }
             }
         }
     }

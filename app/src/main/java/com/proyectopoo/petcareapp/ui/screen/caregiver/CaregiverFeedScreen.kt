@@ -19,13 +19,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.proyectopoo.petcareapp.data.listaServicios
+import com.proyectopoo.petcareapp.data.local.relation.ServiceRequestDetails
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CaregiverFeedScreen(
-    onGoToCreate: () -> Unit,
-    onGoToCaregiverProfile: () -> Unit
+    requests: List<ServiceRequestDetails>,
+    onApplyToRequest: (Int) -> Unit
 ) {
 
     val colorScheme = MaterialTheme.colorScheme
@@ -44,10 +44,10 @@ fun CaregiverFeedScreen(
     var selectedFilter by remember { mutableStateOf("Todos") }
 
     val serviciosFiltrados = if (selectedFilter == "Todos") {
-        listaServicios
+        requests
     } else {
-        listaServicios.filter {
-            it.tipoServicio == selectedFilter
+        requests.filter {
+            it.serviceTypeName == selectedFilter
         }
     }
 
@@ -163,7 +163,11 @@ fun CaregiverFeedScreen(
                                 Spacer(modifier = Modifier.width(10.dp))
 
                                 Text(
-                                    text = "${servicio.nombreMascota}, Golden Retriever · Tamaño M",
+                                    text = listOfNotNull(
+                                        servicio.petName,
+                                        servicio.petBreed,
+                                        servicio.petSize?.let { "Tamaño $it" }
+                                    ).joinToString(" · ").ifBlank { servicio.title },
                                     color = colorScheme.onSurface,
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 17.sp
@@ -173,7 +177,7 @@ fun CaregiverFeedScreen(
                             Spacer(modifier = Modifier.height(10.dp))
 
                             Text(
-                                text = "Dueño: Carlos Martínez",
+                                text = "Dueño: ${servicio.ownerName ?: "Sin nombre"}",
                                 color = colorScheme.onSurface,
                                 fontWeight = FontWeight.Medium
                             )
@@ -183,7 +187,7 @@ fun CaregiverFeedScreen(
                             AssistChip(
                                 onClick = { },
                                 label = {
-                                    Text(servicio.tipoServicio)
+                                    Text(servicio.serviceTypeName ?: "Servicio")
                                 },
                                 colors = AssistChipDefaults.assistChipColors(
                                     containerColor = colorScheme.secondary,
@@ -205,7 +209,7 @@ fun CaregiverFeedScreen(
                                 Spacer(modifier = Modifier.width(8.dp))
 
                                 Text(
-                                    text = "Managua, Nicaragua",
+                                    text = "Servicio solicitado",
                                     color = colorScheme.onSurface
                                 )
                             }
@@ -224,7 +228,7 @@ fun CaregiverFeedScreen(
                                 Spacer(modifier = Modifier.width(8.dp))
 
                                 Text(
-                                    text = servicio.hora,
+                                    text = servicio.requestedDate ?: "Fecha por coordinar",
                                     color = colorScheme.onSurface
                                 )
                             }
@@ -232,7 +236,7 @@ fun CaregiverFeedScreen(
                             Spacer(modifier = Modifier.height(14.dp))
 
                             Text(
-                                text = servicio.descripcion,
+                                text = servicio.description ?: servicio.title,
                                 color = colorScheme.onSurfaceVariant,
                                 fontSize = 15.sp
                             )
@@ -240,20 +244,20 @@ fun CaregiverFeedScreen(
                             Spacer(modifier = Modifier.height(14.dp))
 
                             Text(
-                                text = "Contacto: +505 8888-8888",
+                                text = "Contacto: ${servicio.ownerPhone ?: "No disponible"}",
                                 color = colorScheme.onSurface,
                                 fontWeight = FontWeight.Medium
                             )
 
                             Text(
-                                text = "Email: dueño@email.com",
+                                text = "Email: ${servicio.ownerEmail ?: "No disponible"}",
                                 color = colorScheme.onSurface
                             )
 
                             Spacer(modifier = Modifier.height(18.dp))
 
                             OutlinedButton(
-                                onClick = { },
+                                onClick = { onApplyToRequest(servicio.serviceRequestId) },
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(16.dp),
                                 border = BorderStroke(1.dp, colorScheme.outline),

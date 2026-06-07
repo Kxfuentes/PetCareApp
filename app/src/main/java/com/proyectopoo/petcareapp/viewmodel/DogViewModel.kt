@@ -21,4 +21,8 @@ class DogViewModel : ViewModel() {
             if (it.petId == updated.petId) updated else it
         }
     }
+
+    fun deleteDog(dog: PetEntity) {
+        _dogs.value = _dogs.value.filterNot { it.petId == dog.petId }
+    }
 }

@@ -33,13 +33,18 @@ object CaregiverFeed
 object CaregiverService
 
 @Serializable
-object CreateService
+data class CreateService(
+    val serviceType: String = "",
+    val petName: String = ""
+)
 
 @Serializable
 object OwnerProfile
 
 @Serializable
-object CaregiverProfile
+data class CaregiverProfile(
+    val caregiverId: Int = -1
+)
 
 @Serializable
 object PasswordRecovery

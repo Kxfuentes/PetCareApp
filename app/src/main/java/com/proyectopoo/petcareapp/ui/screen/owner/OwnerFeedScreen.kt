@@ -21,7 +21,7 @@ import com.proyectopoo.petcareapp.model.Cuidador
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun OwnerFeedScreen(
-    onGoToOwnerProfile: (Int) -> Unit
+    onGoToCaregiverProfile: (Int) -> Unit
 ) {
     val tiposServicio = listOf(
         "Todos", "Alojamiento", "Guardería", "Paseo", "Taxi", "Peluquería", "Visitante"
@@ -29,6 +29,7 @@ fun OwnerFeedScreen(
 
     val cuidadores = listOf(
         Cuidador(
+            id = 1,
             nombre = "Carlos Martínez",
             ubicacion = "Managua, Nicaragua",
             precio = "$15/hora",
@@ -38,6 +39,7 @@ fun OwnerFeedScreen(
             review = "Muy amable y atento con las mascotas."
         ),
         Cuidador(
+            id = 2,
             nombre = "Valeria López",
             ubicacion = "León, Nicaragua",
             precio = "$20/hora",
@@ -220,7 +222,7 @@ fun OwnerFeedScreen(
                             Spacer(modifier = Modifier.height(20.dp))
 
                             OutlinedButton(
-                                onClick = { onGoToOwnerProfile(0) },
+                                onClick = { onGoToCaregiverProfile(cuidador.id) },
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(16.dp)
                             ) {

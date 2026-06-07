@@ -17,6 +17,8 @@ import com.proyectopoo.petcareapp.LocalUserRoleViewModel
 import com.proyectopoo.petcareapp.data.local.database.PetCareDatabase
 import com.proyectopoo.petcareapp.data.local.entity.PetEntity
 import com.proyectopoo.petcareapp.data.network.RetrofitClient
+import com.proyectopoo.petcareapp.data.repository.ServiceApplicationRepository
+import com.proyectopoo.petcareapp.data.repository.ServiceRequestRepository
 import com.proyectopoo.petcareapp.data.repository.UserRepository
 import com.proyectopoo.petcareapp.data.session.SessionManager
 import com.proyectopoo.petcareapp.model.UserRole
@@ -35,6 +37,7 @@ import com.proyectopoo.petcareapp.ui.screen.owner.OwnerHomeScreen
 import com.proyectopoo.petcareapp.ui.screen.owner.OwnerProfileScreen
 import com.proyectopoo.petcareapp.viewmodel.DogViewModel
 import com.proyectopoo.petcareapp.viewmodel.LoginViewModel
+import com.proyectopoo.petcareapp.viewmodel.ServiceRequestViewModel
 import com.proyectopoo.petcareapp.viewmodel.UserRoleViewModel
 
 @Composable
@@ -44,10 +47,32 @@ fun AppNavigation(
     sessionLogout: (NavHostController, UserRoleViewModel) -> Unit
 ) {
     val userRoleViewModel = LocalUserRoleViewModel.current
+    val context = LocalContext.current
+    val sessionManager = SessionManager(context)
     val dogViewModel: DogViewModel = viewModel()
+    val database = PetCareDatabase.getDatabase(context)
 
-    // Colecciona los perros para poder pasarlos a OwnerHomeScreen
+    val serviceRequestViewModel: ServiceRequestViewModel = viewModel(
+        factory = viewModelFactory {
+            initializer {
+                ServiceRequestViewModel(
+                    requestRepo = ServiceRequestRepository(database.serviceRequestDao()),
+                    applicationRepo = ServiceApplicationRepository(database.serviceApplicationDao()),
+                    userDao = database.userDao(),
+                    ownerDao = database.ownerDao(),
+                    caregiverDao = database.caregiverDao(),
+                    petDao = database.petDao(),
+                    serviceTypeDao = database.serviceTypeDao()
+                )
+            }
+        }
+    )
+
     val dogs by dogViewModel.dogs.collectAsStateWithLifecycle()
+    val recentOwnerRequests by serviceRequestViewModel.recentOwnerRequests.collectAsStateWithLifecycle()
+    val ownerApplicationDetails by serviceRequestViewModel.ownerApplicationDetails.collectAsStateWithLifecycle()
+    val caregiverApplicationDetails by serviceRequestViewModel.caregiverApplicationDetails.collectAsStateWithLifecycle()
+    val availableRequests by serviceRequestViewModel.availableRequests.collectAsStateWithLifecycle()
 
     NavHost(
         navController = navController,
@@ -55,10 +80,6 @@ fun AppNavigation(
         modifier = modifier
     ) {
         composable<Login> {
-            val context = LocalContext.current
-            val database = PetCareDatabase.getDatabase(context)
-            val sessionManager = SessionManager(context)
-
             val loginViewModel: LoginViewModel = viewModel(
                 factory = viewModelFactory {
                     initializer {
@@ -83,9 +104,7 @@ fun AppNavigation(
                         "CAREGIVER" -> UserRole.CAREGIVER
                         else -> UserRole.OWNER
                     }
-
                     userRoleViewModel.setRole(role)
-
                     navController.navigate(
                         if (role == UserRole.CAREGIVER) CaregiverHome else OwnerHome
                     ) {
@@ -97,17 +116,11 @@ fun AppNavigation(
 
             LoginScreen(
                 onLoginClick = { email, password, rememberSession ->
-                    loginViewModel.login(
-                        email = email,
-                        password = password,
-                        rememberSession = rememberSession
-                    )
+                    loginViewModel.login(email, password, rememberSession)
                 },
                 onGoToRegister = { navController.navigate(Register) },
                 onGoToPasswordRecovery = {
-                    navController.navigate(PasswordRecovery) {
-                        launchSingleTop = true
-                    }
+                    navController.navigate(PasswordRecovery) { launchSingleTop = true }
                 },
                 isLoading = isLoading,
                 errorMessage = errorMessage
@@ -118,7 +131,6 @@ fun AppNavigation(
             RegisterScreen(
                 onRegisterSuccess = { response, password ->
                     val userData = response.user ?: response.useer
-
                     if (userData != null) {
                         navController.navigate(
                             RoleSection(
@@ -138,7 +150,6 @@ fun AppNavigation(
 
         composable<RoleSection> { backStackEntry ->
             val data = backStackEntry.toRoute<RoleSection>()
-
             RoleSectionScreen(
                 userId = data.userId,
                 username = data.username,
@@ -146,20 +157,13 @@ fun AppNavigation(
                 password = data.password,
                 onOwnerSelected = {
                     userRoleViewModel.setRole(UserRole.OWNER)
-
-                    val destination = if (dogs.isEmpty()) {
-                        DogInfo()
-                    } else {
-                        OwnerHome
-                    }
-
+                    val destination = if (dogs.isEmpty()) DogInfo() else OwnerHome
                     navController.navigate(destination) {
                         popUpTo(Login) { inclusive = true }
                     }
                 },
                 onCaregiverSelected = {
                     userRoleViewModel.setRole(UserRole.CAREGIVER)
-
                     navController.navigate(CaregiverHome) {
                         popUpTo(Login) { inclusive = true }
                     }
@@ -170,6 +174,7 @@ fun AppNavigation(
         composable<DogInfo> { backStackEntry ->
             val args = backStackEntry.toRoute<DogInfo>()
             val editingDog = dogs.find { it.petId == args.petId }
+            val ownerId = sessionManager.getUserId()
 
             DogInfoScreen(
                 editingDog = editingDog,
@@ -180,83 +185,139 @@ fun AppNavigation(
                     } else {
                         args.petId
                     }
-
                     val pet = PetEntity(
                         petId = petId,
-                        ownerId = 1, // TODO: obtener del session manager
+                        ownerId = ownerId,
                         name = name,
                         breed = breed,
                         size = size,
                         species = "Dog"
                     )
-
                     if (isNewDog) {
                         dogViewModel.addDog(pet)
                     } else {
                         dogViewModel.updateDog(pet)
                     }
-
                     navController.navigate(OwnerHome) {
-                        popUpTo(navController.graph.id) {
-                            inclusive = false
-                        }
+                        popUpTo(navController.graph.id) { inclusive = false }
                         launchSingleTop = true
                     }
                 }
             )
         }
 
-        // ✅ Pantalla OwnerHome corregida
         composable<OwnerHome> {
-            val ownerId = 1 // TODO: desde SessionManager
-
+            val ownerId = sessionManager.getUserId()
+            LaunchedEffect(ownerId) {
+                serviceRequestViewModel.loadOwnerData(ownerId)
+            }
             OwnerHomeScreen(
-                dogs = dogs,                              // ← se pasa la lista real
-                onGoToCreate = { navController.navigate(CreateService) },
-                onEditPets = { pet: PetEntity ->         // ← ahora recibe PetEntity
+                dogs = dogs,
+                recentRequests = recentOwnerRequests,
+                caregiverApplications = ownerApplicationDetails,
+                onGoToCreate = { serviceType ->
+                    navController.navigate(
+                        CreateService(
+                            serviceType = serviceType,
+                            petName = dogs.firstOrNull()?.name ?: ""
+                        )
+                    )
+                },
+                onEditPets = { pet: PetEntity ->
                     navController.navigate(DogInfo(petId = pet.petId))
+                },
+                onDeletePet = { pet: PetEntity ->
+                    dogViewModel.deleteDog(pet)
                 },
                 onAddDog = { navController.navigate(DogInfo()) },
                 onGoToFeed = { navController.navigate(OwnerFeed) },
                 onGoToOwnerProfile = { navController.navigate(OwnerProfile) },
+                onAcceptApplication = { applicationId ->
+                    serviceRequestViewModel.acceptApplication(applicationId, ownerId)
+                },
+                onRejectApplication = { applicationId ->
+                    serviceRequestViewModel.rejectApplication(applicationId, ownerId)
+                },
                 ownerId = ownerId
             )
         }
 
         composable<OwnerFeed> {
             OwnerFeedScreen(
-                onGoToOwnerProfile = { navController.navigate(OwnerProfile) }
-            )
-        }
-
-        composable<CreateService> {
-            CreateServiceScreen(
-                onBack = { navController.popBackStack() },
-                onPublish = {
-                    navController.navigate(OwnerHome) {
-                        launchSingleTop = true
-                    }
+                onGoToCaregiverProfile = { caregiverId ->
+                    navController.navigate(CaregiverProfile(caregiverId = caregiverId))
                 }
             )
         }
 
-        // ✅ Pantalla CaregiverHome corregida
-        composable<CaregiverHome> {
-            val caregiverId = 1 // TODO: desde SessionManager
+        composable<CreateService> { backStackEntry ->
+            val args = backStackEntry.toRoute<CreateService>()
+            val ownerId = sessionManager.getUserId()
+            CreateServiceScreen(
+                petName = args.petName,
+                serviceType = args.serviceType,
+                onBack = { navController.popBackStack() },
+                onPublish = { petName, serviceType, description, location, price, date ->
+                    val existingPet = dogs.firstOrNull { it.name.equals(petName, ignoreCase = true) }
+                    val petId = existingPet?.petId ?: (System.currentTimeMillis() % Int.MAX_VALUE).toInt()
+                    if (existingPet == null) {
+                        dogViewModel.addDog(
+                            PetEntity(
+                                petId = petId,
+                                ownerId = ownerId,
+                                name = petName,
+                                breed = null,
+                                size = null,
+                                species = "Dog"
+                            )
+                        )
+                    }
+                    serviceRequestViewModel.createRequestFromForm(
+                        ownerId = ownerId,
+                        petId = petId,
+                        petName = petName,
+                        serviceTypeName = serviceType,
+                        description = description,
+                        location = location,
+                        price = price,
+                        requestedDate = date
+                    )
+                    navController.navigate(OwnerHome) { launchSingleTop = true }
+                },
+                existingServices = recentOwnerRequests.mapNotNull { it.serviceTypeName }
+            )
+        }
 
+        composable<CaregiverHome> {
+            val caregiverId = sessionManager.getUserId()
+            LaunchedEffect(caregiverId) {
+                serviceRequestViewModel.loadCaregiverData(caregiverId)
+            }
             CaregiverHomeScreen(
-                onGoToFeed = { navController.navigate(CaregiverFeed) },
-                onGoToCreate = { navController.navigate(CreateService) },   // ← se añade
                 onGoToServices = { navController.navigate(CaregiverService) },
-                onGoToCaregiverProfile = { navController.navigate(CaregiverProfile) },
+                ownerRequests = caregiverApplicationDetails,
+                onAcceptApplication = { applicationId ->
+                    serviceRequestViewModel.acceptApplication(applicationId, caregiverId)
+                },
+                onRejectApplication = { applicationId ->
+                    serviceRequestViewModel.rejectApplication(applicationId, caregiverId)
+                },
                 caregiverId = caregiverId
             )
         }
 
         composable<CaregiverFeed> {
+            val caregiverId = sessionManager.getUserId()
+            LaunchedEffect(caregiverId) {
+                serviceRequestViewModel.loadAvailableRequests()
+                serviceRequestViewModel.loadCaregiverData(caregiverId)
+            }
             CaregiverFeedScreen(
-                onGoToCreate = { navController.navigate(CreateService) },
-                onGoToCaregiverProfile = { navController.navigate(CaregiverProfile) }
+                requests = availableRequests,
+                onApplyToRequest = { requestId ->
+                    serviceRequestViewModel.applyToRequest(requestId, caregiverId)
+                    navController.navigate(CaregiverHome) { launchSingleTop = true }
+                }
             )
         }
 
@@ -274,9 +335,17 @@ fun AppNavigation(
         }
 
         composable<CaregiverProfile> {
+            val args = it.toRoute<CaregiverProfile>()
+            val isOwnProfile = args.caregiverId == -1
             CaregiverProfileScreen(
+                caregiverId = args.caregiverId,
+                showLogout = isOwnProfile,
                 onBack = { navController.popBackStack() },
-                onLogout = { sessionLogout(navController, userRoleViewModel) }
+                onLogout = {
+                    if (isOwnProfile) {
+                        sessionLogout(navController, userRoleViewModel)
+                    }
+                }
             )
         }
 

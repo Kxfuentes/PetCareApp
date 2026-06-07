@@ -53,7 +53,7 @@ fun PetCareNavigationBar(
         if (currentRole == UserRole.OWNER) {
             NavigationBarItem(
                 selected = currentDestination?.hierarchy?.any { it.hasRoute<CreateService>() } == true,
-                onClick = { navigateToTopLevel(navController, CreateService) },
+                onClick = { navigateToTopLevel(navController, CreateService()) },
                 icon = { Icon(Icons.Default.AddCircle, contentDescription = "Publicar") },
                 label = { Text("Publicar") },
                 colors = navigationBarItemColors()
@@ -85,7 +85,7 @@ private fun getFeedRoute(role: UserRole): Any = when (role) {
 
 private fun getProfileRoute(role: UserRole): Any = when (role) {
     UserRole.OWNER -> OwnerProfile
-    UserRole.CAREGIVER -> CaregiverProfile
+    UserRole.CAREGIVER -> CaregiverProfile()
 }
 
 private fun navigateToTopLevel(navController: NavHostController, route: Any) {

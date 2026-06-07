@@ -36,6 +36,16 @@ class Converters {
     }
 
     @TypeConverter
+    fun fromApplicationStatus(value: ApplicationStatus?): String? {
+        return value?.name
+    }
+
+    @TypeConverter
+    fun toApplicationStatus(value: String?): ApplicationStatus? {
+        return value?.let { ApplicationStatus.valueOf(it) }
+    }
+
+    @TypeConverter
     fun fromNotificationType(value: NotificationType?): String? {
         return value?.name
     }

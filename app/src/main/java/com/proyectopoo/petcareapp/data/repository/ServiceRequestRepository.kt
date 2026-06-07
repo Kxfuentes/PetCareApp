@@ -10,5 +10,7 @@ class ServiceRequestRepository(
     suspend fun insert(request: ServiceRequestEntity) = dao.insertRequest(request)
     suspend fun getByOwner(ownerId: Int) = dao.getRequestsByOwner(ownerId)
     suspend fun getWithApplications(ownerId: Int) = dao.getRequestsWithApplications(ownerId)
+    suspend fun getAvailableDetails() = dao.getRequestDetailsByStatus(ServiceRequestStatus.PENDING)
+    suspend fun getRecentDetailsByOwner(ownerId: Int) = dao.getRecentRequestDetailsByOwner(ownerId)
     suspend fun updateStatus(id: Int, status: ServiceRequestStatus) = dao.updateStatus(id, status)
 }

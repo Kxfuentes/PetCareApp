@@ -33,14 +33,12 @@ fun OwnerProfileScreen(
         },
         containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
-
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
                 .padding(24.dp)
         ) {
-
             Text(
                 text = "Mi Perfil - Dueño",
                 style = MaterialTheme.typography.headlineMedium
@@ -93,7 +91,7 @@ fun OwnerProfileScreen(
             Spacer(modifier = Modifier.weight(1f))
 
             Button(
-                onClick = { /* TODO: Editar perfil */ },
+                onClick = { /* Acción de editar perfil */ },
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text("Editar Perfil")

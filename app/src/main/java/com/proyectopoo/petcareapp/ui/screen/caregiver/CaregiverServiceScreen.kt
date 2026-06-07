@@ -40,6 +40,10 @@ fun CaregiverServiceScreen(
     var precio by remember { mutableStateOf("") }
     var descripcion by remember { mutableStateOf("") }
     var activo by remember { mutableStateOf(true) }
+    var servicioEditando by remember { mutableStateOf<ServiceGiven?>(null) }
+    var precioEditado by remember { mutableStateOf("") }
+    var descripcionEditada by remember { mutableStateOf("") }
+    var activoEditado by remember { mutableStateOf(true) }
 
     var servicios by remember {
         mutableStateOf(
@@ -87,6 +91,78 @@ fun CaregiverServiceScreen(
             }
         }
     ) { paddingValues ->
+        servicioEditando?.let { servicio ->
+            AlertDialog(
+                onDismissRequest = { servicioEditando = null },
+                title = { Text("Editar ${servicio.nombre}") },
+                text = {
+                    Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                        OutlinedTextField(
+                            value = precioEditado,
+                            onValueChange = { precioEditado = it },
+                            label = { Text("Precio") },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(16.dp)
+                        )
+
+                        OutlinedTextField(
+                            value = descripcionEditada,
+                            onValueChange = { descripcionEditada = it },
+                            label = { Text("Descripción") },
+                            modifier = Modifier.fillMaxWidth().height(120.dp),
+                            shape = RoundedCornerShape(16.dp)
+                        )
+
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                "Activo",
+                                color = colorScheme.onSurface,
+                                fontWeight = FontWeight.Medium
+                            )
+
+                            Spacer(modifier = Modifier.width(12.dp))
+
+                            Switch(
+                                checked = activoEditado,
+                                onCheckedChange = { activoEditado = it },
+                                colors = SwitchDefaults.colors(
+                                    checkedThumbColor = colorScheme.onPrimary,
+                                    checkedTrackColor = colorScheme.primary,
+                                    uncheckedTrackColor = colorScheme.surfaceVariant
+                                )
+                            )
+                        }
+                    }
+                },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            servicios = servicios.map {
+                                if (it.id == servicio.id) {
+                                    it.copy(
+                                        precio = precioEditado,
+                                        descripcion = descripcionEditada,
+                                        activo = activoEditado
+                                    )
+                                } else {
+                                    it
+                                }
+                            }
+                            servicioEditando = null
+                        },
+                        enabled = precioEditado.isNotBlank() && descripcionEditada.isNotBlank()
+                    ) {
+                        Text("Guardar")
+                    }
+                },
+                dismissButton = {
+                    OutlinedButton(onClick = { servicioEditando = null }) {
+                        Text("Cancelar")
+                    }
+                }
+            )
+        }
 
         if (mostrarFormulario) {
 
@@ -319,7 +395,12 @@ fun CaregiverServiceScreen(
                             Spacer(modifier = Modifier.height(18.dp))
 
                             OutlinedButton(
-                                onClick = {},
+                                onClick = {
+                                    servicioEditando = servicio
+                                    precioEditado = servicio.precio
+                                    descripcionEditada = servicio.descripcion
+                                    activoEditado = servicio.activo
+                                },
                                 shape = RoundedCornerShape(14.dp),
                                 border = BorderStroke(1.dp, colorScheme.outline),
                                 colors = ButtonDefaults.outlinedButtonColors(
