@@ -48,13 +48,23 @@ fun CreateServiceScreen(
     var showError by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
 
-    // Para el dropdown de mascotas
-    var expanded by remember { mutableStateOf(false) }
+
+    var expandedPet by remember { mutableStateOf(false) }
+    var expandedService by remember { mutableStateOf(false) }
+
+    val serviceOptions = listOf(
+        "Alojamiento", "Guardería", "Paseo", "Taxi", "Peluquería", "Visitante"
+    )
 
     val isDuplicate = tipoServicio.isNotBlank() &&
             existingServices.any { it.equals(tipoServicio, ignoreCase = true) }
 
     val scrollState = rememberScrollState()
+
+
+    LaunchedEffect(nombreMascota, tipoServicio, descripcion, ubicacion, precio, fecha) {
+        if (showError) showError = false
+    }
 
     Column(
         modifier = Modifier
@@ -63,8 +73,7 @@ fun CreateServiceScreen(
             .padding(24.dp),
         horizontalAlignment = Alignment.Start
     ) {
-
-
+        // Tarjeta informativa
         Card(
             colors = CardDefaults.cardColors(
                 containerColor = MaterialTheme.colorScheme.primaryContainer
@@ -110,8 +119,8 @@ fun CreateServiceScreen(
 
 
         ExposedDropdownMenuBox(
-            expanded = expanded,
-            onExpandedChange = { expanded = it }
+            expanded = expandedPet,
+            onExpandedChange = { expandedPet = it }
         ) {
             OutlinedTextField(
                 value = nombreMascota,
@@ -122,42 +131,77 @@ fun CreateServiceScreen(
                     .fillMaxWidth()
                     .menuAnchor(),
                 trailingIcon = {
-                    IconButton(onClick = { expanded = !expanded }) {
-                        Icon(Icons.Default.ArrowDropDown, null)
+                    IconButton(onClick = { expandedPet = !expandedPet }) {
+                        Icon(Icons.Default.ArrowDropDown, contentDescription = null)
                     }
                 },
                 isError = showError && nombreMascota.isBlank()
             )
 
             ExposedDropdownMenu(
-                expanded = expanded,
-                onDismissRequest = { expanded = false }
+                expanded = expandedPet,
+                onDismissRequest = { expandedPet = false }
             ) {
-                dogs.forEach { dog ->
+                if (dogs.isEmpty()) {
                     DropdownMenuItem(
-                        text = { Text(dog.name) },
-                        onClick = {
-                            nombreMascota = dog.name
-                            expanded = false
-                        }
+                        text = { Text("No tienes mascotas registradas") },
+                        onClick = { }
                     )
+                } else {
+                    dogs.forEach { dog ->
+                        DropdownMenuItem(
+                            text = { Text(dog.name) },
+                            onClick = {
+                                nombreMascota = dog.name
+                                expandedPet = false
+                            }
+                        )
+                    }
                 }
             }
         }
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        OutlinedTextField(
-            value = tipoServicio,
-            onValueChange = { tipoServicio = it },
-            label = { Text("Tipo de Servicio") },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true,
-            isError = (showError && tipoServicio.isBlank()) || isDuplicate,
-            supportingText = if (isDuplicate) {
-                { Text("Ya tienes este servicio creado", color = MaterialTheme.colorScheme.error) }
-            } else null
-        )
+
+        ExposedDropdownMenuBox(
+            expanded = expandedService,
+            onExpandedChange = { expandedService = it }
+        ) {
+            OutlinedTextField(
+                value = tipoServicio,
+                onValueChange = {},
+                readOnly = true,
+                label = { Text("Tipo de Servicio") },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .menuAnchor(),
+                trailingIcon = {
+                    IconButton(onClick = { expandedService = !expandedService }) {
+                        Icon(Icons.Default.ArrowDropDown, null)
+                    }
+                },
+                isError = (showError && tipoServicio.isBlank()) || isDuplicate,
+                supportingText = if (isDuplicate) {
+                    { Text("Ya tienes este servicio creado", color = MaterialTheme.colorScheme.error) }
+                } else null
+            )
+
+            ExposedDropdownMenu(
+                expanded = expandedService,
+                onDismissRequest = { expandedService = false }
+            ) {
+                serviceOptions.forEach { service ->
+                    DropdownMenuItem(
+                        text = { Text(service) },
+                        onClick = {
+                            tipoServicio = service
+                            expandedService = false
+                        }
+                    )
+                }
+            }
+        }
 
         Spacer(modifier = Modifier.height(12.dp))
 
@@ -198,6 +242,7 @@ fun CreateServiceScreen(
 
         Spacer(modifier = Modifier.height(12.dp))
 
+        // Fecha
         OutlinedTextField(
             value = fecha,
             onValueChange = {},
@@ -223,35 +268,25 @@ fun CreateServiceScreen(
             Spacer(modifier = Modifier.height(8.dp))
         }
 
+        // Botón Publicar
         Button(
             onClick = {
-                if (
-                    nombreMascota.isBlank() ||
-                    tipoServicio.isBlank() ||
-                    descripcion.isBlank() ||
-                    ubicacion.isBlank() ||
-                    precio.isBlank() ||
-                    fecha.isBlank()
+                showError = true
+                if (nombreMascota.isBlank() || tipoServicio.isBlank() ||
+                    descripcion.isBlank() || ubicacion.isBlank() ||
+                    precio.isBlank() || fecha.isBlank()
                 ) {
-                    showError = true
                     errorMessage = "Todos los campos son obligatorios"
                     return@Button
                 }
 
                 if (isDuplicate) {
-                    showError = true
                     errorMessage = "Ya tienes este servicio creado"
                     return@Button
                 }
 
-                onPublish(
-                    nombreMascota,
-                    tipoServicio,
-                    descripcion,
-                    ubicacion,
-                    precio,
-                    fecha
-                )
+                showError = false
+                onPublish(nombreMascota, tipoServicio, descripcion, ubicacion, precio, fecha)
             },
             modifier = Modifier.fillMaxWidth(),
             enabled = !isDuplicate
@@ -268,10 +303,10 @@ fun CreateServiceScreen(
             Text("Cancelar")
         }
 
-        Spacer(modifier = Modifier.height(40.dp)) // espacio extra para scroll
+        Spacer(modifier = Modifier.height(40.dp))
     }
 
-    // Date Picker
+    // DatePickerDialog
     if (showDatePicker) {
         val datePickerState = rememberDatePickerState()
         DatePickerDialog(

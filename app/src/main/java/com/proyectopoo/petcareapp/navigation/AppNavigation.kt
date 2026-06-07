@@ -256,6 +256,7 @@ fun AppNavigation(
             CreateServiceScreen(
                 petName = args.petName,
                 serviceType = args.serviceType,
+                dogs = dogs,
                 onBack = { navController.popBackStack() },
                 onPublish = { petName, serviceType, description, location, price, date ->
                     val existingPet = dogs.firstOrNull { it.name.equals(petName, ignoreCase = true) }
@@ -329,7 +330,6 @@ fun AppNavigation(
 
         composable<OwnerProfile> {
             OwnerProfileScreen(
-                onBack = { navController.popBackStack() },
                 onLogout = { sessionLogout(navController, userRoleViewModel) }
             )
         }

@@ -10,7 +10,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.proyectopoo.petcareapp.data.local.entity.ApplicationStatus
@@ -37,7 +40,7 @@ fun OwnerHomeScreen(
     val scrollState = rememberScrollState()
     var selectedDogIndex by remember { mutableStateOf(0) }
     var petToDelete by remember { mutableStateOf<PetEntity?>(null) }
-    var showWelcome by remember { mutableStateOf(true) }   // Banner dismissible
+    var showWelcome by remember { mutableStateOf(true) }
 
     val safeIndex = if (dogs.isEmpty()) 0 else selectedDogIndex.coerceIn(0, dogs.lastIndex)
     val currentDog = dogs.getOrNull(safeIndex)
@@ -109,7 +112,7 @@ fun OwnerHomeScreen(
                 verticalArrangement = Arrangement.spacedBy(18.dp)
             ) {
 
-                // ================= PET CARD (SIN FOTO, SOLO ÍCONO) =================
+
                 Card(
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                     shape = RoundedCornerShape(20.dp),
@@ -121,7 +124,6 @@ fun OwnerHomeScreen(
 
                         Row(verticalAlignment = Alignment.CenterVertically) {
 
-                            // Ícono de mascota (estático)
                             Surface(
                                 shape = RoundedCornerShape(16.dp),
                                 color = MaterialTheme.colorScheme.surfaceVariant,
@@ -188,7 +190,6 @@ fun OwnerHomeScreen(
                     Text("Agregar mascota")
                 }
 
-                // ================= DIÁLOGO ELIMINAR =================
                 if (petToDelete != null) {
                     AlertDialog(
                         onDismissRequest = { petToDelete = null },
@@ -210,8 +211,12 @@ fun OwnerHomeScreen(
                     )
                 }
 
-                // ================= ÚLTIMOS SERVICIOS SOLICITADOS =================
-                Text("Últimos servicios solicitados", style = MaterialTheme.typography.titleLarge)
+
+                Text(
+                    "Últimos servicios solicitados",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.SemiBold
+                )
 
                 if (recentRequests.isEmpty()) {
                     Card(
@@ -226,25 +231,77 @@ fun OwnerHomeScreen(
                         )
                     }
                 } else {
-                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                         recentRequests.forEach { request ->
                             Card(
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(16.dp),
-                                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .shadow(2.dp, RoundedCornerShape(24.dp))
+                                    .clip(RoundedCornerShape(24.dp)),
+                                shape = RoundedCornerShape(24.dp),
+                                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.surface
+                                )
                             ) {
-                                Column(Modifier.padding(16.dp)) {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Icon(Icons.Default.Assignment, null, tint = MaterialTheme.colorScheme.primary)
-                                        Spacer(Modifier.width(12.dp))
-                                        Text(request.title, style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
-                                        AssistChip(onClick = {}, label = { Text(request.status.name) })
+                                Column(
+                                    modifier = Modifier.padding(20.dp),
+                                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                                    ) {
+                                        Surface(
+                                            shape = RoundedCornerShape(16.dp),
+                                            color = MaterialTheme.colorScheme.primaryContainer,
+                                            modifier = Modifier.size(48.dp)
+                                        ) {
+                                            val serviceIcon = when (request.serviceTypeName?.lowercase()) {
+                                                "paseo" -> Icons.Default.DirectionsWalk
+                                                "alojamiento" -> Icons.Default.Home
+                                                "guardería" -> Icons.Default.WbSunny
+                                                "taxi" -> Icons.Default.LocalTaxi
+                                                "peluquería" -> Icons.Default.ContentCut
+                                                "visitante" -> Icons.Default.HomeRepairService
+                                                else -> Icons.Default.Assignment
+                                            }
+                                            Icon(
+                                                serviceIcon,
+                                                contentDescription = null,
+                                                tint = MaterialTheme.colorScheme.primary,
+                                                modifier = Modifier
+                                                    .fillMaxSize()
+                                                    .padding(12.dp)
+                                            )
+                                        }
+
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text(
+                                                request.title,
+                                                style = MaterialTheme.typography.titleMedium,
+                                                fontWeight = FontWeight.SemiBold
+                                            )
+                                            Text(
+                                                listOfNotNull(request.petName, request.serviceTypeName)
+                                                    .joinToString(" • "),
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+
+                                        StatusChip(status = request.status)
                                     }
-                                    Spacer(Modifier.height(8.dp))
+
+                                    Divider(
+                                        color = MaterialTheme.colorScheme.outlineVariant,
+                                        modifier = Modifier.padding(vertical = 4.dp)
+                                    )
+
                                     Text(
-                                        listOfNotNull(request.petName, request.serviceTypeName, request.requestedDate)
-                                            .joinToString(" • "),
-                                        style = MaterialTheme.typography.bodyMedium
+                                        " ${request.requestedDate ?: "Sin fecha"}",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
                             }
@@ -252,10 +309,15 @@ fun OwnerHomeScreen(
                     }
                 }
 
-                // ================= CUIDADORES INTERESADOS =================
-                Text("Cuidadores interesados", style = MaterialTheme.typography.titleLarge)
+                Text(
+                    "Cuidadores interesados",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.SemiBold
+                )
 
-                val pendingApplications = caregiverApplications.filter { it.applicationStatus == ApplicationStatus.PENDING }
+                val pendingApplications = caregiverApplications.filter {
+                    it.applicationStatus == ApplicationStatus.PENDING
+                }
 
                 if (pendingApplications.isEmpty()) {
                     Card(
@@ -269,38 +331,80 @@ fun OwnerHomeScreen(
                         )
                     }
                 } else {
-                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                         pendingApplications.forEach { application ->
                             Card(
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(18.dp),
-                                elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .shadow(2.dp, RoundedCornerShape(24.dp))
+                                    .clip(RoundedCornerShape(24.dp)),
+                                shape = RoundedCornerShape(24.dp),
+                                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.surface
+                                )
                             ) {
-                                Column(Modifier.padding(16.dp)) {
+                                Column(
+                                    modifier = Modifier.padding(20.dp),
+                                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                                ) {
                                     Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Icon(Icons.Default.Person, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(28.dp))
-                                        Spacer(Modifier.width(12.dp))
+                                        Surface(
+                                            shape = RoundedCornerShape(16.dp),
+                                            color = MaterialTheme.colorScheme.secondaryContainer,
+                                            modifier = Modifier.size(48.dp)
+                                        ) {
+                                            Icon(
+                                                Icons.Default.Person,
+                                                contentDescription = null,
+                                                tint = MaterialTheme.colorScheme.secondary,
+                                                modifier = Modifier
+                                                    .fillMaxSize()
+                                                    .padding(12.dp)
+                                            )
+                                        }
+                                        Spacer(Modifier.width(16.dp))
                                         Column(Modifier.weight(1f)) {
-                                            Text(application.caregiverName ?: "Cuidador", style = MaterialTheme.typography.titleMedium)
                                             Text(
-                                                "Quiere trabajar en: ${application.requestTitle}",
+                                                application.caregiverName ?: "Cuidador desconocido",
+                                                style = MaterialTheme.typography.titleMedium,
+                                                fontWeight = FontWeight.SemiBold
+                                            )
+                                            Text(
+                                                "Interesado en: ${application.requestTitle}",
                                                 style = MaterialTheme.typography.bodyMedium,
                                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                                             )
                                         }
+                                        StatusChip(status = application.applicationStatus)
                                     }
 
-                                    Spacer(Modifier.height(12.dp))
+                                    Divider(
+                                        color = MaterialTheme.colorScheme.outlineVariant,
+                                        modifier = Modifier.padding(vertical = 4.dp)
+                                    )
 
-                                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                    Row(
+                                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
                                         Button(
                                             onClick = { onAcceptApplication(application.applicationId) },
-                                            modifier = Modifier.weight(1f)
-                                        ) { Text("Aceptar") }
+                                            modifier = Modifier.weight(1f),
+                                            shape = RoundedCornerShape(16.dp),
+                                            colors = ButtonDefaults.buttonColors(
+                                                containerColor = MaterialTheme.colorScheme.primary
+                                            )
+                                        ) {
+                                            Text("Aceptar", fontWeight = FontWeight.Medium)
+                                        }
                                         OutlinedButton(
                                             onClick = { onRejectApplication(application.applicationId) },
-                                            modifier = Modifier.weight(1f)
-                                        ) { Text("Rechazar") }
+                                            modifier = Modifier.weight(1f),
+                                            shape = RoundedCornerShape(16.dp)
+                                        ) {
+                                            Text("Rechazar", fontWeight = FontWeight.Medium)
+                                        }
                                     }
                                 }
                             }
@@ -309,19 +413,19 @@ fun OwnerHomeScreen(
                 }
 
 
-                Text("Servicios disponibles", style = MaterialTheme.typography.titleLarge)
+                Text(
+                    "Servicios disponibles",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.SemiBold
+                )
 
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-
                     services.chunked(2).forEach { row ->
-
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-
                             row.forEach { (name, icon) ->
-
                                 Card(
                                     onClick = { onGoToCreate(name) },
                                     modifier = Modifier
@@ -332,24 +436,21 @@ fun OwnerHomeScreen(
                                         containerColor = MaterialTheme.colorScheme.surfaceVariant
                                     )
                                 ) {
-
                                     Column(
                                         modifier = Modifier.padding(12.dp),
                                         verticalArrangement = Arrangement.spacedBy(6.dp)
                                     ) {
-
                                         Icon(
                                             icon,
                                             null,
                                             tint = MaterialTheme.colorScheme.primary,
                                             modifier = Modifier.size(28.dp)
                                         )
-
                                         Text(
                                             text = name,
-                                            style = MaterialTheme.typography.titleSmall
+                                            style = MaterialTheme.typography.titleSmall,
+                                            fontWeight = FontWeight.Medium
                                         )
-
                                         Text(
                                             text = serviceDescriptions[name] ?: "",
                                             style = MaterialTheme.typography.bodySmall,
@@ -359,7 +460,6 @@ fun OwnerHomeScreen(
                                     }
                                 }
                             }
-
                             if (row.size == 1) {
                                 Spacer(Modifier.weight(1f))
                             }
@@ -379,21 +479,19 @@ fun OwnerHomeScreen(
                         modifier = Modifier.padding(16.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 "¿Buscas paseadores?",
                                 style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onPrimary
                             )
-
                             Text(
                                 "Encuentra los mejores cerca de ti",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f)
                             )
                         }
-
                         Button(
                             onClick = onGoToFeed,
                             colors = ButtonDefaults.buttonColors(
@@ -407,4 +505,37 @@ fun OwnerHomeScreen(
             }
         }
     }
+}
+
+
+@Composable
+private fun StatusChip(status: Enum<*>) {
+    val (text, color) = when (status.name.uppercase()) {
+        "PENDING" -> "Pendiente" to Color(0xFFFF9800)
+        "ACCEPTED" -> "Aceptado" to Color(0xFF4CAF50)
+        "REJECTED" -> "Rechazado" to Color(0xFFF44336)
+        else -> status.name.replaceFirstChar { it.uppercase() } to MaterialTheme.colorScheme.outline
+    }
+
+    AssistChip(
+        onClick = {},
+        label = {
+            Text(
+                text,
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.Medium,
+                color = Color.Black
+            )
+        },
+        colors = AssistChipDefaults.assistChipColors(
+            labelColor = Color.Black,
+            containerColor = color.copy(alpha = 0.1f)
+        ),
+        border = AssistChipDefaults.assistChipBorder(
+            enabled = true,
+            borderColor = color.copy(alpha = 0.8f),
+            borderWidth = 1.dp
+        ),
+        shape = RoundedCornerShape(20.dp)
+    )
 }
