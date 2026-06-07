@@ -16,7 +16,6 @@ data class RoleSection(
     val password: String
 )
 
-
 @Serializable
 object OwnerHome
 
@@ -35,7 +34,7 @@ object CaregiverService
 @Serializable
 data class CreateService(
     val serviceType: String = "",
-    val petName: String = ""
+    val petName: String = "",
 )
 
 @Serializable
