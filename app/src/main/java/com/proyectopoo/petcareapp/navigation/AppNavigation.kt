@@ -3,6 +3,9 @@ package com.proyectopoo.petcareapp.navigation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -16,11 +19,13 @@ import androidx.navigation.toRoute
 import com.proyectopoo.petcareapp.LocalUserRoleViewModel
 import com.proyectopoo.petcareapp.data.local.database.PetCareDatabase
 import com.proyectopoo.petcareapp.data.local.entity.PetEntity
+import com.proyectopoo.petcareapp.data.local.entity.UserRoleType
 import com.proyectopoo.petcareapp.data.network.RetrofitClient
 import com.proyectopoo.petcareapp.data.repository.ServiceApplicationRepository
 import com.proyectopoo.petcareapp.data.repository.ServiceRequestRepository
 import com.proyectopoo.petcareapp.data.repository.UserRepository
 import com.proyectopoo.petcareapp.data.session.SessionManager
+import com.proyectopoo.petcareapp.model.User
 import com.proyectopoo.petcareapp.model.UserRole
 import com.proyectopoo.petcareapp.ui.screen.auth.LoginScreen
 import com.proyectopoo.petcareapp.ui.screen.auth.PasswordRecoveryScreen
@@ -329,8 +334,31 @@ fun AppNavigation(
         }
 
         composable<OwnerProfile> {
+            val ownerId = sessionManager.getUserId()
+            var loggedUser by remember { mutableStateOf<User?>(null) }
+
+            LaunchedEffect(ownerId) {
+                if (ownerId != -1) {
+                    val userEntity = database.userDao().getUserById(ownerId)
+                    loggedUser = userEntity?.let {
+                        User(
+                            username = it.fullName,
+                            email = it.email,
+                            role = it.role.name
+                        )
+                    }
+                }
+            }
+
+            val completedServices = recentOwnerRequests.filter {
+                it.status.name == "COMPLETED"
+            }
+
             OwnerProfileScreen(
-                onLogout = { sessionLogout(navController, userRoleViewModel) }
+                onLogout = { sessionLogout(navController, userRoleViewModel) },
+                user = loggedUser,
+                dogs = dogs,
+                historyServices = completedServices
             )
         }
 
