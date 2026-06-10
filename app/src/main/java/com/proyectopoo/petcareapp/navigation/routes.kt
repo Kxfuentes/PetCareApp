@@ -12,8 +12,7 @@ object Register
 data class RoleSection(
     val userId: Int,
     val username: String,
-    val email: String,
-    val password: String
+    val email: String
 )
 
 @Serializable

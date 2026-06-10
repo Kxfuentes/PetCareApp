@@ -15,7 +15,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -30,10 +29,9 @@ import java.net.SocketTimeoutException
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RegisterScreen(
-    onRegisterSuccess: (RegisterResponse, String) -> Unit,
+    onRegisterSuccess: (RegisterResponse) -> Unit,
     onBack: () -> Unit
 ) {
-    val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
     var username by remember { mutableStateOf("") }
@@ -198,8 +196,12 @@ fun RegisterScreen(
                             val response = RetrofitClient.apiService.registerUser(request)
 
                             if (response.isSuccessful) {
-                                response.body()?.let { registerResponse ->
-                                    onRegisterSuccess(registerResponse, password)
+                                val registerResponse = response.body()
+                                val registeredUser = registerResponse?.user ?: registerResponse?.useer
+                                if (registerResponse != null && registeredUser != null && registeredUser.id > 0) {
+                                    onRegisterSuccess(registerResponse)
+                                } else {
+                                    errorMessage = "La API no devolvió los datos del usuario registrado"
                                 }
                             } else {
                                 errorMessage = "Error al registrar el usuario"

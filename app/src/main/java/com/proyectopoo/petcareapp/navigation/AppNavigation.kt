@@ -5,6 +5,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -18,14 +19,17 @@ import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
 import com.proyectopoo.petcareapp.LocalUserRoleViewModel
 import com.proyectopoo.petcareapp.data.local.database.PetCareDatabase
+import com.proyectopoo.petcareapp.data.local.entity.CaregiverEntity
+import com.proyectopoo.petcareapp.data.local.entity.OwnerEntity
 import com.proyectopoo.petcareapp.data.local.entity.PetEntity
+import com.proyectopoo.petcareapp.data.local.entity.UserEntity
 import com.proyectopoo.petcareapp.data.local.entity.UserRoleType
 import com.proyectopoo.petcareapp.data.network.RetrofitClient
+import com.proyectopoo.petcareapp.data.repository.PetRepository
 import com.proyectopoo.petcareapp.data.repository.ServiceApplicationRepository
 import com.proyectopoo.petcareapp.data.repository.ServiceRequestRepository
 import com.proyectopoo.petcareapp.data.repository.UserRepository
 import com.proyectopoo.petcareapp.data.session.SessionManager
-import com.proyectopoo.petcareapp.model.User
 import com.proyectopoo.petcareapp.model.UserRole
 import com.proyectopoo.petcareapp.ui.screen.auth.LoginScreen
 import com.proyectopoo.petcareapp.ui.screen.auth.PasswordRecoveryScreen
@@ -42,8 +46,10 @@ import com.proyectopoo.petcareapp.ui.screen.owner.OwnerHomeScreen
 import com.proyectopoo.petcareapp.ui.screen.owner.OwnerProfileScreen
 import com.proyectopoo.petcareapp.viewmodel.DogViewModel
 import com.proyectopoo.petcareapp.viewmodel.LoginViewModel
+import com.proyectopoo.petcareapp.viewmodel.OwnerProfileViewModel
 import com.proyectopoo.petcareapp.viewmodel.ServiceRequestViewModel
 import com.proyectopoo.petcareapp.viewmodel.UserRoleViewModel
+import kotlinx.coroutines.launch
 
 @Composable
 fun AppNavigation(
@@ -54,8 +60,15 @@ fun AppNavigation(
     val userRoleViewModel = LocalUserRoleViewModel.current
     val context = LocalContext.current
     val sessionManager = SessionManager(context)
-    val dogViewModel: DogViewModel = viewModel()
     val database = PetCareDatabase.getDatabase(context)
+    val scope = rememberCoroutineScope()
+    val dogViewModel: DogViewModel = viewModel(
+        factory = viewModelFactory {
+            initializer {
+                DogViewModel(PetRepository(database.petDao()))
+            }
+        }
+    )
 
     val serviceRequestViewModel: ServiceRequestViewModel = viewModel(
         factory = viewModelFactory {
@@ -78,6 +91,13 @@ fun AppNavigation(
     val ownerApplicationDetails by serviceRequestViewModel.ownerApplicationDetails.collectAsStateWithLifecycle()
     val caregiverApplicationDetails by serviceRequestViewModel.caregiverApplicationDetails.collectAsStateWithLifecycle()
     val availableRequests by serviceRequestViewModel.availableRequests.collectAsStateWithLifecycle()
+    val currentUserId = sessionManager.getUserId()
+
+    LaunchedEffect(currentUserId) {
+        if (currentUserId > 0) {
+            dogViewModel.loadDogs(currentUserId)
+        }
+    }
 
     NavHost(
         navController = navController,
@@ -102,6 +122,7 @@ fun AppNavigation(
             val loggedUser by loginViewModel.loggedUser.collectAsStateWithLifecycle()
             val errorMessage by loginViewModel.errorMessage.collectAsStateWithLifecycle()
             val isLoading by loginViewModel.isLoading.collectAsStateWithLifecycle()
+            var navigationError by remember { mutableStateOf<String?>(null) }
 
             LaunchedEffect(loggedUser) {
                 loggedUser?.let { user ->
@@ -109,12 +130,26 @@ fun AppNavigation(
                         "CAREGIVER" -> UserRole.CAREGIVER
                         else -> UserRole.OWNER
                     }
-                    userRoleViewModel.setRole(role)
-                    navController.navigate(
-                        if (role == UserRole.CAREGIVER) CaregiverHome else OwnerHome
-                    ) {
-                        popUpTo(Login) { inclusive = true }
-                        launchSingleTop = true
+                    try {
+                        prepareLocalAccount(
+                            database = database,
+                            sessionManager = sessionManager,
+                            userId = user.userId,
+                            username = user.fullName,
+                            email = user.email,
+                            role = user.role
+                        )
+                        navigationError = null
+                        userRoleViewModel.setRole(role)
+                        navController.navigate(
+                            if (role == UserRole.CAREGIVER) CaregiverHome else OwnerHome
+                        ) {
+                            popUpTo(Login) { inclusive = true }
+                            launchSingleTop = true
+                        }
+                    } catch (e: Exception) {
+                        navigationError = e.localizedMessage
+                            ?: "No se pudo preparar la sesión local."
                     }
                 }
             }
@@ -128,21 +163,20 @@ fun AppNavigation(
                     navController.navigate(PasswordRecovery) { launchSingleTop = true }
                 },
                 isLoading = isLoading,
-                errorMessage = errorMessage
+                errorMessage = navigationError ?: errorMessage
             )
         }
 
         composable<Register> {
             RegisterScreen(
-                onRegisterSuccess = { response, password ->
+                onRegisterSuccess = { response ->
                     val userData = response.user ?: response.useer
-                    if (userData != null) {
+                    if (userData != null && userData.id > 0 && userData.email.isNotBlank()) {
                         navController.navigate(
                             RoleSection(
                                 userId = userData.id,
                                 username = userData.username,
-                                email = userData.email,
-                                password = password
+                                email = userData.email
                             )
                         ) {
                             popUpTo(Register) { inclusive = true }
@@ -155,60 +189,116 @@ fun AppNavigation(
 
         composable<RoleSection> { backStackEntry ->
             val data = backStackEntry.toRoute<RoleSection>()
+            var isPreparingAccount by remember { mutableStateOf(false) }
+            var onboardingError by remember { mutableStateOf<String?>(null) }
+
             RoleSectionScreen(
                 userId = data.userId,
                 username = data.username,
                 email = data.email,
-                password = data.password,
                 onOwnerSelected = {
-                    userRoleViewModel.setRole(UserRole.OWNER)
-                    val destination = if (dogs.isEmpty()) DogInfo() else OwnerHome
-                    navController.navigate(destination) {
-                        popUpTo(Login) { inclusive = true }
+                    if (isPreparingAccount) return@RoleSectionScreen
+                    scope.launch {
+                        isPreparingAccount = true
+                        onboardingError = null
+                        try {
+                            prepareLocalAccount(
+                                database = database,
+                                sessionManager = sessionManager,
+                                userId = data.userId,
+                                username = data.username,
+                                email = data.email,
+                                role = UserRoleType.OWNER
+                            )
+                            userRoleViewModel.setRole(UserRole.OWNER)
+                            dogViewModel.loadDogs(data.userId)
+                            navController.navigate(DogInfo()) {
+                                popUpTo(Login) { inclusive = true }
+                                launchSingleTop = true
+                            }
+                        } catch (e: Exception) {
+                            onboardingError = e.localizedMessage
+                                ?: "No se pudo preparar tu cuenta. Intenta de nuevo."
+                        } finally {
+                            isPreparingAccount = false
+                        }
                     }
                 },
                 onCaregiverSelected = {
-                    userRoleViewModel.setRole(UserRole.CAREGIVER)
-                    navController.navigate(CaregiverHome) {
-                        popUpTo(Login) { inclusive = true }
+                    if (isPreparingAccount) return@RoleSectionScreen
+                    scope.launch {
+                        isPreparingAccount = true
+                        onboardingError = null
+                        try {
+                            prepareLocalAccount(
+                                database = database,
+                                sessionManager = sessionManager,
+                                userId = data.userId,
+                                username = data.username,
+                                email = data.email,
+                                role = UserRoleType.CAREGIVER
+                            )
+                            userRoleViewModel.setRole(UserRole.CAREGIVER)
+                            navController.navigate(CaregiverHome) {
+                                popUpTo(Login) { inclusive = true }
+                                launchSingleTop = true
+                            }
+                        } catch (e: Exception) {
+                            onboardingError = e.localizedMessage
+                                ?: "No se pudo preparar tu cuenta. Intenta de nuevo."
+                        } finally {
+                            isPreparingAccount = false
+                        }
                     }
-                }
+                },
+                isLoading = isPreparingAccount,
+                errorMessage = onboardingError
             )
         }
 
         composable<DogInfo> { backStackEntry ->
             val args = backStackEntry.toRoute<DogInfo>()
-            val editingDog = dogs.find { it.petId == args.petId }
             val ownerId = sessionManager.getUserId()
+            val editingDog = dogs.find { it.petId == args.petId }
 
-            DogInfoScreen(
-                editingDog = editingDog,
-                onFinish = { name, breed, size ->
-                    val isNewDog = args.petId == -1
-                    val petId = if (isNewDog) {
-                        (System.currentTimeMillis() % Int.MAX_VALUE).toInt()
-                    } else {
-                        args.petId
-                    }
-                    val pet = PetEntity(
-                        petId = petId,
-                        ownerId = ownerId,
-                        name = name,
-                        breed = breed,
-                        size = size,
-                        species = "Dog"
-                    )
-                    if (isNewDog) {
-                        dogViewModel.addDog(pet)
-                    } else {
-                        dogViewModel.updateDog(pet)
-                    }
-                    navController.navigate(OwnerHome) {
-                        popUpTo(navController.graph.id) { inclusive = false }
+            LaunchedEffect(ownerId) {
+                if (ownerId <= 0) {
+                    navController.navigate(Register) {
+                        popUpTo(Login) { inclusive = false }
                         launchSingleTop = true
                     }
                 }
-            )
+            }
+
+            if (ownerId > 0) {
+                DogInfoScreen(
+                    editingDog = editingDog,
+                    onFinish = { name, breed, size ->
+                        val petId = if (args.petId == -1) {
+                            generatePetId(dogs)
+                        } else {
+                            args.petId
+                        }
+                        val pet = PetEntity(
+                            petId = petId,
+                            ownerId = ownerId,
+                            name = name,
+                            breed = breed,
+                            size = size,
+                            species = "Dog"
+                        )
+                        if (args.petId == -1) {
+                            dogViewModel.addDog(pet)
+                        } else {
+                            dogViewModel.updateDog(pet)
+                        }
+                        navController.navigate(OwnerHome) {
+                            launchSingleTop = true
+                            popUpTo(DogInfo(args.petId)) { inclusive = true }
+                        }
+                    }
+                )
+            }
         }
 
         composable<OwnerHome> {
@@ -333,32 +423,29 @@ fun AppNavigation(
             )
         }
 
+
+
         composable<OwnerProfile> {
             val ownerId = sessionManager.getUserId()
-            var loggedUser by remember { mutableStateOf<User?>(null) }
 
-            LaunchedEffect(ownerId) {
-                if (ownerId != -1) {
-                    val userEntity = database.userDao().getUserById(ownerId)
-                    loggedUser = userEntity?.let {
-                        User(
-                            username = it.fullName,
-                            email = it.email,
-                            role = it.role.name
-                        )
-                    }
+            val profileViewModel: OwnerProfileViewModel = viewModel(
+                factory = viewModelFactory {
+                    initializer { OwnerProfileViewModel(database.userDao(), database.petDao(), ownerId) }
                 }
-            }
+            )
 
-            val completedServices = recentOwnerRequests.filter {
-                it.status.name == "COMPLETED"
-            }
+            val user by profileViewModel.user.collectAsStateWithLifecycle()
+            val dogs by profileViewModel.dogs.collectAsStateWithLifecycle()
+
+            val completedServices = recentOwnerRequests.filter { it.status.name == "COMPLETED" }
 
             OwnerProfileScreen(
-                onLogout = { sessionLogout(navController, userRoleViewModel) },
-                user = loggedUser,
+                user = user,
                 dogs = dogs,
-                historyServices = completedServices
+                historyServices = completedServices,
+                onLogout = { sessionLogout(navController, userRoleViewModel) },
+                onEditProfile = { /* Implementar más adelante */ },
+                onAddPet = { navController.navigate(DogInfo()) }
             )
         }
 
@@ -388,4 +475,60 @@ fun AppNavigation(
             )
         }
     }
+}
+
+private fun generatePetId(existingPets: List<PetEntity>): Int {
+    var candidate = (System.currentTimeMillis() % Int.MAX_VALUE).toInt()
+    if (candidate <= 0) candidate = 1
+
+    val usedIds = existingPets.map { it.petId }.toHashSet()
+    while (candidate in usedIds) {
+        candidate = if (candidate == Int.MAX_VALUE) 1 else candidate + 1
+    }
+
+    return candidate
+}
+
+private suspend fun prepareLocalAccount(
+    database: PetCareDatabase,
+    sessionManager: SessionManager,
+    userId: Int,
+    username: String,
+    email: String,
+    role: UserRoleType
+) {
+    require(userId > 0) { "La API devolvió un ID de usuario inválido." }
+    require(email.isNotBlank()) { "La API devolvió un correo inválido." }
+
+    database.userDao().insertUser(
+        UserEntity(
+            userId = userId,
+            fullName = username.ifBlank { email.substringBefore("@") },
+            email = email,
+            password = null,
+            role = role
+        )
+    )
+
+    when (role) {
+        UserRoleType.OWNER -> database.ownerDao().insertOwner(
+            OwnerEntity(
+                ownerId = userId,
+                userId = userId
+            )
+        )
+
+        UserRoleType.CAREGIVER -> database.caregiverDao().insertCaregiver(
+            CaregiverEntity(
+                caregiverId = userId,
+                userId = userId
+            )
+        )
+    }
+
+    sessionManager.saveSession(
+        userId = userId,
+        email = email,
+        role = role
+    )
 }

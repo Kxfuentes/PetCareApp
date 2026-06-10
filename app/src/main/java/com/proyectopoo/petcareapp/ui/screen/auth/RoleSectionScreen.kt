@@ -5,7 +5,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Favorite
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Pets
@@ -17,8 +16,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.proyectopoo.petcareapp.data.network.RegisterRequest
-import com.proyectopoo.petcareapp.ui.theme.TextoSuave
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -26,7 +23,6 @@ fun RoleSectionScreen(
     userId: Int,
     username: String,
     email: String,
-    password: String,
     onOwnerSelected: () -> Unit,
     onCaregiverSelected: () -> Unit,
     isLoading: Boolean = false,

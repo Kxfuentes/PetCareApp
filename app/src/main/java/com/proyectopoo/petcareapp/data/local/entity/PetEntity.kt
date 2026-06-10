@@ -23,7 +23,7 @@ import androidx.room.PrimaryKey
 data class PetEntity(
 
     @PrimaryKey
-    val petId: Int,
+    val petId: Int = 0,
 
     val ownerId: Int,
 

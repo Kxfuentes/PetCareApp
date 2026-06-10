@@ -25,14 +25,9 @@ fun DogInfoScreen(
     var breed by remember(editingDog?.petId) { mutableStateOf(editingDog?.breed.orEmpty()) }
     var selectedSize by remember(editingDog?.petId) { mutableStateOf(editingDog?.size.orEmpty()) }
 
-    val sizes = listOf(
-        "XS (1-5 kg)", "S (5-10 kg)", "M (10-20 kg)",
-        "L (20-40 kg)", "XL (>40 kg)"
-    )
+    val sizes = listOf("XS (1-5 kg)", "S (5-10 kg)", "M (10-20 kg)", "L (20-40 kg)", "XL (>40 kg)")
 
-    Scaffold(
-        containerColor = MaterialTheme.colorScheme.background
-    ) { paddingValues ->
+    Scaffold(containerColor = MaterialTheme.colorScheme.background) { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -52,17 +47,9 @@ fun DogInfoScreen(
                 value = dogName,
                 onValueChange = { dogName = it },
                 label = { Text("Nombre del perro") },
-                leadingIcon = {
-                    Icon(Icons.Outlined.Pets, null, tint = MaterialTheme.colorScheme.primary)
-                },
+                leadingIcon = { Icon(Icons.Outlined.Pets, null, tint = MaterialTheme.colorScheme.primary) },
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.outline
-                )
+                shape = RoundedCornerShape(16.dp)
             )
 
             Spacer(modifier = Modifier.height(18.dp))
@@ -72,31 +59,17 @@ fun DogInfoScreen(
                 onValueChange = { breed = it },
                 label = { Text("Raza") },
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.outline
-                )
+                shape = RoundedCornerShape(16.dp)
             )
 
             Spacer(modifier = Modifier.height(26.dp))
 
-            Text(
-                text = "Tamaño",
-                style = MaterialTheme.typography.titleMedium
-            )
-
+            Text("Tamaño", style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(18.dp))
 
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 sizes.forEach { size ->
                     val isSelected = selectedSize == size
-
                     Surface(
                         modifier = Modifier.border(
                             width = 2.dp,
@@ -110,8 +83,7 @@ fun DogInfoScreen(
                         Text(
                             text = size,
                             modifier = Modifier.padding(horizontal = 18.dp, vertical = 12.dp),
-                            color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
-                            style = MaterialTheme.typography.bodyMedium
+                            color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
@@ -121,23 +93,16 @@ fun DogInfoScreen(
 
             Button(
                 onClick = {
-
                     if (dogName.isBlank() || breed.isBlank() || selectedSize.isBlank()) {
                         Toast.makeText(context, "Completa todos los campos", Toast.LENGTH_SHORT).show()
                         return@Button
                     }
-
                     onFinish(dogName, breed, selectedSize)
                 },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(58.dp),
+                modifier = Modifier.fillMaxWidth().height(58.dp),
                 shape = RoundedCornerShape(18.dp)
             ) {
-                Text(
-                    text = if (editingDog == null) "Continuar" else "Guardar cambios",
-                    style = MaterialTheme.typography.labelLarge
-                )
+                Text(if (editingDog == null) "Guardar Mascota" else "Guardar cambios")
             }
         }
     }
