@@ -40,7 +40,7 @@ fun OwnerHomeScreen(
     val scrollState = rememberScrollState()
     var selectedDogIndex by remember { mutableStateOf(0) }
     var petToDelete by remember { mutableStateOf<PetEntity?>(null) }
-    var showWelcome by remember { mutableStateOf(true) }
+    var showHeader by remember { mutableStateOf(true) } // ← Cambiado de showWelcome correctamente
 
     val safeIndex = if (dogs.isEmpty()) 0 else selectedDogIndex.coerceIn(0, dogs.lastIndex)
     val currentDog = dogs.getOrNull(safeIndex)
@@ -74,7 +74,8 @@ fun OwnerHomeScreen(
                 .verticalScroll(scrollState)
         ) {
 
-            if (showWelcome) {
+            // Header Sección (dismissible)
+            if (showHeader) {
                 Surface(
                     color = MaterialTheme.colorScheme.primary,
                     shape = RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp),
@@ -86,17 +87,17 @@ fun OwnerHomeScreen(
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                "Bienvenido",
+                                text = "Sección de dueño", // ← Cambiado texto principal
                                 style = MaterialTheme.typography.headlineSmall,
                                 color = MaterialTheme.colorScheme.onPrimary
                             )
                             Text(
-                                "¿Qué necesita tu mascota hoy?",
+                                text = "¿Qué necesita tu mascota hoy?",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f)
                             )
                         }
-                        IconButton(onClick = { showWelcome = false }) {
+                        IconButton(onClick = { showHeader = false }) {
                             Icon(
                                 Icons.Default.Close,
                                 contentDescription = "Cerrar",
@@ -112,7 +113,7 @@ fun OwnerHomeScreen(
                 verticalArrangement = Arrangement.spacedBy(18.dp)
             ) {
 
-
+                // Tarjeta de Información de Mascota Activa
                 Card(
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                     shape = RoundedCornerShape(20.dp),
@@ -211,7 +212,6 @@ fun OwnerHomeScreen(
                     )
                 }
 
-
                 Text(
                     "Últimos servicios solicitados",
                     style = MaterialTheme.typography.titleLarge,
@@ -293,13 +293,13 @@ fun OwnerHomeScreen(
                                         StatusChip(status = request.status)
                                     }
 
-                                    Divider(
+                                    HorizontalDivider(
                                         color = MaterialTheme.colorScheme.outlineVariant,
                                         modifier = Modifier.padding(vertical = 4.dp)
                                     )
 
                                     Text(
-                                        " ${request.requestedDate ?: "Sin fecha"}",
+                                        text = " ${request.requestedDate ?: "Sin fecha"}",
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
@@ -379,7 +379,7 @@ fun OwnerHomeScreen(
                                         StatusChip(status = application.applicationStatus)
                                     }
 
-                                    Divider(
+                                    HorizontalDivider(
                                         color = MaterialTheme.colorScheme.outlineVariant,
                                         modifier = Modifier.padding(vertical = 4.dp)
                                     )
@@ -411,7 +411,6 @@ fun OwnerHomeScreen(
                         }
                     }
                 }
-
 
                 Text(
                     "Servicios disponibles",
@@ -467,7 +466,6 @@ fun OwnerHomeScreen(
                     }
                 }
 
-
                 Card(
                     colors = CardDefaults.cardColors(
                         containerColor = MaterialTheme.colorScheme.primary
@@ -506,7 +504,6 @@ fun OwnerHomeScreen(
         }
     }
 }
-
 
 @Composable
 private fun StatusChip(status: Enum<*>) {

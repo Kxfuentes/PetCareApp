@@ -28,10 +28,14 @@ fun CaregiverHomeScreen(
     caregiverId: Int
 ) {
     var available by remember { mutableStateOf(true) }
+    var showHeader by remember { mutableStateOf(true) } // ← Estado del Header agregado
+
     val scrollState = rememberScrollState()
+
     val nextCommitment = ownerRequests
         .filter { it.applicationStatus == ApplicationStatus.ACCEPTED }
         .minByOrNull { it.requestedDate ?: "" }
+
     val pendingRequests = ownerRequests.filter {
         it.applicationStatus == ApplicationStatus.PENDING
     }
@@ -43,24 +47,38 @@ fun CaregiverHomeScreen(
             .verticalScroll(scrollState)
     ) {
 
-        // Header
-        Surface(
-            color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp)
-        ) {
-            Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 32.dp)) {
-                Text(
-                    text = "Panel de Cuidador",
-                    color = MaterialTheme.colorScheme.onPrimary,
-                    fontSize = 28.sp,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    text = "Gestiona tus servicios y solicitudes",
-                    color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f),
-                    fontSize = 16.sp
-                )
+        // Header Sección (dismissible de manera condicional)
+        if (showHeader) {
+            Surface(
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp)
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 20.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Sección del Cuidador",
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            fontSize = 28.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "Gestiona tus servicios y solicitudes",
+                            color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f),
+                            fontSize = 16.sp
+                        )
+                    }
+                    IconButton(onClick = { showHeader = false }) {
+                        Icon(
+                            Icons.Default.Close,
+                            contentDescription = "Cerrar",
+                            tint = MaterialTheme.colorScheme.onPrimary
+                        )
+                    }
+                }
             }
         }
 
@@ -69,7 +87,7 @@ fun CaregiverHomeScreen(
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
 
-
+            // Tarjeta de Estado Actual
             Card(
                 colors = CardDefaults.cardColors(
                     containerColor = MaterialTheme.colorScheme.surface
@@ -105,7 +123,6 @@ fun CaregiverHomeScreen(
                 }
             }
 
-
             Text(
                 text = "Próximo compromiso",
                 color = MaterialTheme.colorScheme.onBackground,
@@ -114,7 +131,6 @@ fun CaregiverHomeScreen(
             )
 
             CommitmentCard(commitment = nextCommitment)
-
 
             Text(
                 text = "Tu actividad",

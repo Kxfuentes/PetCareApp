@@ -9,16 +9,16 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccessTime
-import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.Pets
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.proyectopoo.petcareapp.data.local.entity.ServiceRequestStatus
 import com.proyectopoo.petcareapp.data.local.relation.ServiceRequestDetails
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -27,26 +27,60 @@ fun CaregiverFeedScreen(
     requests: List<ServiceRequestDetails>,
     onApplyToRequest: (Int) -> Unit
 ) {
-
     val colorScheme = MaterialTheme.colorScheme
 
     val tiposServicio = listOf(
-        "Todos",
-        "Alojamiento",
-        "Guardería",
-        "Paseo",
-        "Taxi",
-        "Peluquería",
-        "Visitante"
+        "Todos", "Alojamiento", "Guardería", "Paseo", "Taxi", "Peluquería", "Visitante"
     )
 
     var expanded by remember { mutableStateOf(false) }
     var selectedFilter by remember { mutableStateOf("Todos") }
 
+    // CORRECCIÓN: Se usa '.ifEmpty' para eliminar la advertencia amarilla del compilador
+    val solicitudesBase = remember(requests) {
+        requests.ifEmpty {
+            listOf(
+                ServiceRequestDetails(
+                    serviceRequestId = 101, ownerId = 1, petId = 1, serviceTypeId = 3,
+                    title = "Paseo vespertino para Max",
+                    description = "Max necesita un paseo de 45 minutos por la tarde. Es muy amigable con otros perros, pero se emociona un poco al ver gatos.",
+                    requestedDate = "Hoy · 4:30 PM",
+                    status = ServiceRequestStatus.PENDING,
+                    petName = "Max", petBreed = "Golden Retriever",
+                    petSize = "L (20-40 kg)", // Tamaño formateado
+                    serviceTypeName = "Paseo", ownerName = "Carlos Mendoza",
+                    ownerPhone = "+505 8888-1234", ownerEmail = "carlos.mendoza@email.com"
+                ),
+                ServiceRequestDetails(
+                    serviceRequestId = 102, ownerId = 2, petId = 2, serviceTypeId = 1,
+                    title = "Cuidado de fin de semana para Luna",
+                    description = "Busco un cuidador responsable para Luna. Necesita alojamiento desde el sábado en la mañana hasta el domingo por la tarde. Es muy tranquila.",
+                    requestedDate = "Sábado · 8:00 AM",
+                    status = ServiceRequestStatus.PENDING,
+                    petName = "Luna", petBreed = "Siberian Husky",
+                    petSize = "M (10-20 kg)", // Tamaño formateado
+                    serviceTypeName = "Alojamiento", ownerName = "Andrea Espinoza",
+                    ownerPhone = "+505 7777-5678", ownerEmail = "andrea.es@email.com"
+                ),
+                ServiceRequestDetails(
+                    serviceRequestId = 103, ownerId = 3, petId = 3, serviceTypeId = 5,
+                    title = "Baño y corte de pelo urgente",
+                    description = "Grooming completo para mi perrita consentida. Requiere corte de uñas, limpieza de oídos y un corte de pelo estilo cachorro.",
+                    requestedDate = "Mañana · 10:00 AM",
+                    status = ServiceRequestStatus.PENDING,
+                    petName = "Bella", petBreed = "Poodle",
+                    petSize = "S (5-10 kg)", // Tamaño formateado
+                    serviceTypeName = "Peluquería", ownerName = "Marcela Rostrán",
+                    ownerPhone = "+505 8444-9012", ownerEmail = "marce.rostran@email.com"
+                )
+            )
+        }
+    }
+
     val serviciosFiltrados = if (selectedFilter == "Todos") {
-        requests
+        solicitudesBase
     } else {
-        requests.filter {
+        solicitudesBase.filter {
             it.serviceTypeName == selectedFilter
         }
     }
@@ -56,19 +90,15 @@ fun CaregiverFeedScreen(
             .fillMaxSize()
             .background(colorScheme.background)
     ) {
-
         TopAppBar(
             title = {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-
                     Icon(
                         imageVector = Icons.Default.Search,
                         contentDescription = "Buscar",
                         tint = colorScheme.onPrimary
                     )
-
                     Spacer(modifier = Modifier.width(10.dp))
-
                     Text(
                         text = "Solicitudes disponibles",
                         color = colorScheme.onPrimary,
@@ -86,12 +116,10 @@ fun CaregiverFeedScreen(
                 .fillMaxSize()
                 .padding(20.dp)
         ) {
-
             ExposedDropdownMenuBox(
                 expanded = expanded,
                 onExpandedChange = { expanded = !expanded }
             ) {
-
                 OutlinedTextField(
                     value = selectedFilter,
                     onValueChange = {},
@@ -111,12 +139,12 @@ fun CaregiverFeedScreen(
 
                 ExposedDropdownMenu(
                     expanded = expanded,
-                    onDismissRequest = { expanded = false }
+                    onDismissRequest = { expanded = false },
+                    modifier = Modifier.background(Color.White)
                 ) {
-
                     tiposServicio.forEach { tipo ->
                         DropdownMenuItem(
-                            text = { Text(tipo) },
+                            text = { Text(tipo, color = Color.Black) },
                             onClick = {
                                 selectedFilter = tipo
                                 expanded = false
@@ -131,9 +159,7 @@ fun CaregiverFeedScreen(
             LazyColumn(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-
                 items(serviciosFiltrados) { servicio ->
-
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -147,21 +173,9 @@ fun CaregiverFeedScreen(
                             containerColor = colorScheme.surfaceVariant
                         )
                     ) {
-
-                        Column(
-                            modifier = Modifier.padding(18.dp)
-                        ) {
-
+                        Column(modifier = Modifier.padding(18.dp)) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-
-                                Icon(
-                                    imageVector = Icons.Default.Pets,
-                                    contentDescription = "Mascota",
-                                    tint = colorScheme.primary
-                                )
-
-                                Spacer(modifier = Modifier.width(10.dp))
-
+                                // CORRECCIÓN: Se eliminó el Icon de la patita para simplificar el diseño
                                 Text(
                                     text = listOfNotNull(
                                         servicio.petName,
@@ -186,9 +200,7 @@ fun CaregiverFeedScreen(
 
                             AssistChip(
                                 onClick = { },
-                                label = {
-                                    Text(servicio.serviceTypeName ?: "Servicio")
-                                },
+                                label = { Text(servicio.serviceTypeName ?: "Servicio") },
                                 colors = AssistChipDefaults.assistChipColors(
                                     containerColor = colorScheme.secondary,
                                     labelColor = colorScheme.onSecondary
@@ -197,36 +209,16 @@ fun CaregiverFeedScreen(
 
                             Spacer(modifier = Modifier.height(14.dp))
 
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-
-                                Icon(
-                                    imageVector = Icons.Default.LocationOn,
-                                    contentDescription = "Ubicación",
-                                    tint = colorScheme.primary,
-                                    modifier = Modifier.size(20.dp)
-                                )
-
-                                Spacer(modifier = Modifier.width(8.dp))
-
-                                Text(
-                                    text = "Servicio solicitado",
-                                    color = colorScheme.onSurface
-                                )
-                            }
-
-                            Spacer(modifier = Modifier.height(8.dp))
+                            // CORRECCIÓN: Se eliminó por completo la fila de "Servicio solicitado" junto a su ícono de ubicación
 
                             Row(verticalAlignment = Alignment.CenterVertically) {
-
                                 Icon(
                                     imageVector = Icons.Default.AccessTime,
                                     contentDescription = "Hora",
                                     tint = colorScheme.primary,
                                     modifier = Modifier.size(20.dp)
                                 )
-
                                 Spacer(modifier = Modifier.width(8.dp))
-
                                 Text(
                                     text = servicio.requestedDate ?: "Fecha por coordinar",
                                     color = colorScheme.onSurface
@@ -265,10 +257,7 @@ fun CaregiverFeedScreen(
                                     contentColor = colorScheme.primary
                                 )
                             ) {
-                                Text(
-                                    text = "Me interesa",
-                                    fontWeight = FontWeight.Bold
-                                )
+                                Text("Me interesa", fontWeight = FontWeight.Bold)
                             }
                         }
                     }
