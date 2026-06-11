@@ -1,133 +1,168 @@
 package com.proyectopoo.petcareapp.ui.screen.caregiver
 
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.proyectopoo.petcareapp.model.User
-import com.proyectopoo.petcareapp.ui.components.UserBasicInfoCard
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CaregiverProfileScreen(
+    user: User?,
     caregiverId: Int,
-    showLogout: Boolean = false,
+    isOwnProfile: Boolean,
+    completedServicesCount: Int,
+    rating: Double,
+    isLoading: Boolean,
     onBack: () -> Unit,
     onLogout: () -> Unit,
-    user: User? = null
+    onEditProfile: () -> Unit = {},
+    onManageAvailability: () -> Unit = {}
 ) {
-    val colorScheme = MaterialTheme.colorScheme
+    val scrollState = rememberScrollState()
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Perfil de Cuidador") },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = colorScheme.background
-                )
-            )
-        },
-        containerColor = colorScheme.background
-    ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .padding(24.dp)
+    if (isLoading) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator()
+        }
+        return
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(scrollState)
+            .padding(16.dp),
+        horizontalAlignment = Alignment.Start
+    ) {
+
+        // Tarjeta de Perfil (idéntica al Owner)
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
         ) {
-            Text(
-                text = if (showLogout) "Mi Perfil - Cuidador" else "Perfil del Cuidador",
-                style = MaterialTheme.typography.headlineMedium,
-                color = colorScheme.onBackground
-            )
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            UserBasicInfoCard(
-                name = user?.username ?: "Nombre del Cuidador",
-                email = user?.email ?: "correo@ejemplo.com",
-                role = "Cuidador Profesional"
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .border(1.dp, colorScheme.outline, RoundedCornerShape(16.dp)),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = colorScheme.surface)
+            Row(
+                modifier = Modifier.padding(20.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Column(Modifier.padding(16.dp)) {
-                    Text("Calificación: ★★★★☆ (4.8)", color = colorScheme.onSurface)
-                    Text("Servicios completados: 47", color = colorScheme.onSurface)
-                    Text("Disponibilidad: Disponible ahora", color = colorScheme.primary)
-                    Text("Ubicación: Managua, Nicaragua", color = colorScheme.onSurfaceVariant)
-                }
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            Text(
-                text = "Historial de Trabajos Realizados",
-                style = MaterialTheme.typography.titleMedium,
-                color = colorScheme.onBackground
-            )
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .border(1.dp, colorScheme.outline, RoundedCornerShape(16.dp)),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = colorScheme.surfaceVariant)
-            ) {
-                Column(Modifier.padding(16.dp)) {
-                    Text("• Cuidado de Luna (3 días) - $450", color = colorScheme.onSurface)
-                    Text("• Paseos semanales de Max - $320", color = colorScheme.onSurface)
-                    Text("• Hospedaje de Rocky - $600", color = colorScheme.onSurface)
-                }
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            Button(
-                onClick = { /* Acción de gestión de disponibilidad */ },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = colorScheme.primary,
-                    contentColor = colorScheme.onPrimary
-                )
-            ) {
-                Text("Gestionar Disponibilidad y Precios", fontWeight = FontWeight.Bold)
-            }
-
-            if (showLogout) {
-                Spacer(modifier = Modifier.height(12.dp))
-                OutlinedButton(
-                    onClick = onLogout,
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
-                    border = BorderStroke(1.dp, colorScheme.error),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = colorScheme.error)
+                Box(
+                    modifier = Modifier
+                        .size(72.dp)
+                        .clip(CircleShape),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Text("Cerrar Sesión", fontWeight = FontWeight.Bold)
+                    Icon(Icons.Default.Person, contentDescription = null, modifier = Modifier.size(60.dp), tint = MaterialTheme.colorScheme.primary)
                 }
+
+                Spacer(Modifier.width(16.dp))
+
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        text = user?.username ?: "Cuidador",
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        text = user?.email ?: "correo@ejemplo.com",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Verified, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(6.dp))
+                        Text("Cuidador Profesional", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
+
+                if (isOwnProfile) {
+                    IconButton(onClick = onEditProfile) {
+                        Icon(Icons.Default.Edit, "Editar", tint = MaterialTheme.colorScheme.primary)
+                    }
+                }
+            }
+        }
+
+        Spacer(Modifier.height(24.dp))
+
+        // Rendimiento
+        Row(
+            Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Default.Star, null, tint = MaterialTheme.colorScheme.primary)
+                Spacer(Modifier.width(8.dp))
+                Text("Mi Rendimiento", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+            }
+            if (isOwnProfile) {
+                Button(onClick = onManageAvailability, shape = RoundedCornerShape(20.dp)) {
+                    Icon(Icons.Default.Edit, null, Modifier.size(18.dp))
+                    Spacer(Modifier.width(4.dp))
+                    Text("Disponibilidad")
+                }
+            }
+        }
+
+        Spacer(Modifier.height(12.dp))
+
+        Card(
+            Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(20.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+        ) {
+            Column(Modifier.padding(16.dp)) {
+                Text(
+                    text = "Calificación: ${"%.1f".format(rating)} ★",
+                    style = MaterialTheme.typography.titleMedium
+                )
+                Text(
+                    text = "Servicios completados: $completedServicesCount",
+                    style = MaterialTheme.typography.bodyLarge
+                )
+            }
+        }
+
+        Spacer(Modifier.weight(1f))
+
+        if (isOwnProfile) {
+            Button(
+                onClick = onEditProfile,
+                Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Icon(Icons.Default.Edit, null)
+                Spacer(Modifier.width(8.dp))
+                Text("Editar Perfil")
+            }
+
+            Spacer(Modifier.height(12.dp))
+
+            OutlinedButton(
+                onClick = onLogout,
+                Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
+            ) {
+                Icon(Icons.Default.Logout, null)
+                Spacer(Modifier.width(8.dp))
+                Text("Cerrar Sesión")
             }
         }
     }

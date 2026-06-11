@@ -43,7 +43,6 @@ fun OwnerProfileScreen(
         horizontalAlignment = Alignment.Start
     ) {
 
-        // TARJETA DE PERFIL (como en la imagen)
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(24.dp),

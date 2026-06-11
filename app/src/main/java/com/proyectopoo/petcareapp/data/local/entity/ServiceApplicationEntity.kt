@@ -40,5 +40,7 @@ data class ServiceApplicationEntity(
 enum class ApplicationStatus {
     PENDING,
     ACCEPTED,
-    REJECTED
+    REJECTED,
+
+    COMPLETED
 }

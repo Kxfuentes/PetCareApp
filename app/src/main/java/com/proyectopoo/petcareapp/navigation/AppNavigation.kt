@@ -1,6 +1,10 @@
 package com.proyectopoo.petcareapp.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -9,10 +13,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.lifecycle.viewmodel.initializer
-import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -44,6 +44,7 @@ import com.proyectopoo.petcareapp.ui.screen.owner.DogInfoScreen
 import com.proyectopoo.petcareapp.ui.screen.owner.OwnerFeedScreen
 import com.proyectopoo.petcareapp.ui.screen.owner.OwnerHomeScreen
 import com.proyectopoo.petcareapp.ui.screen.owner.OwnerProfileScreen
+import com.proyectopoo.petcareapp.viewmodel.CaregiverProfileViewModel
 import com.proyectopoo.petcareapp.viewmodel.DogViewModel
 import com.proyectopoo.petcareapp.viewmodel.LoginViewModel
 import com.proyectopoo.petcareapp.viewmodel.OwnerProfileViewModel
@@ -92,6 +93,7 @@ fun AppNavigation(
     val caregiverApplicationDetails by serviceRequestViewModel.caregiverApplicationDetails.collectAsStateWithLifecycle()
     val availableRequests by serviceRequestViewModel.availableRequests.collectAsStateWithLifecycle()
     val currentUserId = sessionManager.getUserId()
+
 
     LaunchedEffect(currentUserId) {
         if (currentUserId > 0) {
@@ -444,23 +446,48 @@ fun AppNavigation(
                 dogs = dogs,
                 historyServices = completedServices,
                 onLogout = { sessionLogout(navController, userRoleViewModel) },
-                onEditProfile = { /* Implementar más adelante */ },
+                onEditProfile = { /* Falta que se implemente */ },
                 onAddPet = { navController.navigate(DogInfo()) }
             )
         }
 
-        composable<CaregiverProfile> {
-            val args = it.toRoute<CaregiverProfile>()
-            val isOwnProfile = args.caregiverId == -1
+        composable<CaregiverProfile> { backStackEntry ->
+            val args = backStackEntry.toRoute<CaregiverProfile>()
+            val requestedCaregiverId = args.caregiverId
+            val loggedUserId = sessionManager.getUserId()
+
+            val isOwnProfile = requestedCaregiverId == -1 || requestedCaregiverId == loggedUserId
+            val targetCaregiverId = if (isOwnProfile) loggedUserId else requestedCaregiverId
+
+            val caregiverProfileViewModel: CaregiverProfileViewModel = viewModel(
+                key = "caregiver_profile_$targetCaregiverId",
+                factory = viewModelFactory {
+                    initializer {
+                        CaregiverProfileViewModel(database, targetCaregiverId)
+                    }
+                }
+            )
+
+            val user by caregiverProfileViewModel.user.collectAsStateWithLifecycle()
+            val completedServicesCount by caregiverProfileViewModel.completedServicesCount.collectAsStateWithLifecycle()
+            val rating by caregiverProfileViewModel.rating.collectAsStateWithLifecycle()
+            val isLoading by caregiverProfileViewModel.isLoading.collectAsStateWithLifecycle()
+
             CaregiverProfileScreen(
-                caregiverId = args.caregiverId,
-                showLogout = isOwnProfile,
+                user = user,
+                caregiverId = targetCaregiverId,
+                isOwnProfile = isOwnProfile,
+                completedServicesCount = completedServicesCount,
+                rating = rating,
+                isLoading = isLoading,
                 onBack = { navController.popBackStack() },
                 onLogout = {
                     if (isOwnProfile) {
                         sessionLogout(navController, userRoleViewModel)
                     }
-                }
+                },
+                onEditProfile = { /* Falta implementar esto*/ },
+                onManageAvailability = { /* y esto */ }
             )
         }
 

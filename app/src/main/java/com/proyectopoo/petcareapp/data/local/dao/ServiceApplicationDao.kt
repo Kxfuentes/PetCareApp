@@ -5,6 +5,7 @@ import com.proyectopoo.petcareapp.data.local.entity.ApplicationStatus
 import com.proyectopoo.petcareapp.data.local.entity.ServiceApplicationEntity
 import com.proyectopoo.petcareapp.data.local.relation.ServiceApplicationDetails
 
+
 @Dao
 interface ServiceApplicationDao {
 
@@ -34,6 +35,9 @@ interface ServiceApplicationDao {
         serviceRequestId: Int,
         caregiverId: Int
     ): ServiceApplicationEntity?
+
+    @Query("SELECT COUNT(*) FROM service_applications WHERE caregiverId = :caregiverId AND status = :status")
+    suspend fun countByCaregiverAndStatus(caregiverId: Int, status: ApplicationStatus): Int
 
     @Query(
         """
