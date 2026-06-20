@@ -86,15 +86,10 @@ fun CaregiverProfileScreen(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Default.Verified, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(6.dp))
-                        Text("Cuidador Profesional", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("Cuidador", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
 
-                if (isOwnProfile) {
-                    IconButton(onClick = onEditProfile) {
-                        Icon(Icons.Default.Edit, "Editar", tint = MaterialTheme.colorScheme.primary)
-                    }
-                }
             }
         }
 
@@ -111,13 +106,7 @@ fun CaregiverProfileScreen(
                 Spacer(Modifier.width(8.dp))
                 Text("Mi Rendimiento", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
             }
-            if (isOwnProfile) {
-                Button(onClick = onManageAvailability, shape = RoundedCornerShape(20.dp)) {
-                    Icon(Icons.Default.Edit, null, Modifier.size(18.dp))
-                    Spacer(Modifier.width(4.dp))
-                    Text("Disponibilidad")
-                }
-            }
+
         }
 
         Spacer(Modifier.height(12.dp))

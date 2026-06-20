@@ -328,7 +328,12 @@ fun AppNavigation(
                 },
                 onAddDog = { navController.navigate(DogInfo()) },
                 onGoToFeed = { navController.navigate(OwnerFeed) },
-                onGoToOwnerProfile = { navController.navigate(OwnerProfile) },
+                // CORRECCIÓN: Para ver el propio perfil, le enviamos su id asignado
+                onGoToOwnerProfile = { navController.navigate(
+                    com.proyectopoo.petcareapp.navigation.OwnerProfile(
+                        ownerId = ownerId
+                    )
+                ) },
                 onAcceptApplication = { applicationId ->
                     serviceRequestViewModel.acceptApplication(applicationId, ownerId)
                 },
@@ -404,6 +409,7 @@ fun AppNavigation(
             )
         }
 
+        // CORRECCIÓN SOLICITADA: Adaptación de argumentos para redirigir al perfil del dueño
         composable<CaregiverFeed> {
             val caregiverId = sessionManager.getUserId()
             LaunchedEffect(caregiverId) {
@@ -412,9 +418,8 @@ fun AppNavigation(
             }
             CaregiverFeedScreen(
                 requests = availableRequests,
-                onApplyToRequest = { requestId ->
-                    serviceRequestViewModel.applyToRequest(requestId, caregiverId)
-                    navController.navigate(CaregiverHome) { launchSingleTop = true }
+                onGoToOwnerProfile = { ownerId ->
+                    navController.navigate(OwnerProfile(ownerId = ownerId))
                 }
             )
         }
@@ -425,14 +430,18 @@ fun AppNavigation(
             )
         }
 
+        // CORRECCIÓN: Adaptado para soportar tanto ver tu propio perfil como el de otros dueños
+        composable<OwnerProfile> { backStackEntry ->
+            val args = backStackEntry.toRoute<OwnerProfile>()
+            val loggedUserId = sessionManager.getUserId()
 
-
-        composable<OwnerProfile> {
-            val ownerId = sessionManager.getUserId()
+            val isOwnProfile = args.ownerId == -1 || args.ownerId == loggedUserId
+            val targetOwnerId = if (isOwnProfile) loggedUserId else args.ownerId
 
             val profileViewModel: OwnerProfileViewModel = viewModel(
+                key = "owner_profile_$targetOwnerId",
                 factory = viewModelFactory {
-                    initializer { OwnerProfileViewModel(database.userDao(), database.petDao(), ownerId) }
+                    initializer { OwnerProfileViewModel(database.userDao(), database.petDao(), targetOwnerId) }
                 }
             )
 
@@ -445,7 +454,11 @@ fun AppNavigation(
                 user = user,
                 dogs = dogs,
                 historyServices = completedServices,
-                onLogout = { sessionLogout(navController, userRoleViewModel) },
+                onLogout = {
+                    if (isOwnProfile) {
+                        sessionLogout(navController, userRoleViewModel)
+                    }
+                },
                 onEditProfile = { /* Falta que se implemente */ },
                 onAddPet = { navController.navigate(DogInfo()) }
             )

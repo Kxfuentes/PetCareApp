@@ -37,7 +37,7 @@ data class CreateService(
 )
 
 @Serializable
-object OwnerProfile
+data class OwnerProfile(val ownerId: Int = -1)
 
 @Serializable
 data class CaregiverProfile(

@@ -58,12 +58,12 @@ fun RoleSectionScreen(
                 textAlign = TextAlign.Center
             )
 
-            Spacer(modifier = Modifier.height(40.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
 
             RoleCard(
                 title = "Soy dueño de perritos",
-                description = "Busco de personas que me ayuden a birndarle el mejor cuidado a mi mascota",
+                description = "Busco de personas que me ayuden a brindarle el mejor cuidado a mi mascota",
                 icon = Icons.Outlined.Pets,
                 isSelected = selectedRole == "OWNER",
                 onClick = { selectedRole = "OWNER" }
@@ -101,7 +101,7 @@ fun RoleSectionScreen(
                     )
                     Spacer(modifier = Modifier.width(12.dp))
                     Text(
-                        text = "Esta elección es permanente y define tu rol principal en la plataforma.",
+                        text = "Esta elección es permanente y define tu rol en la plataforma.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onBackground
                     )
