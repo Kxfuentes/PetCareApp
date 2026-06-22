@@ -77,9 +77,7 @@ fun OwnerProfileScreen(
                     }
                 }
 
-                IconButton(onClick = onEditProfile) {
-                    Icon(Icons.Default.Edit, contentDescription = "Editar", tint = MaterialTheme.colorScheme.primary)
-                }
+
             }
         }
 
@@ -92,11 +90,7 @@ fun OwnerProfileScreen(
                 Spacer(Modifier.width(8.dp))
                 Text("Mis Mascotas", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
             }
-            Button(onClick = onAddPet, shape = RoundedCornerShape(20.dp), contentPadding = PaddingValues(12.dp, 8.dp)) {
-                Icon(Icons.Default.Add, null, Modifier.size(18.dp))
-                Spacer(Modifier.width(4.dp))
-                Text("Agregar mascota")
-            }
+
         }
 
         Spacer(Modifier.height(12.dp))

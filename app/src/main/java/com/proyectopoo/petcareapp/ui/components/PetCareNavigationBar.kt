@@ -31,9 +31,7 @@ fun PetCareNavigationBar(
     NavigationBar(containerColor = CafeOscuro) {
 
         NavigationBarItem(
-            selected = currentDestination?.hierarchy?.any {
-                it.hasRoute(getHomeRoute(currentRole)::class)
-            } == true,
+            selected = currentDestination.isHomeRoute(currentRole),
             onClick = { navigateToTopLevel(navController, getHomeRoute(currentRole)) },
             icon = { Icon(Icons.Default.Home, contentDescription = "Inicio") },
             label = { Text("Inicio") },
@@ -41,9 +39,7 @@ fun PetCareNavigationBar(
         )
 
         NavigationBarItem(
-            selected = currentDestination?.hierarchy?.any {
-                it.hasRoute(getFeedRoute(currentRole)::class)
-            } == true,
+            selected = currentDestination.isFeedRoute(currentRole),
             onClick = { navigateToTopLevel(navController, getFeedRoute(currentRole)) },
             icon = { Icon(Icons.Default.Search, contentDescription = "Buscar") },
             label = { Text("Buscar") },
@@ -61,9 +57,7 @@ fun PetCareNavigationBar(
         }
 
         NavigationBarItem(
-            selected = currentDestination?.hierarchy?.any {
-                it.hasRoute(getProfileRoute(currentRole)::class)
-            } == true,
+            selected = currentDestination.isProfileRoute(currentRole),
             onClick = { navigateToTopLevel(navController, getProfileRoute(currentRole)) },
             icon = { Icon(Icons.Default.Person, contentDescription = "Perfil") },
             label = { Text("Perfil") },
@@ -84,8 +78,35 @@ private fun getFeedRoute(role: UserRole): Any = when (role) {
 }
 
 private fun getProfileRoute(role: UserRole): Any = when (role) {
-    UserRole.OWNER -> OwnerProfile
+    UserRole.OWNER -> OwnerProfile()
     UserRole.CAREGIVER -> CaregiverProfile()
+}
+
+private fun androidx.navigation.NavDestination?.isHomeRoute(role: UserRole): Boolean {
+    return this?.hierarchy?.any {
+        when (role) {
+            UserRole.OWNER -> it.hasRoute<OwnerHome>()
+            UserRole.CAREGIVER -> it.hasRoute<CaregiverHome>()
+        }
+    } == true
+}
+
+private fun androidx.navigation.NavDestination?.isFeedRoute(role: UserRole): Boolean {
+    return this?.hierarchy?.any {
+        when (role) {
+            UserRole.OWNER -> it.hasRoute<OwnerFeed>()
+            UserRole.CAREGIVER -> it.hasRoute<CaregiverFeed>()
+        }
+    } == true
+}
+
+private fun androidx.navigation.NavDestination?.isProfileRoute(role: UserRole): Boolean {
+    return this?.hierarchy?.any {
+        when (role) {
+            UserRole.OWNER -> it.hasRoute<OwnerProfile>()
+            UserRole.CAREGIVER -> it.hasRoute<CaregiverProfile>()
+        }
+    } == true
 }
 
 private fun navigateToTopLevel(navController: NavHostController, route: Any) {

@@ -1,5 +1,3 @@
-// app/src/main/java/com/proyectopoo/petcareapp/viewmodel/CaregiverProfileViewModel.kt
-
 package com.proyectopoo.petcareapp.viewmodel
 
 import androidx.lifecycle.ViewModel
@@ -46,7 +44,8 @@ class CaregiverProfileViewModel(
                     User(
                         username = it.fullName,
                         email = it.email,
-                        role = it.role.name
+                        role = it.role.name,
+                        id = it.userId
                     )
                 }
 

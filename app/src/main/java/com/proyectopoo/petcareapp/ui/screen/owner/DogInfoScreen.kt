@@ -21,9 +21,12 @@ fun DogInfoScreen(
 ) {
     val context = LocalContext.current
 
-    var dogName by remember(editingDog?.petId) { mutableStateOf(editingDog?.name.orEmpty()) }
-    var breed by remember(editingDog?.petId) { mutableStateOf(editingDog?.breed.orEmpty()) }
-    var selectedSize by remember(editingDog?.petId) { mutableStateOf(editingDog?.size.orEmpty()) }
+    // Clave segura para reiniciar el estado al cambiar de mascota
+    val key = editingDog?.petId ?: -1
+
+    var dogName by remember(key) { mutableStateOf(editingDog?.name.orEmpty()) }
+    var breed by remember(key) { mutableStateOf(editingDog?.breed.orEmpty()) }
+    var selectedSize by remember(key) { mutableStateOf(editingDog?.size.orEmpty()) }
 
     val sizes = listOf("XS (1-5 kg)", "S (5-10 kg)", "M (10-20 kg)", "L (20-40 kg)", "XL (>40 kg)")
 
@@ -67,7 +70,8 @@ fun DogInfoScreen(
             Text("Tamaño", style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(18.dp))
 
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 sizes.forEach { size ->
                     val isSelected = selectedSize == size
                     Surface(
@@ -75,14 +79,15 @@ fun DogInfoScreen(
                             width = 2.dp,
                             color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
                             shape = RoundedCornerShape(50.dp)
-                        ),
+                        )
+                        .padding(horizontal = 2.dp),
                         shape = RoundedCornerShape(50.dp),
                         color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
                         onClick = { selectedSize = size }
                     ) {
                         Text(
                             text = size,
-                            modifier = Modifier.padding(horizontal = 18.dp, vertical = 12.dp),
+                            modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp),
                             color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }

@@ -40,8 +40,9 @@ fun OwnerHomeScreen(
     val scrollState = rememberScrollState()
     var selectedDogIndex by remember { mutableStateOf(0) }
     var petToDelete by remember { mutableStateOf<PetEntity?>(null) }
-    var showHeader by remember { mutableStateOf(true) } // ← Cambiado de showWelcome correctamente
+    var showHeader by remember { mutableStateOf(true) }
 
+    // Índice seguro y mascota actual (ya se usaban correctamente)
     val safeIndex = if (dogs.isEmpty()) 0 else selectedDogIndex.coerceIn(0, dogs.lastIndex)
     val currentDog = dogs.getOrNull(safeIndex)
 
@@ -87,7 +88,7 @@ fun OwnerHomeScreen(
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = "Sección de dueño", // ← Cambiado texto principal
+                                text = "Sección de dueño",
                                 style = MaterialTheme.typography.headlineSmall,
                                 color = MaterialTheme.colorScheme.onPrimary
                             )
@@ -196,12 +197,16 @@ fun OwnerHomeScreen(
                         onDismissRequest = { petToDelete = null },
                         title = { Text("Eliminar mascota") },
                         text = { Text("¿Estás seguro de que deseas eliminar a ${petToDelete?.name}?") },
+                        containerColor = Color.White,
+                        titleContentColor = Color.Black,
+                        textContentColor = Color.Black,
                         confirmButton = {
                             Button(
                                 onClick = {
                                     petToDelete?.let(onDeletePet)
                                     petToDelete = null
-                                    selectedDogIndex = selectedDogIndex.coerceAtMost((dogs.size - 2).coerceAtLeast(0))
+                                    // Resetea el índice al primer perro (o 0 si la lista queda vacía)
+                                    selectedDogIndex = 0.coerceAtMost((dogs.size - 1).coerceAtLeast(0))
                                 },
                                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
                             ) { Text("Eliminar") }
