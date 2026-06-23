@@ -25,7 +25,8 @@ import com.proyectopoo.petcareapp.data.local.relation.ServiceRequestDetails
 @Composable
 fun CaregiverFeedScreen(
     requests: List<ServiceRequestDetails>,
-    onGoToOwnerProfile: (Int) -> Unit
+    onGoToOwnerProfile: (Int, Int) -> Unit,
+    onApplyToRequest: (Int) -> Unit
 ) {
     val colorScheme = MaterialTheme.colorScheme
 
@@ -35,6 +36,7 @@ fun CaregiverFeedScreen(
 
     var expanded by remember { mutableStateOf(false) }
     var selectedFilter by remember { mutableStateOf("Todos") }
+    val hasRealRequests = requests.isNotEmpty()
 
     val solicitudesBase = remember(requests) {
         requests.ifEmpty {
@@ -224,11 +226,6 @@ fun CaregiverFeedScreen(
 
                             Spacer(modifier = Modifier.height(14.dp))
 
-                            Text(
-                                text = "Contacto: ${servicio.ownerPhone ?: "No disponible"}",
-                                color = colorScheme.onSurface,
-                                fontWeight = FontWeight.Medium
-                            )
 
                             Text(
                                 text = "Email: ${servicio.ownerEmail ?: "No disponible"}",
@@ -238,8 +235,7 @@ fun CaregiverFeedScreen(
                             Spacer(modifier = Modifier.height(18.dp))
 
                             OutlinedButton(
-                                // CAMBIO: Pasa el ownerId al callback para abrir su pantalla de perfil
-                                onClick = { onGoToOwnerProfile(servicio.ownerId) },
+                                onClick = { onGoToOwnerProfile(servicio.ownerId, servicio.serviceRequestId) },
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(16.dp),
                                 border = BorderStroke(1.dp, colorScheme.outline),
@@ -248,6 +244,17 @@ fun CaregiverFeedScreen(
                                 )
                             ) {
                                 Text("Ver perfil completo", fontWeight = FontWeight.Bold)
+                            }
+
+                            Spacer(modifier = Modifier.height(10.dp))
+
+                            Button(
+                                onClick = { onApplyToRequest(servicio.serviceRequestId) },
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(16.dp),
+                                enabled = hasRealRequests
+                            ) {
+                                Text("Solicitar trabajo", fontWeight = FontWeight.Bold)
                             }
                         }
                     }

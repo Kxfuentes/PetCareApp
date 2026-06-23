@@ -7,16 +7,13 @@ import androidx.room.PrimaryKey
 
 @Entity(
     tableName = "offered_services",
-
     foreignKeys = [
-
         ForeignKey(
             entity = CaregiverEntity::class,
             parentColumns = ["caregiverId"],
             childColumns = ["caregiverId"],
             onDelete = ForeignKey.CASCADE
         ),
-
         ForeignKey(
             entity = ServiceTypeEntity::class,
             parentColumns = ["serviceTypeId"],
@@ -24,27 +21,22 @@ import androidx.room.PrimaryKey
             onDelete = ForeignKey.CASCADE
         )
     ],
-
     indices = [
         Index("caregiverId"),
         Index("serviceTypeId")
     ]
 )
-
 data class OfferedServiceEntity(
-
-    @PrimaryKey
-    val offeredServiceId: Int,
+    @PrimaryKey(autoGenerate = true)
+    val offeredServiceId: Int = 0,
 
     val caregiverId: Int,
-
     val serviceTypeId: Int,
 
     val title: String,
-
     val description: String? = null,
-
     val price: Double,
+    val isAvailable: Boolean = true,
 
-    val isAvailable: Boolean = true
+    val createdAt: Long = System.currentTimeMillis()
 )

@@ -7,23 +7,19 @@ import androidx.room.PrimaryKey
 
 @Entity(
     tableName = "service_requests",
-
     foreignKeys = [
-
         ForeignKey(
             entity = OwnerEntity::class,
             parentColumns = ["ownerId"],
             childColumns = ["ownerId"],
             onDelete = ForeignKey.CASCADE
         ),
-
         ForeignKey(
             entity = PetEntity::class,
             parentColumns = ["petId"],
             childColumns = ["petId"],
             onDelete = ForeignKey.CASCADE
         ),
-
         ForeignKey(
             entity = ServiceTypeEntity::class,
             parentColumns = ["serviceTypeId"],
@@ -31,30 +27,28 @@ import androidx.room.PrimaryKey
             onDelete = ForeignKey.CASCADE
         )
     ],
-
     indices = [
         Index("ownerId"),
         Index("petId"),
         Index("serviceTypeId")
     ]
 )
-
 data class ServiceRequestEntity(
-
     @PrimaryKey
     val serviceRequestId: Int,
 
     val ownerId: Int,
-
     val petId: Int,
-
     val serviceTypeId: Int,
 
     val title: String,
-
     val description: String? = null,
 
     val requestedDate: String? = null,
+
+    // === NUEVOS CAMPOS ===
+    val startTime: String? = null,
+    val endTime: String? = null,
 
     val status: ServiceRequestStatus = ServiceRequestStatus.PENDING
 )

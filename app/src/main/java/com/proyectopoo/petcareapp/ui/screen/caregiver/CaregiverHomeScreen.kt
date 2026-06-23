@@ -51,24 +51,23 @@ fun CaregiverHomeScreen(
         if (showHeader) {
             Surface(
                 color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp)
+                shape = RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp),
+                modifier = Modifier.fillMaxWidth()
             ) {
                 Row(
-                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 20.dp),
+                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 20.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "Sección del Cuidador",
-                            color = MaterialTheme.colorScheme.onPrimary,
-                            fontSize = 28.sp,
-                            fontWeight = FontWeight.Bold
+                            text = "Sección de cuidador",
+                            style = MaterialTheme.typography.headlineSmall,
+                            color = MaterialTheme.colorScheme.onPrimary
                         )
                         Text(
                             text = "Gestiona tus servicios y solicitudes",
-                            color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f),
-                            fontSize = 16.sp
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f)
                         )
                     }
                     IconButton(onClick = { showHeader = false }) {
