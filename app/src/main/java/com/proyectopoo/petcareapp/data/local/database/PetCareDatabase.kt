@@ -18,10 +18,11 @@ import com.proyectopoo.petcareapp.data.local.entity.*
         ServiceTypeEntity::class,
         ServiceRequestEntity::class,
         ServiceApplicationEntity::class,
+        OfferedServiceEntity::class,
         AvailabilityEntity::class,
         RatingEntity::class
     ],
-    version = 3,
+    version = 4,
     exportSchema = false
 )
 abstract class PetCareDatabase : RoomDatabase() {
@@ -33,6 +34,7 @@ abstract class PetCareDatabase : RoomDatabase() {
     abstract fun serviceTypeDao(): ServiceTypeDao
     abstract fun serviceRequestDao(): ServiceRequestDao
     abstract fun serviceApplicationDao(): ServiceApplicationDao
+    abstract fun offeredServiceDao(): OfferedServiceDao
     abstract fun availabilityDao(): AvailabilityDao
     abstract fun ratingDao(): RatingDao
 
@@ -68,6 +70,27 @@ abstract class PetCareDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL("""
+                    CREATE TABLE IF NOT EXISTS `offered_services` (
+                        `offeredServiceId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        `caregiverId` INTEGER NOT NULL,
+                        `serviceTypeId` INTEGER NOT NULL,
+                        `title` TEXT NOT NULL,
+                        `description` TEXT,
+                        `price` REAL NOT NULL,
+                        `isAvailable` INTEGER NOT NULL,
+                        `createdAt` INTEGER NOT NULL,
+                        FOREIGN KEY(`caregiverId`) REFERENCES `caregivers`(`caregiverId`) ON UPDATE NO ACTION ON DELETE CASCADE,
+                        FOREIGN KEY(`serviceTypeId`) REFERENCES `service_types`(`serviceTypeId`) ON UPDATE NO ACTION ON DELETE CASCADE
+                    )
+                """)
+                database.execSQL("CREATE INDEX IF NOT EXISTS `index_offered_services_caregiverId` ON `offered_services` (`caregiverId`)")
+                database.execSQL("CREATE INDEX IF NOT EXISTS `index_offered_services_serviceTypeId` ON `offered_services` (`serviceTypeId`)")
+            }
+        }
+
         fun getDatabase(context: Context): PetCareDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -75,7 +98,7 @@ abstract class PetCareDatabase : RoomDatabase() {
                     PetCareDatabase::class.java,
                     "petcare_database"
                 )
-                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
                     .build()
                 INSTANCE = instance
                 instance

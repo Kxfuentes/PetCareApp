@@ -90,7 +90,9 @@ class ServiceRequestViewModel(
         description: String,
         location: String,
         price: String,
-        requestedDate: String
+        requestedDate: String,
+        startTime: String,
+        endTime: String
     ) {
         viewModelScope.launch {
             ensureOwner(ownerId)
@@ -122,6 +124,7 @@ class ServiceRequestViewModel(
             }
 
             val requestId = (System.currentTimeMillis() % Int.MAX_VALUE).toInt()
+
             requestRepo.insert(
                 ServiceRequestEntity(
                     serviceRequestId = requestId,
@@ -134,7 +137,9 @@ class ServiceRequestViewModel(
                         if (location.isNotBlank()) append("\nUbicación: ${location.trim()}")
                         if (price.isNotBlank()) append("\nPrecio: C$${price.trim()}")
                     },
-                    requestedDate = requestedDate
+                    requestedDate = requestedDate,
+                    startTime = startTime.ifBlank { null },   // ← Nuevo
+                    endTime = endTime.ifBlank { null }        // ← Nuevo
                 )
             )
 

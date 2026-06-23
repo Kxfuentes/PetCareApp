@@ -24,16 +24,23 @@ class DogViewModel(
 
     fun addDog(dog: PetEntity) {
         viewModelScope.launch {
-            petRepository.insertPet(dog)
-            loadDogs(dog.ownerId)
+            saveDog(dog, isNewDog = true)
         }
     }
 
     fun updateDog(updated: PetEntity) {
         viewModelScope.launch {
-            petRepository.updatePet(updated)
-            loadDogs(updated.ownerId)
+            saveDog(updated, isNewDog = false)
         }
+    }
+
+    suspend fun saveDog(dog: PetEntity, isNewDog: Boolean) {
+        if (isNewDog) {
+            petRepository.insertPet(dog)
+        } else {
+            petRepository.updatePet(dog)
+        }
+        _dogs.value = petRepository.getPetsByOwner(dog.ownerId)
     }
 
     fun deleteDog(dog: PetEntity) {

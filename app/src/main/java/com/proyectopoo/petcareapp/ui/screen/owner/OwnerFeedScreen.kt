@@ -27,7 +27,8 @@ import com.proyectopoo.petcareapp.ui.theme.*
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OwnerFeedScreen(
-    onGoToCaregiverProfile: (Int) -> Unit
+    onGoToCaregiverProfile: (Int) -> Unit,
+    onRequestServices: (Int) -> Unit
 ) {
     val tiposServicio = listOf(
         "Todos", "Alojamiento", "Guardería", "Paseo", "Taxi", "Peluquería", "Visitante"
@@ -38,21 +39,43 @@ fun OwnerFeedScreen(
             id = 1,
             nombre = "Carlos Martínez",
             ubicacion = "Managua, Nicaragua",
-            precio = "$15/hora",
+            precio = "C$250 por paseo",
             rating = 4.8,
+<<<<<<< HEAD
             reviews = 4,
             servicios = listOf("Paseo", "Guardería"),
             review = "Muy amable y atento con las mascotas."
+=======
+            reviews = 42,
+            servicios = listOf("Paseo", "Visitante"),
+            review = "Ideal para paseos programados y visitas a domicilio."
+>>>>>>> 5b3d2f1aa9357a0016785dc061220ce3feea7909
         ),
         Cuidador(
             id = 2,
             nombre = "Valeria López",
             ubicacion = "León, Nicaragua",
-            precio = "$20/hora",
+            precio = "C$900 por alojamiento",
             rating = 4.9,
+<<<<<<< HEAD
             reviews = 8,
             servicios = listOf("Alojamiento", "Peluquería"),
             review = "Excelente experiencia y mucho cariño hacia los perros."
+=======
+            reviews = 81,
+            servicios = listOf("Alojamiento", "Guardería", "Peluquería"),
+            review = "Recibe mascotas para guardería, alojamiento y grooming."
+        ),
+        Cuidador(
+            id = 3,
+            nombre = "María Fernanda",
+            ubicacion = "Masaya, Nicaragua",
+            precio = "C$350 por taxi",
+            rating = 4.7,
+            reviews = 35,
+            servicios = listOf("Taxi", "Peluquería"),
+            review = "Apoya con traslados a veterinaria y servicios de peluquería."
+>>>>>>> 5b3d2f1aa9357a0016785dc061220ce3feea7909
         )
     )
 
@@ -224,6 +247,16 @@ fun OwnerFeedScreen(
                                 colors = ButtonDefaults.outlinedButtonColors(contentColor = CafeMedio)
                             ) {
                                 Text("Ver perfil completo", fontWeight = FontWeight.Bold)
+                            }
+
+                            Spacer(modifier = Modifier.height(10.dp))
+
+                            Button(
+                                onClick = { onRequestServices(cuidador.id) },
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(16.dp)
+                            ) {
+                                Text("Solicitar servicios", fontWeight = FontWeight.Bold)
                             }
                         }
                     }

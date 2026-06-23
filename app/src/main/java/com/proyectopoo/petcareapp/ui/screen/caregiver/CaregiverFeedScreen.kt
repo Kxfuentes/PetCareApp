@@ -25,6 +25,7 @@ import com.proyectopoo.petcareapp.data.local.relation.ServiceRequestDetails
 @Composable
 fun CaregiverFeedScreen(
     requests: List<ServiceRequestDetails>,
+    onGoToOwnerProfile: (Int, Int) -> Unit,
     onApplyToRequest: (Int) -> Unit
 ) {
     val colorScheme = MaterialTheme.colorScheme
@@ -35,8 +36,8 @@ fun CaregiverFeedScreen(
 
     var expanded by remember { mutableStateOf(false) }
     var selectedFilter by remember { mutableStateOf("Todos") }
+    val hasRealRequests = requests.isNotEmpty()
 
-    // CORRECCIÓN: Se usa '.ifEmpty' para eliminar la advertencia amarilla del compilador
     val solicitudesBase = remember(requests) {
         requests.ifEmpty {
             listOf(
@@ -47,7 +48,7 @@ fun CaregiverFeedScreen(
                     requestedDate = "Hoy · 4:30 PM",
                     status = ServiceRequestStatus.PENDING,
                     petName = "Max", petBreed = "Golden Retriever",
-                    petSize = "L (20-40 kg)", // Tamaño formateado
+                    petSize = "L (20-40 kg)",
                     serviceTypeName = "Paseo", ownerName = "Carlos Mendoza",
                     ownerPhone = "+505 8888-1234", ownerEmail = "carlos.mendoza@email.com"
                 ),
@@ -58,7 +59,7 @@ fun CaregiverFeedScreen(
                     requestedDate = "Sábado · 8:00 AM",
                     status = ServiceRequestStatus.PENDING,
                     petName = "Luna", petBreed = "Siberian Husky",
-                    petSize = "M (10-20 kg)", // Tamaño formateado
+                    petSize = "M (10-20 kg)",
                     serviceTypeName = "Alojamiento", ownerName = "Andrea Espinoza",
                     ownerPhone = "+505 7777-5678", ownerEmail = "andrea.es@email.com"
                 ),
@@ -69,7 +70,7 @@ fun CaregiverFeedScreen(
                     requestedDate = "Mañana · 10:00 AM",
                     status = ServiceRequestStatus.PENDING,
                     petName = "Bella", petBreed = "Poodle",
-                    petSize = "S (5-10 kg)", // Tamaño formateado
+                    petSize = "S (5-10 kg)",
                     serviceTypeName = "Peluquería", ownerName = "Marcela Rostrán",
                     ownerPhone = "+505 8444-9012", ownerEmail = "marce.rostran@email.com"
                 )
@@ -175,7 +176,6 @@ fun CaregiverFeedScreen(
                     ) {
                         Column(modifier = Modifier.padding(18.dp)) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                // CORRECCIÓN: Se eliminó el Icon de la patita para simplificar el diseño
                                 Text(
                                     text = listOfNotNull(
                                         servicio.petName,
@@ -198,18 +198,9 @@ fun CaregiverFeedScreen(
 
                             Spacer(modifier = Modifier.height(12.dp))
 
-                            AssistChip(
-                                onClick = { },
-                                label = { Text(servicio.serviceTypeName ?: "Servicio") },
-                                colors = AssistChipDefaults.assistChipColors(
-                                    containerColor = colorScheme.secondary,
-                                    labelColor = colorScheme.onSecondary
-                                )
-                            )
+                            IntentosChip(servicio)
 
                             Spacer(modifier = Modifier.height(14.dp))
-
-                            // CORRECCIÓN: Se eliminó por completo la fila de "Servicio solicitado" junto a su ícono de ubicación
 
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(
@@ -235,11 +226,6 @@ fun CaregiverFeedScreen(
 
                             Spacer(modifier = Modifier.height(14.dp))
 
-                            Text(
-                                text = "Contacto: ${servicio.ownerPhone ?: "No disponible"}",
-                                color = colorScheme.onSurface,
-                                fontWeight = FontWeight.Medium
-                            )
 
                             Text(
                                 text = "Email: ${servicio.ownerEmail ?: "No disponible"}",
@@ -249,7 +235,7 @@ fun CaregiverFeedScreen(
                             Spacer(modifier = Modifier.height(18.dp))
 
                             OutlinedButton(
-                                onClick = { onApplyToRequest(servicio.serviceRequestId) },
+                                onClick = { onGoToOwnerProfile(servicio.ownerId, servicio.serviceRequestId) },
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(16.dp),
                                 border = BorderStroke(1.dp, colorScheme.outline),
@@ -257,7 +243,18 @@ fun CaregiverFeedScreen(
                                     contentColor = colorScheme.primary
                                 )
                             ) {
-                                Text("Me interesa", fontWeight = FontWeight.Bold)
+                                Text("Ver perfil completo", fontWeight = FontWeight.Bold)
+                            }
+
+                            Spacer(modifier = Modifier.height(10.dp))
+
+                            Button(
+                                onClick = { onApplyToRequest(servicio.serviceRequestId) },
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(16.dp),
+                                enabled = hasRealRequests
+                            ) {
+                                Text("Solicitar trabajo", fontWeight = FontWeight.Bold)
                             }
                         }
                     }
@@ -269,4 +266,16 @@ fun CaregiverFeedScreen(
             }
         }
     }
+}
+
+@Composable
+private fun IntentosChip(servicio: ServiceRequestDetails) {
+    AssistChip(
+        onClick = { },
+        label = { Text(servicio.serviceTypeName ?: "Servicio") },
+        colors = AssistChipDefaults.assistChipColors(
+            containerColor = MaterialTheme.colorScheme.secondary,
+            labelColor = MaterialTheme.colorScheme.onSecondary
+        )
+    )
 }

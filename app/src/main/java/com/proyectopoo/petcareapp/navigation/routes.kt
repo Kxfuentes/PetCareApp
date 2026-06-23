@@ -37,7 +37,10 @@ data class CreateService(
 )
 
 @Serializable
-object OwnerProfile
+data class OwnerProfile(
+    val ownerId: Int = -1,
+    val serviceRequestId: Int = -1
+)
 
 @Serializable
 data class CaregiverProfile(
@@ -51,3 +54,15 @@ object PasswordRecovery
 data class DogInfo(
     val petId: Int = -1
 )
+
+@Serializable
+data class OwnerPublicProfile(val ownerId: Int)
+
+@Serializable
+data class CaregiverPublicProfile(val caregiverId: Int)
+
+@Serializable
+data class EditOwnerProfile(val ownerId: Int = -1)
+
+@Serializable
+data class EditCaregiverProfile(val caregiverId: Int = -1)

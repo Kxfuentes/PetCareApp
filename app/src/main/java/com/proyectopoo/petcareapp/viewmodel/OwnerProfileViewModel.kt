@@ -32,9 +32,10 @@ class OwnerProfileViewModel(
             val userEntity = userDao.getUserById(ownerId)
             _user.value = userEntity?.let {
                 User(
+                    id = it.userId,
                     username = it.fullName,
                     email = it.email,
-                    role = it.role.name
+                    role = it.role.name,
                 )
             }
         }
@@ -58,5 +59,10 @@ class OwnerProfileViewModel(
             petDao.updatePet(pet)
             loadDogs()
         }
+    }
+
+    fun refreshData() {
+        loadUser()
+        loadDogs()
     }
 }
