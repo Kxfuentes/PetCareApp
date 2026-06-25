@@ -25,7 +25,7 @@ data class CaregiverEntity(
     @PrimaryKey
     val caregiverId: Int,
 
-    val userId: Int,
+    val userId: String,
 
     val description: String? = null,
 

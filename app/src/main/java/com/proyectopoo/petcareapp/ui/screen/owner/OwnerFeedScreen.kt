@@ -41,15 +41,9 @@ fun OwnerFeedScreen(
             ubicacion = "Managua, Nicaragua",
             precio = "C$250 por paseo",
             rating = 4.8,
-<<<<<<< HEAD
-            reviews = 4,
-            servicios = listOf("Paseo", "Guardería"),
-            review = "Muy amable y atento con las mascotas."
-=======
             reviews = 42,
             servicios = listOf("Paseo", "Visitante"),
             review = "Ideal para paseos programados y visitas a domicilio."
->>>>>>> 5b3d2f1aa9357a0016785dc061220ce3feea7909
         ),
         Cuidador(
             id = 2,
@@ -57,11 +51,6 @@ fun OwnerFeedScreen(
             ubicacion = "León, Nicaragua",
             precio = "C$900 por alojamiento",
             rating = 4.9,
-<<<<<<< HEAD
-            reviews = 8,
-            servicios = listOf("Alojamiento", "Peluquería"),
-            review = "Excelente experiencia y mucho cariño hacia los perros."
-=======
             reviews = 81,
             servicios = listOf("Alojamiento", "Guardería", "Peluquería"),
             review = "Recibe mascotas para guardería, alojamiento y grooming."
@@ -75,7 +64,6 @@ fun OwnerFeedScreen(
             reviews = 35,
             servicios = listOf("Taxi", "Peluquería"),
             review = "Apoya con traslados a veterinaria y servicios de peluquería."
->>>>>>> 5b3d2f1aa9357a0016785dc061220ce3feea7909
         )
     )
 
@@ -118,7 +106,9 @@ fun OwnerFeedScreen(
                     onValueChange = {},
                     readOnly = true,
                     label = { Text("Filtrar por servicio") },
-                    modifier = Modifier.fillMaxWidth().menuAnchor(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .menuAnchor(),
                     shape = RoundedCornerShape(16.dp),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedContainerColor = FondoCampo,
@@ -128,7 +118,10 @@ fun OwnerFeedScreen(
                     )
                 )
 
-                ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                ExposedDropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = { expanded = false }
+                ) {
                     tiposServicio.forEach { tipo ->
                         DropdownMenuItem(
                             text = { Text(tipo) },
@@ -177,13 +170,33 @@ fun OwnerFeedScreen(
                                         )
                                     }
                                 }
+
                                 Spacer(modifier = Modifier.width(16.dp))
+
                                 Column {
-                                    Text(cuidador.nombre, color = CafeOscuro, fontWeight = FontWeight.Bold, fontSize = 19.sp)
+                                    Text(
+                                        text = cuidador.nombre,
+                                        color = CafeOscuro,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 19.sp
+                                    )
+
                                     Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Icon(Icons.Default.Star, null, tint = CafeMedio, modifier = Modifier.size(18.dp))
-                                        Text(cuidador.rating.toString(), color = CafeOscuro, fontWeight = FontWeight.SemiBold)
-                                        Text(" (${cuidador.reviews})", color = TextoSuave)
+                                        Icon(
+                                            Icons.Default.Star,
+                                            contentDescription = null,
+                                            tint = CafeMedio,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                        Text(
+                                            text = cuidador.rating.toString(),
+                                            color = CafeOscuro,
+                                            fontWeight = FontWeight.SemiBold
+                                        )
+                                        Text(
+                                            text = " (${cuidador.reviews})",
+                                            color = TextoSuave
+                                        )
                                     }
                                 }
                             }
@@ -205,7 +218,7 @@ fun OwnerFeedScreen(
                                     color = CafeOscuro
                                 )
                             }
-                            
+
                             Spacer(modifier = Modifier.height(12.dp))
 
                             Text(
@@ -224,7 +237,10 @@ fun OwnerFeedScreen(
                                     AssistChip(
                                         onClick = { },
                                         label = { Text(servicio) },
-                                        colors = AssistChipDefaults.assistChipColors(containerColor = CafeClaro, labelColor = CafeOscuro)
+                                        colors = AssistChipDefaults.assistChipColors(
+                                            containerColor = CafeClaro,
+                                            labelColor = CafeOscuro
+                                        )
                                     )
                                 }
                             }

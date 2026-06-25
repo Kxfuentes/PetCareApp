@@ -198,13 +198,14 @@ fun RegisterScreen(
                             if (response.isSuccessful) {
                                 val registerResponse = response.body()
                                 val registeredUser = registerResponse?.user ?: registerResponse?.useer
-                                if (registerResponse != null && registeredUser != null && registeredUser.id > 0) {
+
+                                if (registerResponse != null && registeredUser != null && registeredUser.id.isNotBlank()) {
                                     onRegisterSuccess(registerResponse)
                                 } else {
-                                    errorMessage = "La API no devolvió los datos del usuario registrado"
+                                    errorMessage = "La API respondió OK, pero no devolvió usuario. Body: ${response.body()}"
                                 }
                             } else {
-                                errorMessage = "Error al registrar el usuario"
+                                errorMessage = "HTTP ${response.code()}: ${response.errorBody()?.string()}"
                             }
                         } catch (e: SocketTimeoutException) {
                             errorMessage = "No se pudo conectar con la API. Revisa que el servidor esté activo y que BASE_URL apunte a tu computadora."

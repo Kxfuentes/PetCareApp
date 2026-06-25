@@ -205,7 +205,7 @@ class ServiceRequestViewModel(
         ownerDao.insertOwner(
             OwnerEntity(
                 ownerId = ownerId,
-                userId = ownerId,
+                userId = ownerId.toString(),
                 address = null
             )
         )
@@ -231,7 +231,7 @@ class ServiceRequestViewModel(
         caregiverDao.insertCaregiver(
             CaregiverEntity(
                 caregiverId = caregiverId,
-                userId = userId
+                userId = userId.toString(),
             )
         )
     }

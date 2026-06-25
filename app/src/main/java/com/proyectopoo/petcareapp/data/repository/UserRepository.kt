@@ -56,13 +56,14 @@ class UserRepository(
         }
 
         val user = UserEntity(
-            userId = userDto.id,
+            userId = userDto.id.toLocalUserId(),
             fullName = userDto.username,
             email = userDto.email,
             phone = null,
             password = null,
             role = mappedRole
         )
+
 
         userDao.insertUser(user)
 
@@ -102,4 +103,11 @@ class UserRepository(
     suspend fun deleteUser(user: UserEntity) {
         userDao.deleteUser(user)
     }
+}
+private fun String.toLocalUserId(): Int {
+    val numericId = this.toIntOrNull()
+    if (numericId != null && numericId > 0) return numericId
+
+    val generatedId = this.hashCode() and Int.MAX_VALUE
+    return if (generatedId > 0) generatedId else 1
 }

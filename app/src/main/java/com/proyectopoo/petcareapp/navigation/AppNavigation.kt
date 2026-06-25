@@ -39,25 +39,25 @@ import com.proyectopoo.petcareapp.ui.screen.auth.RoleSectionScreen
 import com.proyectopoo.petcareapp.ui.screen.caregiver.CaregiverFeedScreen
 import com.proyectopoo.petcareapp.ui.screen.caregiver.CaregiverHomeScreen
 import com.proyectopoo.petcareapp.ui.screen.caregiver.CaregiverProfileScreen
+import com.proyectopoo.petcareapp.ui.screen.caregiver.CaregiverPublicProfileScreen
 import com.proyectopoo.petcareapp.ui.screen.caregiver.CaregiverServiceScreen
 import com.proyectopoo.petcareapp.ui.screen.caregiver.EditCaregiverProfileScreen
-import com.proyectopoo.petcareapp.ui.screen.caregiver.CaregiverPublicProfileScreen
 import com.proyectopoo.petcareapp.ui.screen.owner.CreateServiceScreen
 import com.proyectopoo.petcareapp.ui.screen.owner.DogInfoScreen
+import com.proyectopoo.petcareapp.ui.screen.owner.EditOwnerProfileScreen
 import com.proyectopoo.petcareapp.ui.screen.owner.OwnerFeedScreen
 import com.proyectopoo.petcareapp.ui.screen.owner.OwnerHomeScreen
 import com.proyectopoo.petcareapp.ui.screen.owner.OwnerProfileScreen
 import com.proyectopoo.petcareapp.ui.screen.owner.OwnerPublicProfileScreen
-import com.proyectopoo.petcareapp.ui.screen.owner.EditOwnerProfileScreen
 import com.proyectopoo.petcareapp.viewmodel.CaregiverProfileViewModel
 import com.proyectopoo.petcareapp.viewmodel.CaregiverServiceViewModel
 import com.proyectopoo.petcareapp.viewmodel.DogViewModel
+import com.proyectopoo.petcareapp.viewmodel.EditCaregiverProfileViewModel
+import com.proyectopoo.petcareapp.viewmodel.EditOwnerProfileViewModel
 import com.proyectopoo.petcareapp.viewmodel.LoginViewModel
 import com.proyectopoo.petcareapp.viewmodel.OwnerProfileViewModel
 import com.proyectopoo.petcareapp.viewmodel.ServiceRequestViewModel
 import com.proyectopoo.petcareapp.viewmodel.UserRoleViewModel
-import com.proyectopoo.petcareapp.viewmodel.EditOwnerProfileViewModel
-import com.proyectopoo.petcareapp.viewmodel.EditCaregiverProfileViewModel
 import kotlinx.coroutines.launch
 
 @Composable
@@ -71,6 +71,7 @@ fun AppNavigation(
     val sessionManager = SessionManager(context)
     val database = PetCareDatabase.getDatabase(context)
     val scope = rememberCoroutineScope()
+
     val dogViewModel: DogViewModel = viewModel(
         factory = viewModelFactory {
             initializer {
@@ -140,6 +141,7 @@ fun AppNavigation(
                         "CAREGIVER" -> UserRole.CAREGIVER
                         else -> UserRole.OWNER
                     }
+
                     try {
                         prepareLocalAccount(
                             database = database,
@@ -149,8 +151,10 @@ fun AppNavigation(
                             email = user.email,
                             role = user.role
                         )
+
                         navigationError = null
                         userRoleViewModel.setRole(role)
+
                         navController.navigate(
                             if (role == UserRole.CAREGIVER) CaregiverHome else OwnerHome
                         ) {
@@ -182,10 +186,13 @@ fun AppNavigation(
             RegisterScreen(
                 onRegisterSuccess = { response ->
                     val userData = response.user ?: response.useer
-                    if (userData != null && userData.id > 0 && userData.email.isNotBlank()) {
+
+                    if (userData != null && userData.id.isNotBlank() && userData.email.isNotBlank()) {
+                        val localUserId = userData.id.toLocalUserId()
+
                         navController.navigate(
                             RoleSection(
-                                userId = userData.id,
+                                userId = localUserId,
                                 username = userData.username,
                                 email = userData.email
                             )
@@ -210,9 +217,11 @@ fun AppNavigation(
                 email = data.email,
                 onOwnerSelected = {
                     if (isPreparingAccount) return@RoleSectionScreen
+
                     scope.launch {
                         isPreparingAccount = true
                         onboardingError = null
+
                         try {
                             prepareLocalAccount(
                                 database = database,
@@ -222,8 +231,10 @@ fun AppNavigation(
                                 email = data.email,
                                 role = UserRoleType.OWNER
                             )
+
                             userRoleViewModel.setRole(UserRole.OWNER)
                             dogViewModel.loadDogs(data.userId)
+
                             navController.navigate(DogInfo()) {
                                 popUpTo(Login) { inclusive = true }
                                 launchSingleTop = true
@@ -238,9 +249,11 @@ fun AppNavigation(
                 },
                 onCaregiverSelected = {
                     if (isPreparingAccount) return@RoleSectionScreen
+
                     scope.launch {
                         isPreparingAccount = true
                         onboardingError = null
+
                         try {
                             prepareLocalAccount(
                                 database = database,
@@ -250,7 +263,9 @@ fun AppNavigation(
                                 email = data.email,
                                 role = UserRoleType.CAREGIVER
                             )
+
                             userRoleViewModel.setRole(UserRole.CAREGIVER)
+
                             navController.navigate(CaregiverHome) {
                                 popUpTo(Login) { inclusive = true }
                                 launchSingleTop = true
@@ -300,11 +315,13 @@ fun AppNavigation(
                         scope.launch {
                             try {
                                 ensureOwnerExists(database, sessionManager, ownerId)
+
                                 if (isNewDog) {
                                     dogViewModel.addDog(pet)
                                 } else {
                                     dogViewModel.updateDog(pet)
                                 }
+
                                 navController.popBackStack()
                             } catch (e: Exception) {
                                 Toast.makeText(
@@ -329,9 +346,11 @@ fun AppNavigation(
         // ===== OWNER HOME =====
         composable<OwnerHome> {
             val ownerId = sessionManager.getUserId()
+
             LaunchedEffect(ownerId) {
                 serviceRequestViewModel.loadOwnerData(ownerId)
             }
+
             OwnerHomeScreen(
                 dogs = dogs,
                 recentRequests = recentOwnerRequests,
@@ -368,15 +387,18 @@ fun AppNavigation(
         // ===== OWNER FEED =====
         composable<OwnerFeed> {
             val ownerId = sessionManager.getUserId()
+
             LaunchedEffect(ownerId) {
                 serviceRequestViewModel.loadOwnerData(ownerId)
             }
+
             OwnerFeedScreen(
                 onGoToCaregiverProfile = { caregiverId ->
                     navController.navigate(CaregiverProfile(caregiverId = caregiverId))
                 },
                 onRequestServices = { caregiverId ->
                     val request = recentOwnerRequests.firstOrNull()
+
                     if (request == null) {
                         Toast.makeText(
                             context,
@@ -395,18 +417,22 @@ fun AppNavigation(
             )
         }
 
-        // ===== CREATE SERVICE (ACTUALIZADO CON startTime Y endTime) =====
+        // ===== CREATE SERVICE =====
         composable<CreateService> { backStackEntry ->
             val args = backStackEntry.toRoute<CreateService>()
             val ownerId = sessionManager.getUserId()
+
             CreateServiceScreen(
                 petName = args.petName,
                 serviceType = args.serviceType,
                 dogs = dogs,
                 onBack = { navController.popBackStack() },
                 onPublish = { petName, serviceType, description, location, price, date, startTime, endTime ->
-                    val existingPet = dogs.firstOrNull { it.name.equals(petName, ignoreCase = true) }
-                    val petId = existingPet?.petId ?: (System.currentTimeMillis() % Int.MAX_VALUE).toInt()
+                    val existingPet = dogs.firstOrNull {
+                        it.name.equals(petName, ignoreCase = true)
+                    }
+
+                    val petId = existingPet?.petId ?: generatePetId(dogs)
 
                     if (existingPet == null) {
                         dogViewModel.addDog(
@@ -433,6 +459,7 @@ fun AppNavigation(
                         startTime = startTime,
                         endTime = endTime
                     )
+
                     navController.navigate(OwnerHome) { launchSingleTop = true }
                 },
                 existingServices = recentOwnerRequests.mapNotNull { it.serviceTypeName }
@@ -442,9 +469,11 @@ fun AppNavigation(
         // ===== CAREGIVER HOME =====
         composable<CaregiverHome> {
             val caregiverId = sessionManager.getUserId()
+
             LaunchedEffect(caregiverId) {
                 serviceRequestViewModel.loadCaregiverData(caregiverId)
             }
+
             CaregiverHomeScreen(
                 onGoToServices = { navController.navigate(CaregiverService) },
                 ownerRequests = caregiverApplicationDetails,
@@ -461,10 +490,12 @@ fun AppNavigation(
         // ===== CAREGIVER FEED =====
         composable<CaregiverFeed> {
             val caregiverId = sessionManager.getUserId()
+
             LaunchedEffect(caregiverId) {
                 serviceRequestViewModel.loadAvailableRequests()
                 serviceRequestViewModel.loadCaregiverData(caregiverId)
             }
+
             CaregiverFeedScreen(
                 requests = availableRequests,
                 onGoToOwnerProfile = { ownerId, serviceRequestId ->
@@ -477,6 +508,7 @@ fun AppNavigation(
                 },
                 onApplyToRequest = { serviceRequestId ->
                     serviceRequestViewModel.applyToRequest(serviceRequestId, caregiverId)
+
                     Toast.makeText(
                         context,
                         "Solicitud de trabajo enviada.",
@@ -489,6 +521,7 @@ fun AppNavigation(
         // ===== CAREGIVER SERVICE =====
         composable<CaregiverService> {
             val caregiverId = sessionManager.getUserId()
+
             val caregiverServiceViewModel: CaregiverServiceViewModel = viewModel(
                 key = "caregiver_services_$caregiverId",
                 factory = viewModelFactory {
@@ -537,9 +570,13 @@ fun AppNavigation(
                 OwnerProfileScreen(
                     user = user,
                     dogs = dogs,
-                    historyServices = recentOwnerRequests.filter { it.status.name == "COMPLETED" },
+                    historyServices = recentOwnerRequests.filter {
+                        it.status.name == "COMPLETED"
+                    },
                     onLogout = { sessionLogout(navController, userRoleViewModel) },
-                    onEditProfile = { navController.navigate(EditOwnerProfile(targetOwnerId)) },
+                    onEditProfile = {
+                        navController.navigate(EditOwnerProfile(targetOwnerId))
+                    },
                     onAddPet = { navController.navigate(DogInfo()) }
                 )
             } else {
@@ -555,7 +592,11 @@ fun AppNavigation(
                                 Toast.LENGTH_SHORT
                             ).show()
                         } else {
-                            serviceRequestViewModel.applyToRequest(args.serviceRequestId, loggedUserId)
+                            serviceRequestViewModel.applyToRequest(
+                                args.serviceRequestId,
+                                loggedUserId
+                            )
+
                             Toast.makeText(
                                 context,
                                 "Solicitud de trabajo enviada.",
@@ -602,8 +643,10 @@ fun AppNavigation(
                     isLoading = isLoading,
                     onBack = { navController.popBackStack() },
                     onLogout = { sessionLogout(navController, userRoleViewModel) },
-                    onEditProfile = { navController.navigate(EditCaregiverProfile(targetCaregiverId)) },
-                    onManageAvailability = { /* implementar */ }
+                    onEditProfile = {
+                        navController.navigate(EditCaregiverProfile(targetCaregiverId))
+                    },
+                    onManageAvailability = { }
                 )
             } else {
                 CaregiverPublicProfileScreen(
@@ -612,6 +655,7 @@ fun AppNavigation(
                     onBack = { navController.popBackStack() },
                     onRequestServices = {
                         val request = recentOwnerRequests.firstOrNull()
+
                         if (request == null) {
                             Toast.makeText(
                                 context,
@@ -619,7 +663,11 @@ fun AppNavigation(
                                 Toast.LENGTH_SHORT
                             ).show()
                         } else {
-                            serviceRequestViewModel.applyToRequest(request.serviceRequestId, targetCaregiverId)
+                            serviceRequestViewModel.applyToRequest(
+                                request.serviceRequestId,
+                                targetCaregiverId
+                            )
+
                             Toast.makeText(
                                 context,
                                 "Solicitud enviada al cuidador.",
@@ -634,7 +682,11 @@ fun AppNavigation(
         // ===== EDIT OWNER PROFILE =====
         composable<EditOwnerProfile> { backStackEntry ->
             val args = backStackEntry.toRoute<EditOwnerProfile>()
-            val ownerId = if (args.ownerId == -1) sessionManager.getUserId() else args.ownerId
+            val ownerId = if (args.ownerId == -1) {
+                sessionManager.getUserId()
+            } else {
+                args.ownerId
+            }
 
             val viewModel: EditOwnerProfileViewModel = viewModel(
                 key = "edit_owner_profile_$ownerId",
@@ -658,7 +710,11 @@ fun AppNavigation(
         // ===== EDIT CAREGIVER PROFILE =====
         composable<EditCaregiverProfile> { backStackEntry ->
             val args = backStackEntry.toRoute<EditCaregiverProfile>()
-            val caregiverId = if (args.caregiverId == -1) sessionManager.getUserId() else args.caregiverId
+            val caregiverId = if (args.caregiverId == -1) {
+                sessionManager.getUserId()
+            } else {
+                args.caregiverId
+            }
 
             val viewModel: EditCaregiverProfileViewModel = viewModel(
                 key = "edit_caregiver_profile_$caregiverId",
@@ -695,16 +751,31 @@ fun AppNavigation(
 }
 
 // ========== FUNCIONES AUXILIARES ==========
+
 private fun generatePetId(existingPets: List<PetEntity>): Int {
     var candidate = (System.currentTimeMillis() % Int.MAX_VALUE).toInt()
+
     if (candidate <= 0) candidate = 1
 
     val usedIds = existingPets.map { it.petId }.toHashSet()
+
     while (candidate in usedIds) {
         candidate = if (candidate == Int.MAX_VALUE) 1 else candidate + 1
     }
 
     return candidate
+}
+
+private fun String.toLocalUserId(): Int {
+    val numericId = this.toIntOrNull()
+
+    if (numericId != null && numericId > 0) {
+        return numericId
+    }
+
+    val generatedId = this.hashCode() and Int.MAX_VALUE
+
+    return if (generatedId > 0) generatedId else 1
 }
 
 private suspend fun ensureOwnerExists(
@@ -715,6 +786,7 @@ private suspend fun ensureOwnerExists(
     if (database.ownerDao().getOwnerById(ownerId) != null) return
 
     val email = sessionManager.getEmail().orEmpty()
+
     if (database.userDao().getUserById(ownerId) == null) {
         database.userDao().insertUser(
             UserEntity(
@@ -730,7 +802,7 @@ private suspend fun ensureOwnerExists(
     database.ownerDao().insertOwner(
         OwnerEntity(
             ownerId = ownerId,
-            userId = ownerId
+            userId = ownerId.toString()
         )
     )
 }
@@ -760,14 +832,15 @@ private suspend fun prepareLocalAccount(
         UserRoleType.OWNER -> database.ownerDao().insertOwner(
             OwnerEntity(
                 ownerId = userId,
-                userId = userId
+                userId = userId.toString()
+
             )
         )
 
         UserRoleType.CAREGIVER -> database.caregiverDao().insertCaregiver(
             CaregiverEntity(
                 caregiverId = userId,
-                userId = userId
+                userId = userId.toString()
             )
         )
     }
