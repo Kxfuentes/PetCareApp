@@ -52,3 +52,8 @@ data class SessionDto(
 data class ErrorResponse(
     val error: String? = null
 )
+
+@Serializable
+data class RoleUpdateRequest(
+    val rol: String
+)

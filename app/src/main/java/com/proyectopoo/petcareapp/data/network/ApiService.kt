@@ -12,9 +12,9 @@ interface ApiService {
 
     @PUT("api/users/{id}")
     suspend fun updateUserRole(
-        @Path("id") userId: Int,
-        @Body request: RegisterRequest
-    ): Response<RegisterResponse>
+        @Path("id") userId: String,
+        @Body request: RoleUpdateRequest
+    ): Response<UserDto>
 
     @POST("api/auth/login")
     suspend fun login(

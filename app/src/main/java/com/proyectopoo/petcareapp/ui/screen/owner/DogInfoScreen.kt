@@ -24,6 +24,7 @@ fun DogInfoScreen(
     // Clave segura para reiniciar el estado al cambiar de mascota
     val key = editingDog?.petId ?: -1
 
+    var isSaving by remember { mutableStateOf(false) }
     var dogName by remember(key) { mutableStateOf(editingDog?.name.orEmpty()) }
     var breed by remember(key) { mutableStateOf(editingDog?.breed.orEmpty()) }
     var selectedSize by remember(key) { mutableStateOf(editingDog?.size.orEmpty()) }
@@ -98,16 +99,29 @@ fun DogInfoScreen(
 
             Button(
                 onClick = {
+                    if (isSaving) return@Button
+
                     if (dogName.isBlank() || breed.isBlank() || selectedSize.isBlank()) {
                         Toast.makeText(context, "Completa todos los campos", Toast.LENGTH_SHORT).show()
                         return@Button
                     }
+
+                    isSaving = true
                     onFinish(dogName, breed, selectedSize)
                 },
-                modifier = Modifier.fillMaxWidth().height(58.dp),
+                enabled = !isSaving,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(58.dp),
                 shape = RoundedCornerShape(18.dp)
             ) {
-                Text(if (editingDog == null) "Guardar Mascota" else "Guardar cambios")
+                Text(
+                    when {
+                        isSaving -> "Guardando..."
+                        editingDog == null -> "Guardar Mascota"
+                        else -> "Guardar cambios"
+                    }
+                )
             }
         }
     }

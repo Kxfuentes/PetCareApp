@@ -1,5 +1,6 @@
 package com.proyectopoo.petcareapp.navigation
 
+import com.proyectopoo.petcareapp.data.network.RoleUpdateRequest
 import android.widget.Toast
 import androidx.compose.runtime.Composable
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -149,7 +150,7 @@ fun AppNavigation(
                             userId = user.userId,
                             username = user.fullName,
                             email = user.email,
-                            role = user.role
+                            role = UserRoleType.OWNER
                         )
 
                         navigationError = null
@@ -192,7 +193,8 @@ fun AppNavigation(
 
                         navController.navigate(
                             RoleSection(
-                                userId = localUserId,
+                                userId = userData.id.toLocalUserId(),
+                                apiUserId = userData.id,
                                 username = userData.username,
                                 email = userData.email
                             )
@@ -223,6 +225,15 @@ fun AppNavigation(
                         onboardingError = null
 
                         try {
+                            val roleResponse = RetrofitClient.apiService.updateUserRole(
+                                userId = data.apiUserId,
+                                request = RoleUpdateRequest(rol = "propietario")
+                            )
+
+                            if (!roleResponse.isSuccessful) {
+                                throw Exception("No se pudo guardar el rol de propietario en PostgreSQL. HTTP ${roleResponse.code()}")
+                            }
+
                             prepareLocalAccount(
                                 database = database,
                                 sessionManager = sessionManager,
@@ -255,6 +266,15 @@ fun AppNavigation(
                         onboardingError = null
 
                         try {
+                            val roleResponse = RetrofitClient.apiService.updateUserRole(
+                                userId = data.apiUserId,
+                                request = RoleUpdateRequest(rol = "cuidador")
+                            )
+
+                            if (!roleResponse.isSuccessful) {
+                                throw Exception("No se pudo guardar el rol de cuidador en PostgreSQL. HTTP ${roleResponse.code()}")
+                            }
+
                             prepareLocalAccount(
                                 database = database,
                                 sessionManager = sessionManager,
@@ -322,7 +342,13 @@ fun AppNavigation(
                                     dogViewModel.updateDog(pet)
                                 }
 
-                                navController.popBackStack()
+                                Toast.makeText(context, "Mascota guardada correctamente", Toast.LENGTH_SHORT).show()
+
+                                navController.navigate(OwnerHome) {
+                                    popUpTo(DogInfo()) { inclusive = true }
+                                    launchSingleTop = true
+                                }
+
                             } catch (e: Exception) {
                                 Toast.makeText(
                                     context,
@@ -421,7 +447,6 @@ fun AppNavigation(
         composable<CreateService> { backStackEntry ->
             val args = backStackEntry.toRoute<CreateService>()
             val ownerId = sessionManager.getUserId()
-
             CreateServiceScreen(
                 petName = args.petName,
                 serviceType = args.serviceType,

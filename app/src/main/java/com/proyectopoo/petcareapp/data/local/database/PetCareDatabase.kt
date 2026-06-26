@@ -98,8 +98,9 @@ abstract class PetCareDatabase : RoomDatabase() {
                     PetCareDatabase::class.java,
                     "petcare_database"
                 )
-                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
+                    .fallbackToDestructiveMigration()
                     .build()
+
                 INSTANCE = instance
                 instance
             }
