@@ -34,47 +34,71 @@ class UserRepository(
         password: String,
         rememberSession: Boolean
     ): UserEntity? {
-        val response = apiService.login(
-            LoginRequest(
-                email = email,
-                password = password
+        return try {
+            val cleanEmail = email.trim()
+            val cleanPassword = password.trim()
+
+            println("REPOSITORY LOGIN - Email: $cleanEmail")
+
+            val response = apiService.login(
+                LoginRequest(
+                    email = cleanEmail,
+                    password = cleanPassword
+                )
             )
-        )
 
-        if (!response.isSuccessful) {
-            return null
-        }
+            if (!response.isSuccessful) {
+                val errorBody = response.errorBody()?.string()
+                println("Login failed: ${response.code()} - $errorBody")
+                return null
+            }
 
-        val body = response.body() ?: return null
-        
-        val userDto = body.user ?: body.useer ?: return null
+            val body = response.body()
+            if (body == null) {
+                println("Response body is null")
+                return null
+            }
 
-        val mappedRole = when (userDto.role?.uppercase()) {
-            "OWNER", "DUENO", "DUEÑO", "PROPIETARIO" -> UserRoleType.OWNER
-            "CAREGIVER", "CUIDADOR", "GESTOR" -> UserRoleType.CAREGIVER
-            else -> UserRoleType.OWNER
-        }
+            val userDto = body.user
+            if (userDto == null) {
+                println("User is null in response")
+                return null
+            }
 
-        val user = UserEntity(
-            userId = userDto.id,
-            fullName = userDto.username,
-            email = userDto.email,
-            phone = null,
-            password = null,
-            role = mappedRole
-        )
+            val mappedRole = when (userDto.role?.uppercase()) {
+                "OWNER", "DUENO", "DUEÑO", "PROPIETARIO" -> UserRoleType.OWNER
+                "CAREGIVER", "CUIDADOR", "GESTOR" -> UserRoleType.CAREGIVER
+                else -> UserRoleType.OWNER
+            }
 
-        userDao.insertUser(user)
+            val user = UserEntity(
+                userId = userDto.id,
+                fullName = userDto.username,
+                email = userDto.email,
+                phone = null,
+                password = null,
+                role = mappedRole
+            )
 
-        if (rememberSession) {
+            userDao.insertUser(user)
+
             sessionManager.saveSession(
                 userId = user.userId,
                 email = user.email,
                 role = user.role
             )
-        }
 
-        return user
+            val token = body.token
+            if (token != null) {
+                sessionManager.saveToken(token, rememberSession)
+            }
+
+            return user
+        } catch (e: Exception) {
+            println("Exception in login: ${e.message}")
+            e.printStackTrace()
+            return null
+        }
     }
 
     fun isLoggedIn(): Boolean {
@@ -93,6 +117,7 @@ class UserRepository(
 
     fun logout() {
         sessionManager.clearSession()
+        sessionManager.clearToken()
     }
 
     suspend fun updateUser(user: UserEntity) {

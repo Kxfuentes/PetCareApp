@@ -40,7 +40,7 @@ data class AppStateData(
     val currentRole: UserRole? = null
 )
 
-//NUEVO: Estado para la búsqueda de ubicaciones
+// Estado para la búsqueda de ubicaciones
 data class LocationSearchState(
     val query: String = "",
     val results: List<NominatimResponse> = emptyList(),
@@ -68,9 +68,10 @@ class MainViewModel : ViewModel() {
     private val _caregiverState = MutableStateFlow(CaregiverState())
     val caregiverState: StateFlow<CaregiverState> = _caregiverState.asStateFlow()
 
-    // Estado para cuidadores
     private val _caregivers = MutableStateFlow<List<Cuidador>>(emptyList())
     val caregivers: StateFlow<List<Cuidador>> = _caregivers.asStateFlow()
+
+    // ========== FUNCIONES DE USUARIO ==========
 
     fun updateUser(user: User?) {
         _appState.update {
@@ -108,6 +109,7 @@ class MainViewModel : ViewModel() {
         }
     }
 
+    // ========== FUNCIONES DE UBICACIÓN (Nominatim) ==========
 
     fun updateSearchQuery(query: String) {
         _locationSearchState.update { it.copy(query = query) }
@@ -135,7 +137,6 @@ class MainViewModel : ViewModel() {
             }
 
             try {
-                // Llamamos a Nominatim
                 val results = NominatimClient.instance.searchLocation(
                     query = query,
                     format = "json",
@@ -165,18 +166,28 @@ class MainViewModel : ViewModel() {
         _locationSearchState.update {
             it.copy(
                 selectedLocation = location,
-                query = location.display_name // Actualizamos el query con la dirección seleccionada
+                query = location.display_name
             )
         }
     }
 
+    // 🔥 CORREGIDO: Limpia resultados y el query, pero mantiene selectedLocation
     fun clearSearchResults() {
         _locationSearchState.update {
             it.copy(
                 results = emptyList(),
                 error = null,
-                isLoading = false
+                isLoading = false,
+                query = ""  // 🔥 Limpia también el query
+                // 🔥 selectedLocation se mantiene
             )
+        }
+    }
+
+    // 🔥 CORREGIDO: Limpia TODO incluyendo selectedLocation
+    fun clearLocationData() {
+        _locationSearchState.update {
+            LocationSearchState() // Reset a estado inicial
         }
     }
 
@@ -189,11 +200,6 @@ class MainViewModel : ViewModel() {
         }
     }
 
-    fun clearLocationData() {
-        _locationSearchState.update {
-            LocationSearchState() // Reset a estado inicial
-        }
-    }
 
     fun searchServicesNearby(
         lat: Double,
@@ -202,23 +208,16 @@ class MainViewModel : ViewModel() {
         onResult: (List<ServiceRequestDetails>) -> Unit
     ) {
         viewModelScope.launch {
-            // Aquí iría la llamada real a tu API a través de un Repository
-            // val results = repository.getNearbyServices(lat, lon, radius)
-            // onResult(results)
-            
+            // Aquí iría la llamada real a tu API
             kotlinx.coroutines.delay(1000)
             onResult(emptyList())
         }
     }
 
-    // Cargar cuidadores desde la API
     fun loadAllCaregivers() {
         viewModelScope.launch {
             _caregiverState.update { it.copy(isLoading = true, error = null) }
             try {
-                // val response = RetrofitClient.apiService.getCaregivers()
-                // _caregiverState.update { it.copy(caregivers = response, isLoading = false) }
-                
                 // MOCK
                 kotlinx.coroutines.delay(1000)
                 val mockCaregivers = listOf(
@@ -227,13 +226,13 @@ class MainViewModel : ViewModel() {
                     Cuidador("3", "Carlos López", "León", "C$120/h", 4.5, 20, listOf("Taxi", "Paseo"), "Puntual y confiable")
                 )
                 _caregiverState.update { it.copy(caregivers = mockCaregivers, isLoading = false) }
+                _caregivers.value = mockCaregivers
             } catch (e: Exception) {
                 _caregiverState.update { it.copy(isLoading = false, error = e.message) }
             }
         }
     }
 
-    // Buscar cuidadores por ubicación
     fun searchCaregiversNearby(
         lat: Double,
         lon: Double,
@@ -242,12 +241,15 @@ class MainViewModel : ViewModel() {
         viewModelScope.launch {
             _caregiverState.update { it.copy(isLoading = true, error = null) }
             try {
-                // val response = RetrofitClient.apiService.searchCaregiversNearby(lat, lon, radius)
-                // _caregiverState.update { it.copy(nearbyCaregivers = response, totalFound = response.size, isLoading = false) }
-
                 kotlinx.coroutines.delay(1000)
-                val nearby = _caregiverState.value.caregivers.take(2) // Mock
-                _caregiverState.update { it.copy(nearbyCaregivers = nearby, totalFound = nearby.size, isLoading = false) }
+                val nearby = _caregiverState.value.caregivers.take(2)
+                _caregiverState.update {
+                    it.copy(
+                        nearbyCaregivers = nearby,
+                        totalFound = nearby.size,
+                        isLoading = false
+                    )
+                }
             } catch (e: Exception) {
                 _caregiverState.update { it.copy(isLoading = false, error = e.message) }
             }
@@ -264,7 +266,7 @@ class MainViewModel : ViewModel() {
     }
 
     fun clearCaregiverSearch() {
-        _caregiverState.update { 
+        _caregiverState.update {
             it.copy(nearbyCaregivers = emptyList(), totalFound = 0, error = null)
         }
     }

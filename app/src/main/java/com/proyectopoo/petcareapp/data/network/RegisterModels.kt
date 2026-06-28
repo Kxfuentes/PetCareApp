@@ -27,11 +27,13 @@ data class RegisterResponse(
 
 @Serializable
 data class LoginResponse(
+    @SerialName("token") val token: String? = null,
     @SerialName("user") val user: UserDto? = null,
-    @SerialName("useer") val useer: UserDto? = null, // Soporte para typo en el servidor
+    @SerialName("useer") val useer: UserDto? = null,
     @SerialName("session") val session: SessionDto? = null,
     @SerialName("error") val error: String? = null
 )
+
 
 @Serializable
 data class UserDto(

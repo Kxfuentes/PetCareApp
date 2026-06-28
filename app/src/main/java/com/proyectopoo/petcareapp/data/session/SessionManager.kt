@@ -44,4 +44,10 @@ class SessionManager(
     fun clearSession() {
         prefs.edit().clear().apply()
     }
+
+    fun clearToken() {
+        TODO("Not yet implemented")
+    }
+
+    fun saveToken(token: String, rememberSession: Boolean) {}
 }

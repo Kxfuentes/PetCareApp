@@ -57,7 +57,6 @@ fun CreateServiceScreen(
     var expandedPet by remember { mutableStateOf(false) }
     var expandedService by remember { mutableStateOf(false) }
 
-    // NUEVO: Estado para la búsqueda de ubicación
     val locationState by viewModel.locationSearchState.collectAsState()
     var showLocationResults by remember { mutableStateOf(false) }
 
@@ -70,7 +69,12 @@ fun CreateServiceScreen(
 
     val scrollState = rememberScrollState()
 
-    // NUEVO: Efecto para ocultar resultados cuando se selecciona una ubicación
+    DisposableEffect(Unit) {
+        onDispose {
+            viewModel.clearSearchResults()
+        }
+    }
+
     LaunchedEffect(locationState.selectedLocation) {
         if (locationState.selectedLocation != null) {
             showLocationResults = false
@@ -78,9 +82,29 @@ fun CreateServiceScreen(
         }
     }
 
-    // Efecto para limpiar errores cuando el usuario escribe
     LaunchedEffect(nombreMascota, tipoServicio, descripcion, ubicacion, precio, fecha) {
         if (showError) showError = false
+    }
+
+    fun handlePublish() {
+        showError = true
+        if (nombreMascota.isBlank() || tipoServicio.isBlank() ||
+            descripcion.isBlank() || ubicacion.isBlank() ||
+            precio.isBlank() || fecha.isBlank()
+        ) {
+            errorMessage = "Todos los campos son obligatorios"
+            return
+        }
+
+        if (isDuplicate) {
+            errorMessage = "Ya tienes este servicio creado"
+            return
+        }
+
+        showError = false
+        onPublish(nombreMascota, tipoServicio, descripcion, ubicacion, precio, fecha)
+
+        viewModel.clearSearchResults()
     }
 
     Column(
@@ -90,6 +114,7 @@ fun CreateServiceScreen(
             .padding(24.dp),
         horizontalAlignment = Alignment.Start
     ) {
+        // Tarjeta informativa
         Card(
             colors = CardDefaults.cardColors(
                 containerColor = MaterialTheme.colorScheme.primaryContainer
@@ -234,15 +259,13 @@ fun CreateServiceScreen(
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        // ----- NUEVO: CAMPO DE UBICACIÓN CON BÚSQUEDA -----
         Text(
-            text = "📍 Ubicación del servicio",
+            text = "Ubicación del servicio",
             style = MaterialTheme.typography.titleSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(bottom = 4.dp)
         )
 
-        // Campo de búsqueda de ubicación
         OutlinedTextField(
             value = locationState.query,
             onValueChange = {
@@ -294,7 +317,7 @@ fun CreateServiceScreen(
                             },
                             supportingContent = {
                                 Text(
-                                    text = "📍 ${result.lat}, ${result.lon}",
+                                    text = "${result.lat}, ${result.lon}",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -342,8 +365,8 @@ fun CreateServiceScreen(
             )
         }
 
-        // Mostrar ubicación seleccionada (si no está en el campo de búsqueda)
-        if (locationState.selectedLocation != null && ubicacion.isNotEmpty()) {
+        // Mostrar ubicación seleccionada
+        if (ubicacion.isNotEmpty() && !showLocationResults) {
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -371,17 +394,6 @@ fun CreateServiceScreen(
                     )
                 }
             }
-        }
-
-        // Si no hay resultados y el usuario busca, mostrar mensaje
-        if (showLocationResults && locationState.query.isNotEmpty() &&
-            locationState.results.isEmpty() && !locationState.isLoading) {
-            Text(
-                text = "No se encontraron ubicaciones. Intenta con otra dirección.",
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.padding(vertical = 8.dp)
-            )
         }
 
         Spacer(modifier = Modifier.height(12.dp))
@@ -419,7 +431,6 @@ fun CreateServiceScreen(
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        // Mensaje de error
         if (showError) {
             Text(
                 text = errorMessage,
@@ -430,24 +441,7 @@ fun CreateServiceScreen(
 
         // Botón Publicar
         Button(
-            onClick = {
-                showError = true
-                if (nombreMascota.isBlank() || tipoServicio.isBlank() ||
-                    descripcion.isBlank() || ubicacion.isBlank() ||
-                    precio.isBlank() || fecha.isBlank()
-                ) {
-                    errorMessage = "Todos los campos son obligatorios"
-                    return@Button
-                }
-
-                if (isDuplicate) {
-                    errorMessage = "Ya tienes este servicio creado"
-                    return@Button
-                }
-
-                showError = false
-                onPublish(nombreMascota, tipoServicio, descripcion, ubicacion, precio, fecha)
-            },
+            onClick = { handlePublish() },
             modifier = Modifier.fillMaxWidth(),
             enabled = !isDuplicate
         ) {
