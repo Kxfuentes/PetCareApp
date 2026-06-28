@@ -409,8 +409,10 @@ fun AppNavigation(
             val ownerId = sessionManager.getUserId()
 
             LaunchedEffect(ownerId) {
-                dogViewModel.loadDogs(ownerId)
-                serviceRequestViewModel.loadOwnerData(ownerId)
+                if (ownerId > 0) {
+                    dogViewModel.loadDogs(ownerId)
+                    serviceRequestViewModel.loadOwnerData(ownerId)
+                }
             }
 
             OwnerHomeScreen(
@@ -557,7 +559,9 @@ fun AppNavigation(
             val caregiverId = sessionManager.getUserId()
 
             LaunchedEffect(caregiverId) {
-                serviceRequestViewModel.loadCaregiverData(caregiverId)
+                if (caregiverId > 0) {
+                    serviceRequestViewModel.loadCaregiverData(caregiverId)
+                }
             }
 
             CaregiverHomeScreen(
@@ -591,7 +595,9 @@ fun AppNavigation(
 
             LaunchedEffect(caregiverId) {
                 serviceRequestViewModel.loadAvailableRequests()
-                serviceRequestViewModel.loadCaregiverData(caregiverId)
+                if (caregiverId > 0) {
+                    serviceRequestViewModel.loadCaregiverData(caregiverId)
+                }
             }
 
             CaregiverFeedScreen(
@@ -645,7 +651,7 @@ fun AppNavigation(
             val args = backStackEntry.toRoute<OwnerProfile>()
             val loggedUserId = sessionManager.getUserId()
 
-            val isOwnProfile = args.ownerId == -1 || args.ownerId == loggedUserId
+            val isOwnProfile = args.ownerId <= 0 || args.ownerId == loggedUserId
             val targetOwnerId = if (isOwnProfile) loggedUserId else args.ownerId
 
             val profileViewModel: OwnerProfileViewModel = viewModel(
@@ -662,7 +668,7 @@ fun AppNavigation(
             )
 
             val user by profileViewModel.user.collectAsStateWithLifecycle()
-            val dogs by profileViewModel.dogs.collectAsStateWithLifecycle()
+            val profileDogs by profileViewModel.dogs.collectAsStateWithLifecycle()
 
             if (isOwnProfile) {
                 LaunchedEffect(targetOwnerId) {
@@ -715,11 +721,10 @@ fun AppNavigation(
             val args = backStackEntry.toRoute<CaregiverProfile>()
             val loggedUserId = sessionManager.getUserId()
 
-            val isOwnProfile = args.caregiverId == -1 || args.caregiverId == loggedUserId
+            val isOwnProfile = args.caregiverId <= 0 || args.caregiverId == loggedUserId
             val targetCaregiverId = if (isOwnProfile) loggedUserId else args.caregiverId
 
-            val caregiverProfileViewModel: CaregiverProfileViewModel = viewModel(
-                key = "caregiver_profile_$targetCaregiverId",
+            val viewModel: CaregiverProfileViewModel = viewModel(
                 factory = viewModelFactory {
                     initializer {
                         CaregiverProfileViewModel(
@@ -730,10 +735,10 @@ fun AppNavigation(
                 }
             )
 
-            val user by caregiverProfileViewModel.user.collectAsStateWithLifecycle()
-            val completedServicesCount by caregiverProfileViewModel.completedServicesCount.collectAsStateWithLifecycle()
-            val rating by caregiverProfileViewModel.rating.collectAsStateWithLifecycle()
-            val isLoading by caregiverProfileViewModel.isLoading.collectAsStateWithLifecycle()
+            val user by viewModel.user.collectAsStateWithLifecycle()
+            val completedServicesCount by viewModel.completedServicesCount.collectAsStateWithLifecycle()
+            val rating by viewModel.rating.collectAsStateWithLifecycle()
+            val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
 
             if (isOwnProfile) {
                 CaregiverProfileScreen(
@@ -753,7 +758,7 @@ fun AppNavigation(
             } else {
                 CaregiverPublicProfileScreen(
                     caregiverId = targetCaregiverId,
-                    viewModel = caregiverProfileViewModel,
+                    viewModel = viewModel,
                     onBack = { navController.popBackStack() },
                     onRequestServices = {
                         scope.launch {
@@ -858,8 +863,7 @@ private fun generatePetId(existingPets: List<PetEntity>): Int {
 
     if (candidate <= 0) candidate = 1
 
-    val usedIds = existingPets.map { it.petId }.toHashSet()
-
+    val usedIds = existingPets.map { it.petId }.toSet()
     while (candidate in usedIds) {
         candidate = if (candidate == Int.MAX_VALUE) 1 else candidate + 1
     }

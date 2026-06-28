@@ -57,14 +57,16 @@ class LoginViewModel(
                 )
 
                 if (user != null) {
+                    println("Login successful for user: ${user.fullName}")
                     _loggedUser.value = user
                     _errorMessage.value = null
                 } else {
+                    println("Login failed: user is null")
                     _errorMessage.value = "Correo o contraseña incorrectos"
                 }
 
             } catch (e: Exception) {
-
+                println("Exception in login: ${e.message}")
                 _errorMessage.value = e.message
 
             } finally {

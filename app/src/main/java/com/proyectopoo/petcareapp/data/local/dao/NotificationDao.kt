@@ -21,10 +21,10 @@ interface NotificationDao {
     suspend fun getAllNotifications(): List<NotificationEntity>
 
     @Query("SELECT * FROM notifications WHERE userId = :userId")
-    suspend fun getNotificationsByUser(userId: Int): List<NotificationEntity>
+    suspend fun getNotificationsByUser(userId: String): List<NotificationEntity>
 
     @Query("SELECT * FROM notifications WHERE userId = :userId AND isRead = 0")
-    suspend fun getUnreadNotificationsByUser(userId: Int): List<NotificationEntity>
+    suspend fun getUnreadNotificationsByUser(userId: String): List<NotificationEntity>
 
     @Query("UPDATE notifications SET isRead = 1 WHERE notificationId = :notificationId")
     suspend fun markAsRead(notificationId: Int)

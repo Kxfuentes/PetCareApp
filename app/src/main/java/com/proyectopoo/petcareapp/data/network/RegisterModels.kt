@@ -27,8 +27,9 @@ data class RegisterResponse(
 
 @Serializable
 data class LoginResponse(
+    @SerialName("token") val token: String? = null,
     @SerialName("user") val user: UserDto? = null,
-    @SerialName("useer") val useer: UserDto? = null, // Soporte para typo en el servidor
+    @SerialName("useer") val useer: UserDto? = null,
     @SerialName("session") val session: SessionDto? = null,
     @SerialName("error") val error: String? = null
 )
@@ -45,7 +46,9 @@ data class UserDto(
 data class SessionDto(
     val id: String? = null,
     @SerialName("token_sesion") val tokenSesion: String? = null,
-    @SerialName("fecha_inicio") val fechaInicio: String? = null
+    @SerialName("fecha_inicio") val fechaInicio: String? = null,
+    val token: String? = null,
+    @SerialName("sessions") val sessionToken: String? = null
 )
 
 @Serializable

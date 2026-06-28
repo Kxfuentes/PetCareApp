@@ -40,7 +40,7 @@ data class RequestOffer(
 @Serializable
 data class CreateService(
     val serviceType: String = "",
-    val petName: String = "",
+    val petName: String = ""
 )
 
 @Serializable

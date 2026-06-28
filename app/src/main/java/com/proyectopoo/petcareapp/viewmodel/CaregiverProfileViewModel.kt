@@ -34,40 +34,31 @@ class CaregiverProfileViewModel(
         loadCaregiverData()
     }
 
-    private fun loadCaregiverData() {
+    fun loadCaregiverData() {
         viewModelScope.launch {
             _isLoading.value = true
             _error.value = null
             try {
                 val userEntity = database.userDao().getUserById(caregiverId)
-                _user.value = userEntity?.let {
-                    User(
-                        username = it.fullName,
-                        email = it.email,
-                        role = it.role.name,
-                        id = it.userId
+                if (userEntity != null) {
+                    _user.value = User(
+                        id = userEntity.userId,
+                        username = userEntity.fullName,
+                        email = userEntity.email,
+                        role = userEntity.role.name
                     )
+
+                    val caregiverEntity = database.caregiverDao().getCaregiverById(caregiverId)
+                    _rating.value = caregiverEntity?.rating ?: 0.0
+
+                    val applications = database.serviceApplicationDao().getByCaregiver(caregiverId)
+                    _completedServicesCount.value = applications.count { it.status == ApplicationStatus.COMPLETED }
                 }
-
-
-                val completed = database.serviceApplicationDao()
-                    .countByCaregiverAndStatus(caregiverId, ApplicationStatus.COMPLETED)
-                _completedServicesCount.value = completed
-
-
-                val avgRating = database.ratingDao().getAverageRatingForCaregiver(caregiverId)
-                _rating.value = avgRating ?: 0.0
-
             } catch (e: Exception) {
-                _error.value = e.localizedMessage ?: "Error al cargar el perfil del cuidador"
-                e.printStackTrace()
+                _error.value = "Error al cargar datos del cuidador: ${e.message}"
             } finally {
                 _isLoading.value = false
             }
         }
-    }
-
-    fun refresh() {
-        loadCaregiverData()
     }
 }

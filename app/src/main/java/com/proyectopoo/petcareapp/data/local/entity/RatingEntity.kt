@@ -1,5 +1,3 @@
-// app/src/main/java/com/proyectopoo/petcareapp/data/local/entity/RatingEntity.kt
-
 package com.proyectopoo.petcareapp.data.local.entity
 
 import androidx.room.Entity
@@ -38,11 +36,11 @@ import androidx.room.PrimaryKey
 data class RatingEntity(
     @PrimaryKey(autoGenerate = true)
     val ratingId: Int = 0,
-    val serviceRequestId: Int,   // ID de la solicitud de servicio calificada
-    val caregiverId: Int,         // ID del cuidador calificado
-    val ownerId: Int,             // ID del dueño vinculado al servicio
+    val serviceRequestId: Int,
+    val caregiverId: Int,
+    val ownerId: Int,
     val ratedByRole: UserRoleType = UserRoleType.OWNER,
-    val score: Double,            // Calificación (1.0 a 5.0)
-    val comment: String? = null,  // Comentario opcional
-    val createdAt: Long = System.currentTimeMillis()  // Timestamp
+    val score: Double,
+    val comment: String? = null,
+    val createdAt: Long = System.currentTimeMillis()
 )

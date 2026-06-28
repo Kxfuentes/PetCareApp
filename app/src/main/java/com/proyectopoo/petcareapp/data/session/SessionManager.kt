@@ -46,9 +46,7 @@ class SessionManager(
 
     fun getRole(): UserRoleType? {
         val role = prefs.getString("role", null)
-        return role?.let {
-            UserRoleType.valueOf(it)
-        }
+        return role?.let { UserRoleType.valueOf(it) }
     }
 
     fun getToken(): String? {
@@ -57,6 +55,16 @@ class SessionManager(
 
     fun getApiUserId(): String? {
         return prefs.getString("api_user_id", null)
+    }
+
+    fun saveToken(token: String, rememberSession: Boolean) {
+        if (rememberSession) {
+            prefs.edit().putString("auth_token", token).commit()
+        }
+    }
+
+    fun clearToken() {
+        prefs.edit().remove("auth_token").commit()
     }
 
     fun clearSession() {

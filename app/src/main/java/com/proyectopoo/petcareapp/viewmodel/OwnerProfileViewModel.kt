@@ -41,7 +41,7 @@ class OwnerProfileViewModel(
         }
     }
 
-    fun loadDogs() {
+    private fun loadDogs() {
         viewModelScope.launch {
             _dogs.value = petDao.getPetsByOwner(ownerId)
         }

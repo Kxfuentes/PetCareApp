@@ -36,50 +36,62 @@ class UserRepository(
         password: String,
         rememberSession: Boolean
     ): UserEntity? {
-        val response = apiService.login(
-            LoginRequest(
-                email = email,
-                password = password
+        return try {
+            val cleanEmail = email.trim()
+            val cleanPassword = password.trim()
+
+            val response = apiService.login(
+                LoginRequest(
+                    email = cleanEmail,
+                    password = cleanPassword
+                )
             )
-        )
 
-        if (!response.isSuccessful) {
-            return null
+            if (!response.isSuccessful) {
+                return null
+            }
+
+            val body = response.body() ?: return null
+            val userDto = body.user ?: body.useer ?: return null
+
+            val mappedRole = when (userDto.role?.uppercase()) {
+                "OWNER", "DUENO", "DUEÑO", "PROPIETARIO" -> UserRoleType.OWNER
+                "CAREGIVER", "CUIDADOR", "GESTOR" -> UserRoleType.CAREGIVER
+                else -> UserRoleType.OWNER
+            }
+
+            val stableUserId = resolveStableUserId(
+                userDao = userDao,
+                email = userDto.email,
+                apiUserId = userDto.id
+            )
+
+            val user = upsertLocalUser(
+                userDao = userDao,
+                userId = stableUserId,
+                fullName = userDto.username,
+                email = userDto.email,
+                role = mappedRole
+            )
+
+            val token = body.token ?: body.session?.tokenSesion ?: body.session?.token
+            sessionManager.saveSession(
+                userId = user.userId,
+                email = user.email,
+                role = user.role,
+                token = token,
+                apiUserId = userDto.id
+            )
+
+            if (token != null) {
+                sessionManager.saveToken(token, rememberSession)
+            }
+
+            user
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
         }
-
-        val body = response.body() ?: return null
-        
-        val userDto = body.user ?: body.useer ?: return null
-
-        val mappedRole = when (userDto.role?.uppercase()) {
-            "OWNER", "DUENO", "DUEÑO", "PROPIETARIO" -> UserRoleType.OWNER
-            "CAREGIVER", "CUIDADOR", "GESTOR" -> UserRoleType.CAREGIVER
-            else -> UserRoleType.OWNER
-        }
-
-        val stableUserId = resolveStableUserId(
-            userDao = userDao,
-            email = userDto.email,
-            apiUserId = userDto.id
-        )
-
-        val user = upsertLocalUser(
-            userDao = userDao,
-            userId = stableUserId,
-            fullName = userDto.username,
-            email = userDto.email,
-            role = mappedRole
-        )
-
-        sessionManager.saveSession(
-            userId = user.userId,
-            email = user.email,
-            role = user.role,
-            token = body.session?.tokenSesion,
-            apiUserId = userDto.id
-        )
-
-        return user
     }
 
     fun isLoggedIn(): Boolean {
@@ -98,6 +110,7 @@ class UserRepository(
 
     fun logout() {
         sessionManager.clearSession()
+        sessionManager.clearToken()
     }
 
     suspend fun updateUser(user: UserEntity) {

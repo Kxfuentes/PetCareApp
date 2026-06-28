@@ -214,7 +214,6 @@ fun CaregiverFeedScreen(
 
                             Spacer(modifier = Modifier.height(14.dp))
 
-
                             Text(
                                 text = "Email: ${servicio.ownerEmail ?: "No disponible"}",
                                 color = colorScheme.onSurface

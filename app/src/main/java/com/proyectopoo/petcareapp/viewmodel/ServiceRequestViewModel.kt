@@ -76,6 +76,7 @@ class ServiceRequestViewModel(
     val caregiverBookings = _caregiverBookings.asStateFlow()
 
     fun loadOwnerData(ownerId: Int) {
+        if (ownerId <= 0) return
         viewModelScope.launch {
             _ownerRequests.value = requestRepo.getWithApplications(ownerId)
             _recentOwnerRequests.value = requestRepo.getRecentDetailsByOwner(ownerId)
@@ -85,6 +86,7 @@ class ServiceRequestViewModel(
     }
 
     fun loadCaregiverData(caregiverId: Int) {
+        if (caregiverId <= 0) return
         viewModelScope.launch {
             _caregiverApplications.value = applicationRepo.getByCaregiver(caregiverId)
             _caregiverApplicationDetails.value = applicationRepo.getIncomingOwnerRequestsForCaregiver(caregiverId)
@@ -268,6 +270,7 @@ class ServiceRequestViewModel(
             caregiverId?.let {
                 _caregiverApplicationDetails.value = applicationRepo.getIncomingOwnerRequestsForCaregiver(it)
             }
+            loadAvailableRequests()
         }
     }
 

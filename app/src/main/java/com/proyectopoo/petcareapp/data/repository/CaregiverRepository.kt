@@ -25,7 +25,7 @@ class CaregiverRepository(
     }
 
     suspend fun getCaregiverByUserId(
-        userId: Int
+        userId: String
     ): CaregiverEntity? {
 
         return caregiverDao.getCaregiverByUserId(userId)
