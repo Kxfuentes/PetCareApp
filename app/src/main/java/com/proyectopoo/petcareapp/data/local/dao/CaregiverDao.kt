@@ -21,7 +21,7 @@ interface CaregiverDao {
     suspend fun getCaregiverById(caregiverId: Int): CaregiverEntity?
 
     @Query("SELECT * FROM caregivers WHERE userId = :userId LIMIT 1")
-    suspend fun getCaregiverByUserId(userId: Int): CaregiverEntity?
+    suspend fun getCaregiverByUserId(userId: String): CaregiverEntity?
 
     @Update
     suspend fun updateCaregiver(caregiver: CaregiverEntity)

@@ -94,7 +94,6 @@ fun AppNavigation(
     val availableRequests by serviceRequestViewModel.availableRequests.collectAsStateWithLifecycle()
     val currentUserId = sessionManager.getUserId()
 
-
     LaunchedEffect(currentUserId) {
         if (currentUserId > 0) {
             dogViewModel.loadDogs(currentUserId)
@@ -261,7 +260,12 @@ fun AppNavigation(
         composable<DogInfo> { backStackEntry ->
             val args = backStackEntry.toRoute<DogInfo>()
             val ownerId = sessionManager.getUserId()
-            val editingDog = dogs.find { it.petId == args.petId }
+
+            val editingDog = if (args.petId != -1) {
+                dogs.find { it.petId == args.petId }
+            } else {
+                null
+            }
 
             LaunchedEffect(ownerId) {
                 if (ownerId <= 0) {
@@ -306,7 +310,9 @@ fun AppNavigation(
         composable<OwnerHome> {
             val ownerId = sessionManager.getUserId()
             LaunchedEffect(ownerId) {
-                serviceRequestViewModel.loadOwnerData(ownerId)
+                if (ownerId > 0) {
+                    serviceRequestViewModel.loadOwnerData(ownerId)
+                }
             }
             OwnerHomeScreen(
                 dogs = dogs,
@@ -328,12 +334,9 @@ fun AppNavigation(
                 },
                 onAddDog = { navController.navigate(DogInfo()) },
                 onGoToFeed = { navController.navigate(OwnerFeed) },
-                // CORRECCIÓN: Para ver el propio perfil, le enviamos su id asignado
-                onGoToOwnerProfile = { navController.navigate(
-                    com.proyectopoo.petcareapp.navigation.OwnerProfile(
-                        ownerId = ownerId
-                    )
-                ) },
+                onGoToOwnerProfile = {
+                    navController.navigate(OwnerProfile(ownerId = ownerId))
+                },
                 onAcceptApplication = { applicationId ->
                     serviceRequestViewModel.acceptApplication(applicationId, ownerId)
                 },
@@ -362,7 +365,11 @@ fun AppNavigation(
                 onBack = { navController.popBackStack() },
                 onPublish = { petName, serviceType, description, location, price, date ->
                     val existingPet = dogs.firstOrNull { it.name.equals(petName, ignoreCase = true) }
-                    val petId = existingPet?.petId ?: (System.currentTimeMillis() % Int.MAX_VALUE).toInt()
+                    val petId = if (existingPet != null) {
+                        existingPet.petId
+                    } else {
+                        generatePetId(dogs)
+                    }
                     if (existingPet == null) {
                         dogViewModel.addDog(
                             PetEntity(
@@ -375,6 +382,7 @@ fun AppNavigation(
                             )
                         )
                     }
+                    // ✅ SIN .toString() - todo Int
                     serviceRequestViewModel.createRequestFromForm(
                         ownerId = ownerId,
                         petId = petId,
@@ -394,7 +402,9 @@ fun AppNavigation(
         composable<CaregiverHome> {
             val caregiverId = sessionManager.getUserId()
             LaunchedEffect(caregiverId) {
-                serviceRequestViewModel.loadCaregiverData(caregiverId)
+                if (caregiverId > 0) {
+                    serviceRequestViewModel.loadCaregiverData(caregiverId)
+                }
             }
             CaregiverHomeScreen(
                 onGoToServices = { navController.navigate(CaregiverService) },
@@ -409,12 +419,13 @@ fun AppNavigation(
             )
         }
 
-        // CORRECCIÓN SOLICITADA: Adaptación de argumentos para redirigir al perfil del dueño
         composable<CaregiverFeed> {
             val caregiverId = sessionManager.getUserId()
             LaunchedEffect(caregiverId) {
                 serviceRequestViewModel.loadAvailableRequests()
-                serviceRequestViewModel.loadCaregiverData(caregiverId)
+                if (caregiverId > 0) {
+                    serviceRequestViewModel.loadCaregiverData(caregiverId)
+                }
             }
             CaregiverFeedScreen(
                 requests = availableRequests,
@@ -430,12 +441,11 @@ fun AppNavigation(
             )
         }
 
-        // CORRECCIÓN: Adaptado para soportar tanto ver tu propio perfil como el de otros dueños
         composable<OwnerProfile> { backStackEntry ->
             val args = backStackEntry.toRoute<OwnerProfile>()
             val loggedUserId = sessionManager.getUserId()
 
-            val isOwnProfile = args.ownerId == -1 || args.ownerId == loggedUserId
+            val isOwnProfile = args.ownerId <= 0 || args.ownerId == loggedUserId
             val targetOwnerId = if (isOwnProfile) loggedUserId else args.ownerId
 
             val profileViewModel: OwnerProfileViewModel = viewModel(
@@ -446,20 +456,20 @@ fun AppNavigation(
             )
 
             val user by profileViewModel.user.collectAsStateWithLifecycle()
-            val dogs by profileViewModel.dogs.collectAsStateWithLifecycle()
+            val profileDogs by profileViewModel.dogs.collectAsStateWithLifecycle()
 
             val completedServices = recentOwnerRequests.filter { it.status.name == "COMPLETED" }
 
             OwnerProfileScreen(
                 user = user,
-                dogs = dogs,
+                dogs = profileDogs,
                 historyServices = completedServices,
                 onLogout = {
                     if (isOwnProfile) {
                         sessionLogout(navController, userRoleViewModel)
                     }
                 },
-                onEditProfile = { /* Falta que se implemente */ },
+                onEditProfile = { },
                 onAddPet = { navController.navigate(DogInfo()) }
             )
         }
@@ -469,11 +479,10 @@ fun AppNavigation(
             val requestedCaregiverId = args.caregiverId
             val loggedUserId = sessionManager.getUserId()
 
-            val isOwnProfile = requestedCaregiverId == -1 || requestedCaregiverId == loggedUserId
+            val isOwnProfile = requestedCaregiverId <= 0 || requestedCaregiverId == loggedUserId
             val targetCaregiverId = if (isOwnProfile) loggedUserId else requestedCaregiverId
 
-            val caregiverProfileViewModel: CaregiverProfileViewModel = viewModel(
-                key = "caregiver_profile_$targetCaregiverId",
+            val viewModel: CaregiverProfileViewModel = viewModel(
                 factory = viewModelFactory {
                     initializer {
                         CaregiverProfileViewModel(database, targetCaregiverId)
@@ -481,10 +490,10 @@ fun AppNavigation(
                 }
             )
 
-            val user by caregiverProfileViewModel.user.collectAsStateWithLifecycle()
-            val completedServicesCount by caregiverProfileViewModel.completedServicesCount.collectAsStateWithLifecycle()
-            val rating by caregiverProfileViewModel.rating.collectAsStateWithLifecycle()
-            val isLoading by caregiverProfileViewModel.isLoading.collectAsStateWithLifecycle()
+            val user by viewModel.user.collectAsStateWithLifecycle()
+            val completedServicesCount by viewModel.completedServicesCount.collectAsStateWithLifecycle()
+            val rating by viewModel.rating.collectAsStateWithLifecycle()
+            val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
 
             CaregiverProfileScreen(
                 user = user,
@@ -499,8 +508,8 @@ fun AppNavigation(
                         sessionLogout(navController, userRoleViewModel)
                     }
                 },
-                onEditProfile = { /* Falta implementar esto*/ },
-                onManageAvailability = { /* y esto */ }
+                onEditProfile = { },
+                onManageAvailability = { }
             )
         }
 
@@ -521,7 +530,7 @@ private fun generatePetId(existingPets: List<PetEntity>): Int {
     var candidate = (System.currentTimeMillis() % Int.MAX_VALUE).toInt()
     if (candidate <= 0) candidate = 1
 
-    val usedIds = existingPets.map { it.petId }.toHashSet()
+    val usedIds = existingPets.map { it.petId }.toSet()
     while (candidate in usedIds) {
         candidate = if (candidate == Int.MAX_VALUE) 1 else candidate + 1
     }

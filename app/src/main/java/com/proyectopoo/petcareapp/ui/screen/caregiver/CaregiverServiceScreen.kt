@@ -3,6 +3,7 @@ package com.proyectopoo.petcareapp.ui.screen.caregiver
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -11,6 +12,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -22,14 +24,21 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.proyectopoo.petcareapp.model.ServiceGiven
+import com.proyectopoo.petcareapp.viewmodel.MainViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CaregiverServiceScreen(
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    viewModel: MainViewModel = viewModel() // AÑADIDO
 ) {
     val colorScheme = MaterialTheme.colorScheme
+
+    // NUEVO: Estado de ubicación del ViewModel
+    val locationState by viewModel.locationSearchState.collectAsState()
+    var showLocationResults by remember { mutableStateOf(false) }
 
     val tiposServicio = listOf(
         "Alojamiento", "Guardería", "Paseo",
@@ -57,15 +66,27 @@ fun CaregiverServiceScreen(
     var descripcionEditada by remember { mutableStateOf("") }
     var activoEditado by remember { mutableStateOf(true) }
 
+    // NUEVO: Variables para editar ubicación
+    var ubicacionEditada by remember { mutableStateOf("") }
+    var ubicacionOriginal by remember { mutableStateOf("") }
+
     var servicios by remember { mutableStateOf(listOf<ServiceGiven>()) }
 
     fun obtenerIcono(nombre: String) = when (nombre) {
         "Alojamiento" -> Icons.Default.NightShelter
         "Guardería" -> Icons.Default.WbSunny
-        "Paseo" -> Icons.Default.DirectionsWalk
+        "Paseo" -> Icons.AutoMirrored.Filled.DirectionsWalk
         "Taxi" -> Icons.Default.LocalTaxi
         "Peluquería" -> Icons.Default.ContentCut
         else -> Icons.Default.House
+    }
+
+    // NUEVO: Efecto para actualizar la ubicación cuando se selecciona
+    LaunchedEffect(locationState.selectedLocation) {
+        if (locationState.selectedLocation != null) {
+            showLocationResults = false
+            ubicacionEditada = locationState.selectedLocation!!.display_name
+        }
     }
 
     Scaffold(
@@ -78,6 +99,15 @@ fun CaregiverServiceScreen(
                         color = colorScheme.onPrimary,
                         fontWeight = FontWeight.Bold
                     )
+                },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(
+                            imageVector = Icons.Default.ArrowBack,
+                            contentDescription = "Volver",
+                            tint = colorScheme.onPrimary
+                        )
+                    }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = colorScheme.primary
@@ -97,10 +127,13 @@ fun CaregiverServiceScreen(
         }
     ) { paddingValues ->
 
-        // --- DIÁLOGO DE EDICIÓN ---
+        // --- DIÁLOGO DE EDICIÓN MODIFICADO CON UBICACIÓN ---
         servicioEditando?.let { servicio ->
             AlertDialog(
-                onDismissRequest = { servicioEditando = null },
+                onDismissRequest = {
+                    servicioEditando = null
+                    viewModel.clearSearchResults()
+                },
                 containerColor = Color.White,
                 title = {
                     Text(
@@ -111,6 +144,7 @@ fun CaregiverServiceScreen(
                 },
                 text = {
                     Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                        // Precio
                         OutlinedTextField(
                             value = precioEditado,
                             onValueChange = { precioEditado = it },
@@ -125,11 +159,12 @@ fun CaregiverServiceScreen(
                             )
                         )
 
+                        // Descripción
                         OutlinedTextField(
                             value = descripcionEditada,
                             onValueChange = { descripcionEditada = it },
                             label = { Text("Descripción (Opcional)") },
-                            modifier = Modifier.fillMaxWidth().height(120.dp),
+                            modifier = Modifier.fillMaxWidth().height(80.dp),
                             shape = RoundedCornerShape(16.dp),
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedTextColor = Color.Black,
@@ -137,6 +172,127 @@ fun CaregiverServiceScreen(
                             )
                         )
 
+                        // ----- NUEVO: CAMPO DE UBICACIÓN EN EL DIÁLOGO -----
+                        Text(
+                            text = "📍 Ubicación del servicio",
+                            style = MaterialTheme.typography.titleSmall,
+                            color = Color.Black,
+                            modifier = Modifier.padding(top = 4.dp)
+                        )
+
+                        // Campo de búsqueda
+                        OutlinedTextField(
+                            value = locationState.query.ifEmpty { ubicacionEditada },
+                            onValueChange = {
+                                viewModel.updateSearchQuery(it)
+                                showLocationResults = it.isNotEmpty()
+                            },
+                            label = { Text("Buscar o cambiar ubicación") },
+                            placeholder = { Text("Ej: Plaza Mayor, Managua") },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true,
+                            shape = RoundedCornerShape(16.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedTextColor = Color.Black,
+                                unfocusedTextColor = Color.Black
+                            ),
+                            trailingIcon = {
+                                if (locationState.query.isNotEmpty() || ubicacionEditada.isNotEmpty()) {
+                                    IconButton(onClick = {
+                                        viewModel.clearSearchResults()
+                                        showLocationResults = false
+                                        ubicacionEditada = ""
+                                    }) {
+                                        Icon(Icons.Default.Close, contentDescription = "Limpiar")
+                                    }
+                                } else {
+                                    Icon(Icons.Default.Search, contentDescription = "Buscar")
+                                }
+                            }
+                        )
+
+                        // Mostrar resultados de búsqueda
+                        if (showLocationResults && locationState.results.isNotEmpty() && !locationState.isLoading) {
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .heightIn(max = 150.dp),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+                                )
+                            ) {
+                                LazyColumn {
+                                    items(locationState.results) { result ->
+                                        ListItem(
+                                            headlineContent = {
+                                                Text(
+                                                    result.display_name,
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                    maxLines = 2
+                                                )
+                                            },
+                                            leadingContent = {
+                                                Icon(
+                                                    Icons.Default.LocationOn,
+                                                    contentDescription = null,
+                                                    tint = MaterialTheme.colorScheme.primary
+                                                )
+                                            },
+                                            modifier = Modifier.clickable {
+                                                viewModel.selectLocation(result)
+                                                showLocationResults = false
+                                                ubicacionEditada = result.display_name
+                                            }
+                                        )
+                                        HorizontalDivider()
+                                    }
+                                }
+                            }
+                        }
+
+                        // Mostrar estado de carga
+                        if (locationState.isLoading) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(8.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                            }
+                        }
+
+                        // Mostrar ubicación seleccionada
+                        if (ubicacionEditada.isNotEmpty() && !showLocationResults) {
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.primaryContainer
+                                )
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(10.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        Icons.Default.CheckCircle,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = ubicacionEditada,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                                    )
+                                }
+                            }
+                        }
+
+                        // Switch Activo
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text(
                                 "Activo",
@@ -168,13 +324,15 @@ fun CaregiverServiceScreen(
                                     it.copy(
                                         precio = precioFormateado,
                                         descripcion = descripcionEditada,
-                                        activo = activoEditado
+                                        activo = activoEditado,
+                                        ubicacion = ubicacionEditada // AÑADIDO: guardar ubicación
                                     )
                                 } else {
                                     it
                                 }
                             }
                             servicioEditando = null
+                            viewModel.clearSearchResults()
                         },
                         enabled = precioEditado.isNotBlank()
                     ) {
@@ -182,14 +340,17 @@ fun CaregiverServiceScreen(
                     }
                 },
                 dismissButton = {
-                    OutlinedButton(onClick = { servicioEditando = null }) {
+                    OutlinedButton(onClick = {
+                        servicioEditando = null
+                        viewModel.clearSearchResults()
+                    }) {
                         Text("Cancelar")
                     }
                 }
             )
         }
 
-        // --- FORMULARIO PARA AGREGAR NUEVO SERVICIO ---
+        // --- FORMULARIO PARA AGREGAR NUEVO SERVICIO (MODIFICADO CON UBICACIÓN) ---
         if (mostrarFormulario) {
             Column(
                 modifier = Modifier
@@ -207,6 +368,7 @@ fun CaregiverServiceScreen(
 
                 Spacer(modifier = Modifier.height(24.dp))
 
+                // Tipo de servicio
                 ExposedDropdownMenuBox(
                     expanded = expanded,
                     onExpandedChange = { expanded = !expanded }
@@ -216,7 +378,7 @@ fun CaregiverServiceScreen(
                         onValueChange = {},
                         readOnly = true,
                         label = { Text("Tipo de servicio") },
-                        modifier = Modifier.fillMaxWidth().menuAnchor(),
+                        modifier = Modifier.fillMaxWidth().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable),
                         shape = RoundedCornerShape(16.dp),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedContainerColor = colorScheme.surface,
@@ -245,6 +407,7 @@ fun CaregiverServiceScreen(
 
                 Spacer(modifier = Modifier.height(18.dp))
 
+                // Precio
                 OutlinedTextField(
                     value = precio,
                     onValueChange = { precio = it },
@@ -263,11 +426,12 @@ fun CaregiverServiceScreen(
 
                 Spacer(modifier = Modifier.height(18.dp))
 
+                // Descripción
                 OutlinedTextField(
                     value = descripcion,
                     onValueChange = { descripcion = it },
                     label = { Text("Descripción (Opcional)") },
-                    modifier = Modifier.fillMaxWidth().height(130.dp),
+                    modifier = Modifier.fillMaxWidth().height(100.dp),
                     shape = RoundedCornerShape(16.dp),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedContainerColor = colorScheme.surface,
@@ -279,6 +443,128 @@ fun CaregiverServiceScreen(
 
                 Spacer(modifier = Modifier.height(18.dp))
 
+                // ----- NUEVO: UBICACIÓN EN FORMULARIO DE CREACIÓN -----
+                Text(
+                    text = "Ubicación del servicio",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(bottom = 4.dp)
+                )
+
+                OutlinedTextField(
+                    value = locationState.query,
+                    onValueChange = {
+                        viewModel.updateSearchQuery(it)
+                        showLocationResults = it.isNotEmpty()
+                    },
+                    label = { Text("Buscar dirección") },
+                    placeholder = { Text("Ej: Plaza Mayor, Managua") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    shape = RoundedCornerShape(16.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedContainerColor = colorScheme.surface,
+                        unfocusedContainerColor = colorScheme.surface,
+                        focusedBorderColor = colorScheme.primary,
+                        unfocusedBorderColor = colorScheme.outline
+                    ),
+                    trailingIcon = {
+                        if (locationState.query.isNotEmpty()) {
+                            IconButton(onClick = {
+                                viewModel.clearSearchResults()
+                                showLocationResults = false
+                            }) {
+                                Icon(Icons.Default.Close, contentDescription = "Limpiar")
+                            }
+                        } else {
+                            Icon(Icons.Default.Search, contentDescription = "Buscar")
+                        }
+                    }
+                )
+
+                // Resultados de búsqueda
+                if (showLocationResults && locationState.results.isNotEmpty() && !locationState.isLoading) {
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(max = 150.dp)
+                            .padding(vertical = 4.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = colorScheme.surfaceVariant
+                        )
+                    ) {
+                        LazyColumn {
+                            items(locationState.results) { result ->
+                                ListItem(
+                                    headlineContent = {
+                                        Text(
+                                            result.display_name,
+                                            style = MaterialTheme.typography.bodySmall,
+                                            maxLines = 2
+                                        )
+                                    },
+                                    leadingContent = {
+                                        Icon(
+                                            Icons.Default.LocationOn,
+                                            contentDescription = null,
+                                            tint = colorScheme.primary
+                                        )
+                                    },
+                                    modifier = Modifier.clickable {
+                                        viewModel.selectLocation(result)
+                                        showLocationResults = false
+                                    }
+                                )
+                                HorizontalDivider()
+                            }
+                        }
+                    }
+                }
+
+                if (locationState.isLoading) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(8.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                    }
+                }
+
+                // Mostrar ubicación seleccionada
+                if (locationState.selectedLocation != null && !showLocationResults) {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = colorScheme.primaryContainer
+                        )
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(10.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                Icons.Default.CheckCircle,
+                                contentDescription = null,
+                                tint = colorScheme.primary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = locationState.selectedLocation!!.display_name,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = colorScheme.onPrimaryContainer
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(18.dp))
+
+                // Switch Activo
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         "Activo",
@@ -301,7 +587,8 @@ fun CaregiverServiceScreen(
 
                 Spacer(modifier = Modifier.height(30.dp))
 
-                val formularioValido = tipoServicio.isNotBlank() && precio.isNotBlank()
+                val formularioValido = tipoServicio.isNotBlank() && precio.isNotBlank() &&
+                        locationState.selectedLocation != null
 
                 Button(
                     onClick = {
@@ -310,7 +597,8 @@ fun CaregiverServiceScreen(
                             tipoServicio,
                             "C$ $precio",
                             descripcion,
-                            activo
+                            activo,
+                            ubicacion = locationState.selectedLocation!!.display_name // AÑADIDO
                         )
                         servicios = servicios + nuevo
                         tipoServicio = ""
@@ -318,6 +606,7 @@ fun CaregiverServiceScreen(
                         descripcion = ""
                         activo = true
                         mostrarFormulario = false
+                        viewModel.clearSearchResults()
                     },
                     enabled = formularioValido,
                     modifier = Modifier.fillMaxWidth().height(55.dp),
@@ -333,7 +622,10 @@ fun CaregiverServiceScreen(
                 Spacer(modifier = Modifier.height(12.dp))
 
                 OutlinedButton(
-                    onClick = { mostrarFormulario = false },
+                    onClick = {
+                        mostrarFormulario = false
+                        viewModel.clearSearchResults()
+                    },
                     modifier = Modifier.fillMaxWidth().height(55.dp),
                     shape = RoundedCornerShape(18.dp),
                     border = BorderStroke(1.dp, colorScheme.outline),
@@ -347,9 +639,8 @@ fun CaregiverServiceScreen(
 
         } else {
 
-            // --- VISTA PRINCIPAL DE SERVICIOS OFRECIDOS ---
+            // --- VISTA PRINCIPAL DE SERVICIOS OFRECIDOS (sin cambios) ---
             if (servicios.isEmpty()) {
-                // Modificado a LazyColumn para soportar cómodamente la lista explicativa con scroll
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxSize()
@@ -360,7 +651,6 @@ fun CaregiverServiceScreen(
                 ) {
                     item { Spacer(modifier = Modifier.height(20.dp)) }
 
-                    // Bloque del mensaje informativo principal
                     item {
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
@@ -391,7 +681,6 @@ fun CaregiverServiceScreen(
                         )
                     }
 
-                    // Título de la guía de servicios
                     item {
                         Text(
                             text = "Guía de servicios de la plataforma",
@@ -403,7 +692,6 @@ fun CaregiverServiceScreen(
                         )
                     }
 
-                    // Renderizado de las 6 explicaciones mapeadas dinámicamente
                     items(detallesServicios) { (nombre, explicacion) ->
                         Card(
                             modifier = Modifier.fillMaxWidth(),
@@ -488,6 +776,17 @@ fun CaregiverServiceScreen(
                                             color = colorScheme.primary,
                                             fontWeight = FontWeight.Bold
                                         )
+
+                                        // NUEVO: Mostrar ubicación
+                                        servicio.ubicacion?.let { ubicacion ->
+                                            Spacer(modifier = Modifier.height(2.dp))
+                                            Text(
+                                                text = "$ubicacion",
+                                                color = colorScheme.onSurfaceVariant,
+                                                fontSize = 12.sp,
+                                                maxLines = 1
+                                            )
+                                        }
                                     }
 
                                     Switch(
@@ -521,6 +820,8 @@ fun CaregiverServiceScreen(
                                         precioEditado = servicio.precio.replace("C$", "").trim()
                                         descripcionEditada = servicio.descripcion
                                         activoEditado = servicio.activo
+                                        ubicacionEditada = servicio.ubicacion ?: "" // Cargar ubicación
+                                        ubicacionOriginal = servicio.ubicacion ?: ""
                                     },
                                     shape = RoundedCornerShape(14.dp),
                                     border = BorderStroke(1.dp, colorScheme.outline),

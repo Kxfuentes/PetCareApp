@@ -37,7 +37,7 @@ interface ServiceApplicationDao {
     ): ServiceApplicationEntity?
 
     @Query("SELECT COUNT(*) FROM service_applications WHERE caregiverId = :caregiverId AND status = :status")
-    suspend fun countByCaregiverAndStatus(caregiverId: Int, status: ApplicationStatus): Int
+    suspend fun countByCaregiverAndStatus(caregiverId: String, status: ApplicationStatus): Int
 
     @Query(
         """

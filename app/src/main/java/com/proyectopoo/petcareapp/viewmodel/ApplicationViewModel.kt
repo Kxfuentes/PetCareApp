@@ -18,7 +18,10 @@ class ApplicationViewModel(
     private val _ownerRequestsWithApps = MutableStateFlow<List<RequestWithApplications>>(emptyList())
     val ownerRequestsWithApps = _ownerRequestsWithApps.asStateFlow()
 
+    private var currentOwnerId: Int = 0
+
     fun loadOwnerRequests(ownerId: Int) {
+        currentOwnerId = ownerId
         viewModelScope.launch {
             _ownerRequestsWithApps.value = requestDao.getRequestsWithApplications(ownerId)
         }
@@ -27,20 +30,18 @@ class ApplicationViewModel(
     fun acceptApplication(applicationId: Int) {
         viewModelScope.launch {
             applicationDao.updateStatus(applicationId, ApplicationStatus.ACCEPTED)
-            // Recargar para reflejar cambios
-            _ownerRequestsWithApps.value = requestDao.getRequestsWithApplications(
-                _ownerRequestsWithApps.value.firstOrNull()?.request?.ownerId ?: return@launch
-            )
+            if (currentOwnerId > 0) {
+                _ownerRequestsWithApps.value = requestDao.getRequestsWithApplications(currentOwnerId)
+            }
         }
     }
 
     fun rejectApplication(applicationId: Int) {
         viewModelScope.launch {
             applicationDao.updateStatus(applicationId, ApplicationStatus.REJECTED)
-            // recargar igual
-            _ownerRequestsWithApps.value = requestDao.getRequestsWithApplications(
-                _ownerRequestsWithApps.value.firstOrNull()?.request?.ownerId ?: return@launch
-            )
+            if (currentOwnerId > 0) {
+                _ownerRequestsWithApps.value = requestDao.getRequestsWithApplications(currentOwnerId)
+            }
         }
     }
 }

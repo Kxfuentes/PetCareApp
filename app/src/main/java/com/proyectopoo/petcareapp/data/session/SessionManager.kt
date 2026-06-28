@@ -38,9 +38,7 @@ class SessionManager(
 
     fun getRole(): UserRoleType? {
         val role = prefs.getString("role", null)
-        return role?.let {
-            UserRoleType.valueOf(it)
-        }
+        return role?.let { UserRoleType.valueOf(it) }
     }
 
     fun clearSession() {

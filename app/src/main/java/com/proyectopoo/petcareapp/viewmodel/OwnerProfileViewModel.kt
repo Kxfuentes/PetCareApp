@@ -32,6 +32,7 @@ class OwnerProfileViewModel(
             val userEntity = userDao.getUserById(ownerId)
             _user.value = userEntity?.let {
                 User(
+                    id = it.userId,
                     username = it.fullName,
                     email = it.email,
                     role = it.role.name
@@ -40,23 +41,9 @@ class OwnerProfileViewModel(
         }
     }
 
-    fun loadDogs() {
+    private fun loadDogs() {
         viewModelScope.launch {
             _dogs.value = petDao.getPetsByOwner(ownerId)
-        }
-    }
-
-    fun addDog(pet: PetEntity) {
-        viewModelScope.launch {
-            petDao.insertPet(pet)
-            loadDogs()
-        }
-    }
-
-    fun updateDog(pet: PetEntity) {
-        viewModelScope.launch {
-            petDao.updatePet(pet)
-            loadDogs()
         }
     }
 }

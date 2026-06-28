@@ -54,6 +54,7 @@ class ServiceRequestViewModel(
     val caregiverApplicationDetails = _caregiverApplicationDetails.asStateFlow()
 
     fun loadOwnerData(ownerId: Int) {
+        if (ownerId <= 0) return
         viewModelScope.launch {
             _ownerRequests.value = requestRepo.getWithApplications(ownerId)
             _recentOwnerRequests.value = requestRepo.getRecentDetailsByOwner(ownerId)
@@ -62,6 +63,7 @@ class ServiceRequestViewModel(
     }
 
     fun loadCaregiverData(caregiverId: Int) {
+        if (caregiverId <= 0) return
         viewModelScope.launch {
             _caregiverApplications.value = applicationRepo.getByCaregiver(caregiverId)
             _caregiverApplicationDetails.value = applicationRepo.getDetailsByCaregiver(caregiverId)
@@ -157,27 +159,32 @@ class ServiceRequestViewModel(
         }
     }
 
-    fun acceptApplication(applicationId: Int, ownerId: Int? = null, caregiverId: Int? = null) {
+    fun acceptApplication(applicationId: Int, userId: Int) {
         viewModelScope.launch {
             applicationRepo.updateStatus(applicationId, ApplicationStatus.ACCEPTED)
-            ownerId?.let {
-                _ownerApplicationDetails.value = applicationRepo.getDetailsByOwner(it)
+
+            // Recargar datos según el rol del usuario
+            val user = userDao.getUserById(userId)
+            if (user?.role == UserRoleType.CAREGIVER) {
+                loadCaregiverData(userId)
+            } else {
+                loadOwnerData(userId)
             }
-            caregiverId?.let {
-                _caregiverApplicationDetails.value = applicationRepo.getDetailsByCaregiver(it)
-            }
+            loadAvailableRequests()
         }
     }
 
-    fun rejectApplication(applicationId: Int, ownerId: Int? = null, caregiverId: Int? = null) {
+    fun rejectApplication(applicationId: Int, userId: Int) {
         viewModelScope.launch {
             applicationRepo.updateStatus(applicationId, ApplicationStatus.REJECTED)
-            ownerId?.let {
-                _ownerApplicationDetails.value = applicationRepo.getDetailsByOwner(it)
+
+            val user = userDao.getUserById(userId)
+            if (user?.role == UserRoleType.CAREGIVER) {
+                loadCaregiverData(userId)
+            } else {
+                loadOwnerData(userId)
             }
-            caregiverId?.let {
-                _caregiverApplicationDetails.value = applicationRepo.getDetailsByCaregiver(it)
-            }
+            loadAvailableRequests()
         }
     }
 
@@ -209,7 +216,7 @@ class ServiceRequestViewModel(
     private suspend fun ensureCaregiver(caregiverId: Int) {
         if (caregiverDao.getCaregiverById(caregiverId) != null) return
 
-        val userId = caregiverId + 10_000
+        val userId = caregiverId
         if (userDao.getUserById(userId) == null) {
             userDao.insertUser(
                 UserEntity(

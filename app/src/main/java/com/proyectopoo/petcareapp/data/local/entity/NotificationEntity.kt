@@ -21,7 +21,7 @@ data class NotificationEntity(
     @PrimaryKey
     val notificationId: Int,
 
-    val userId: Int,
+    val userId: String,
 
     val title: String,
 

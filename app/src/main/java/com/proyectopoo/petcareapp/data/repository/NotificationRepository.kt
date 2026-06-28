@@ -24,14 +24,14 @@ class NotificationRepository(
     }
 
     suspend fun getNotificationsByUser(
-        userId: Int
+        userId: String
     ): List<NotificationEntity> {
 
         return notificationDao.getNotificationsByUser(userId)
     }
 
     suspend fun getUnreadNotificationsByUser(
-        userId: Int
+        userId: String
     ): List<NotificationEntity> {
 
         return notificationDao

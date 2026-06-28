@@ -1,6 +1,9 @@
 package com.proyectopoo.petcareapp.ui.screen.owner
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -13,7 +16,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.proyectopoo.petcareapp.data.local.entity.PetEntity
+import com.proyectopoo.petcareapp.viewmodel.MainViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -34,7 +39,8 @@ fun CreateServiceScreen(
         price: String,
         date: String
     ) -> Unit,
-    existingServices: List<String> = emptyList()
+    existingServices: List<String> = emptyList(),
+    viewModel: MainViewModel = viewModel()
 ) {
 
     var nombreMascota by remember(petName) { mutableStateOf(petName) }
@@ -48,9 +54,12 @@ fun CreateServiceScreen(
     var showError by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
 
-
     var expandedPet by remember { mutableStateOf(false) }
     var expandedService by remember { mutableStateOf(false) }
+
+    // NUEVO: Estado para la búsqueda de ubicación
+    val locationState by viewModel.locationSearchState.collectAsState()
+    var showLocationResults by remember { mutableStateOf(false) }
 
     val serviceOptions = listOf(
         "Alojamiento", "Guardería", "Paseo", "Taxi", "Peluquería", "Visitante"
@@ -61,7 +70,15 @@ fun CreateServiceScreen(
 
     val scrollState = rememberScrollState()
 
+    // NUEVO: Efecto para ocultar resultados cuando se selecciona una ubicación
+    LaunchedEffect(locationState.selectedLocation) {
+        if (locationState.selectedLocation != null) {
+            showLocationResults = false
+            ubicacion = locationState.selectedLocation!!.display_name
+        }
+    }
 
+    // Efecto para limpiar errores cuando el usuario escribe
     LaunchedEffect(nombreMascota, tipoServicio, descripcion, ubicacion, precio, fecha) {
         if (showError) showError = false
     }
@@ -73,7 +90,6 @@ fun CreateServiceScreen(
             .padding(24.dp),
         horizontalAlignment = Alignment.Start
     ) {
-        // Tarjeta informativa
         Card(
             colors = CardDefaults.cardColors(
                 containerColor = MaterialTheme.colorScheme.primaryContainer
@@ -117,7 +133,7 @@ fun CreateServiceScreen(
 
         Spacer(modifier = Modifier.height(24.dp))
 
-
+        // Selector de Mascota
         ExposedDropdownMenuBox(
             expanded = expandedPet,
             onExpandedChange = { expandedPet = it }
@@ -129,7 +145,7 @@ fun CreateServiceScreen(
                 label = { Text("Nombre de la Mascota") },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .menuAnchor(),
+                    .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable),
                 trailingIcon = {
                     IconButton(onClick = { expandedPet = !expandedPet }) {
                         Icon(Icons.Default.ArrowDropDown, contentDescription = null)
@@ -163,7 +179,7 @@ fun CreateServiceScreen(
 
         Spacer(modifier = Modifier.height(12.dp))
 
-
+        // Selector de Tipo de Servicio
         ExposedDropdownMenuBox(
             expanded = expandedService,
             onExpandedChange = { expandedService = it }
@@ -175,7 +191,7 @@ fun CreateServiceScreen(
                 label = { Text("Tipo de Servicio") },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .menuAnchor(),
+                    .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable),
                 trailingIcon = {
                     IconButton(onClick = { expandedService = !expandedService }) {
                         Icon(Icons.Default.ArrowDropDown, null)
@@ -205,6 +221,7 @@ fun CreateServiceScreen(
 
         Spacer(modifier = Modifier.height(12.dp))
 
+        // Descripción
         OutlinedTextField(
             value = descripcion,
             onValueChange = { descripcion = it },
@@ -217,17 +234,159 @@ fun CreateServiceScreen(
 
         Spacer(modifier = Modifier.height(12.dp))
 
+        // ----- NUEVO: CAMPO DE UBICACIÓN CON BÚSQUEDA -----
+        Text(
+            text = "📍 Ubicación del servicio",
+            style = MaterialTheme.typography.titleSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(bottom = 4.dp)
+        )
+
+        // Campo de búsqueda de ubicación
         OutlinedTextField(
-            value = ubicacion,
-            onValueChange = { ubicacion = it },
-            label = { Text("Ubicación") },
+            value = locationState.query,
+            onValueChange = {
+                viewModel.updateSearchQuery(it)
+                showLocationResults = it.isNotEmpty()
+            },
+            label = { Text("Buscar dirección") },
+            placeholder = { Text("Ej: Plaza Mayor, Managua") },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
+            trailingIcon = {
+                if (locationState.query.isNotEmpty()) {
+                    IconButton(onClick = {
+                        viewModel.clearSearchResults()
+                        showLocationResults = false
+                        ubicacion = ""
+                    }) {
+                        Icon(Icons.Default.Close, contentDescription = "Limpiar")
+                    }
+                } else {
+                    Icon(Icons.Default.Search, contentDescription = "Buscar")
+                }
+            },
             isError = showError && ubicacion.isBlank()
         )
 
+        // Mostrar resultados de búsqueda
+        if (showLocationResults && locationState.results.isNotEmpty() && !locationState.isLoading) {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 200.dp)
+                    .padding(vertical = 4.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+                )
+            ) {
+                LazyColumn(
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    items(locationState.results) { result ->
+                        ListItem(
+                            headlineContent = {
+                                Text(
+                                    text = result.display_name,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    maxLines = 2
+                                )
+                            },
+                            supportingContent = {
+                                Text(
+                                    text = "📍 ${result.lat}, ${result.lon}",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            },
+                            leadingContent = {
+                                Icon(
+                                    Icons.Default.LocationOn,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            },
+                            modifier = Modifier.clickable {
+                                viewModel.selectLocation(result)
+                                showLocationResults = false
+                                ubicacion = result.display_name
+                            }
+                        )
+                        HorizontalDivider()
+                    }
+                }
+            }
+        }
+
+        // Mostrar estado de carga
+        if (locationState.isLoading) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(24.dp)
+                )
+            }
+        }
+
+        // Mostrar error de búsqueda
+        if (locationState.error != null && !locationState.isLoading && showLocationResults) {
+            Text(
+                text = locationState.error!!,
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(vertical = 4.dp)
+            )
+        }
+
+        // Mostrar ubicación seleccionada (si no está en el campo de búsqueda)
+        if (locationState.selectedLocation != null && ubicacion.isNotEmpty()) {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer
+                )
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        Icons.Default.CheckCircle,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = ubicacion,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
+            }
+        }
+
+        // Si no hay resultados y el usuario busca, mostrar mensaje
+        if (showLocationResults && locationState.query.isNotEmpty() &&
+            locationState.results.isEmpty() && !locationState.isLoading) {
+            Text(
+                text = "No se encontraron ubicaciones. Intenta con otra dirección.",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(vertical = 8.dp)
+            )
+        }
+
         Spacer(modifier = Modifier.height(12.dp))
 
+        // Precio
         OutlinedTextField(
             value = precio,
             onValueChange = { value ->
@@ -260,6 +419,7 @@ fun CreateServiceScreen(
 
         Spacer(modifier = Modifier.height(32.dp))
 
+        // Mensaje de error
         if (showError) {
             Text(
                 text = errorMessage,

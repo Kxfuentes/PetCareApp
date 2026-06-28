@@ -13,7 +13,7 @@ interface RatingDao {
     suspend fun insertRating(rating: RatingEntity)
 
     @Query("SELECT AVG(score) FROM ratings WHERE caregiverId = :caregiverId")
-    suspend fun getAverageRatingForCaregiver(caregiverId: Int): Double?
+    suspend fun getAverageRatingForCaregiver(caregiverId: String): Double?
 
     @Query("SELECT COUNT(*) FROM ratings WHERE caregiverId = :caregiverId")
     suspend fun getRatingCountForCaregiver(caregiverId: Int): Int

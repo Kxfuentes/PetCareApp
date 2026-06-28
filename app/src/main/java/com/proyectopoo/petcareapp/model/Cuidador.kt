@@ -1,7 +1,7 @@
 package com.proyectopoo.petcareapp.model
 
 data class Cuidador(
-    val id: Int,
+    val id: String,
     val nombre: String,
     val ubicacion: String,
     val precio: String,

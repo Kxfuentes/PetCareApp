@@ -33,11 +33,13 @@ object CaregiverService
 @Serializable
 data class CreateService(
     val serviceType: String = "",
-    val petName: String = "",
+    val petName: String = ""
 )
 
 @Serializable
-data class OwnerProfile(val ownerId: Int = -1)
+data class OwnerProfile(
+    val ownerId: Int = -1
+)
 
 @Serializable
 data class CaregiverProfile(

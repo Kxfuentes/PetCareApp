@@ -57,7 +57,7 @@ fun RegisterScreen(
         if (password.isBlank()) return "La contraseña es requerida"
         if (password.length < 3) return "Mínimo 3 caracteres"
         if (!password.any { !it.isLetterOrDigit() })
-            return "La contraseña deebe incluir un carácter especial"
+            return "La contraseña debe incluir un carácter especial"
 
         if (password != confirmPassword) return "Las contraseñas no coinciden"
 
@@ -92,7 +92,6 @@ fun RegisterScreen(
 
             Spacer(modifier = Modifier.height(32.dp))
 
-
             errorMessage?.let { error ->
                 Text(
                     text = error,
@@ -101,7 +100,6 @@ fun RegisterScreen(
                 )
                 Spacer(modifier = Modifier.height(16.dp))
             }
-
 
             OutlinedTextField(
                 value = username,
@@ -198,13 +196,19 @@ fun RegisterScreen(
                             if (response.isSuccessful) {
                                 val registerResponse = response.body()
                                 val registeredUser = registerResponse?.user ?: registerResponse?.useer
+
                                 if (registerResponse != null && registeredUser != null && registeredUser.id > 0) {
                                     onRegisterSuccess(registerResponse)
                                 } else {
                                     errorMessage = "La API no devolvió los datos del usuario registrado"
                                 }
                             } else {
-                                errorMessage = "Error al registrar el usuario"
+                                val errorBody = response.errorBody()?.string()
+                                errorMessage = when {
+                                    errorBody?.contains("duplicada") == true -> "Este correo electrónico ya está registrado"
+                                    errorBody?.contains("email") == true -> "Error con el formato del correo"
+                                    else -> "Error al registrar el usuario: ${response.code()}"
+                                }
                             }
                         } catch (e: SocketTimeoutException) {
                             errorMessage = "No se pudo conectar con la API. Revisa que el servidor esté activo y que BASE_URL apunte a tu computadora."

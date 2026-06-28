@@ -43,12 +43,7 @@ data class UserDto(
 
 @Serializable
 data class SessionDto(
-    val id: Int? = null,
-    @SerialName("token_sesion") val tokenSesion: String? = null,
-    @SerialName("fecha_inicio") val fechaInicio: String? = null
-)
-
-@Serializable
-data class ErrorResponse(
-    val error: String? = null
+    val id: Int,
+    val token: String? = null,
+    @SerialName("sessions") val sessionToken: String? = null
 )

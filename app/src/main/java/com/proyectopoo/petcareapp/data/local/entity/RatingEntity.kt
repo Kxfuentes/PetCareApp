@@ -38,9 +38,9 @@ import androidx.room.PrimaryKey
 data class RatingEntity(
     @PrimaryKey(autoGenerate = true)
     val ratingId: Int = 0,
-    val serviceRequestId: Int,   // ID de la solicitud de servicio calificada
-    val caregiverId: Int,         // ID del cuidador calificado
-    val ownerId: Int,             // ID del dueño que califica
+    val serviceRequestId: String,   // ID de la solicitud de servicio calificada
+    val caregiverId: String,         // ID del cuidador calificado
+    val ownerId: String,             // ID del dueño que califica
     val score: Double,            // Calificación (1.0 a 5.0)
     val comment: String? = null,  // Comentario opcional
     val createdAt: Long = System.currentTimeMillis()  // Timestamp
