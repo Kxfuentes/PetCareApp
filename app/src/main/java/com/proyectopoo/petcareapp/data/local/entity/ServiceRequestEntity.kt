@@ -50,8 +50,17 @@ data class ServiceRequestEntity(
     val startTime: String? = null,
     val endTime: String? = null,
 
-    val status: ServiceRequestStatus = ServiceRequestStatus.PENDING
+    val status: ServiceRequestStatus = ServiceRequestStatus.PENDING,
+
+    val offeredServiceId: Int? = null,
+
+    val sourceType: RequestSource = RequestSource.OPEN
 )
+
+enum class RequestSource {
+    OFFER,
+    OPEN
+}
 
 enum class ServiceRequestStatus {
     PENDING,

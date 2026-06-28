@@ -18,6 +18,8 @@ import androidx.compose.ui.unit.sp
 import com.proyectopoo.petcareapp.data.local.entity.ApplicationStatus
 import com.proyectopoo.petcareapp.data.local.relation.ServiceApplicationDetails
 import com.proyectopoo.petcareapp.ui.components.ActionCard
+import com.proyectopoo.petcareapp.ui.util.statusLabel
+import kotlin.math.roundToInt
 
 @Composable
 fun CaregiverHomeScreen(
@@ -25,6 +27,7 @@ fun CaregiverHomeScreen(
     ownerRequests: List<ServiceApplicationDetails>,
     onAcceptApplication: (Int) -> Unit,
     onRejectApplication: (Int) -> Unit,
+    onCompleteAndRate: (ServiceApplicationDetails, Double, String) -> Unit,
     caregiverId: Int
 ) {
     var available by remember { mutableStateOf(true) }
@@ -39,6 +42,12 @@ fun CaregiverHomeScreen(
     val pendingRequests = ownerRequests.filter {
         it.applicationStatus == ApplicationStatus.PENDING
     }
+    val acceptedRequests = ownerRequests.filter {
+        it.applicationStatus == ApplicationStatus.ACCEPTED
+    }
+    var requestToRate by remember { mutableStateOf<ServiceApplicationDetails?>(null) }
+    var ratingScore by remember { mutableStateOf(5f) }
+    var ratingComment by remember { mutableStateOf("") }
 
     Column(
         modifier = Modifier
@@ -184,9 +193,20 @@ fun CaregiverHomeScreen(
                                     fontSize = 17.sp
                                 )
                                 Text(
-                                    text = "${request.requestTitle} · ${request.petName ?: "Mascota"}",
+                                    text = "${request.requestTitle} · ${request.petNames ?: request.petName ?: "Mascota"}",
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     fontSize = 14.sp
+                                )
+                                Text(
+                                    text = "Fecha: ${request.requestedDate ?: "—"} · Hora: ${request.startTime ?: "—"}",
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    fontSize = 13.sp
+                                )
+                                Text(
+                                    text = "Estado: ${statusLabel(request.applicationStatus.name)}",
+                                    color = MaterialTheme.colorScheme.primary,
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Medium
                                 )
                                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                                     Button(
@@ -207,7 +227,84 @@ fun CaregiverHomeScreen(
                     }
                 }
             }
+
+            if (acceptedRequests.isNotEmpty()) {
+                Text(
+                    text = "Servicios aceptados por calificar",
+                    color = MaterialTheme.colorScheme.onBackground,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold
+                )
+
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    acceptedRequests.forEach { request ->
+                        Card(
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.surface
+                            ),
+                            shape = RoundedCornerShape(18.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(16.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(Modifier.weight(1f)) {
+                                    Text(
+                                        text = request.ownerName ?: "Dueño",
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Text(
+                                        text = request.serviceTypeName ?: request.requestTitle,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                                Button(onClick = {
+                                    requestToRate = request
+                                    ratingScore = 5f
+                                    ratingComment = ""
+                                }) {
+                                    Text("Calificar")
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
+    }
+
+    requestToRate?.let { request ->
+        AlertDialog(
+            onDismissRequest = { requestToRate = null },
+            title = { Text("Calificar dueño") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text("${ratingScore.roundToInt()} estrellas")
+                    Slider(
+                        value = ratingScore,
+                        onValueChange = { ratingScore = it },
+                        valueRange = 1f..5f,
+                        steps = 3
+                    )
+                    OutlinedTextField(
+                        value = ratingComment,
+                        onValueChange = { ratingComment = it },
+                        label = { Text("Comentario opcional") },
+                        minLines = 2
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    onCompleteAndRate(request, ratingScore.toDouble(), ratingComment)
+                    requestToRate = null
+                }) { Text("Guardar") }
+            },
+            dismissButton = {
+                TextButton(onClick = { requestToRate = null }) { Text("Cancelar") }
+            }
+        )
     }
 }
 

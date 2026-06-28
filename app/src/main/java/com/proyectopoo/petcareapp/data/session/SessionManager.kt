@@ -14,14 +14,22 @@ class SessionManager(
     fun saveSession(
         userId: Int,
         email: String,
-        role: UserRoleType
+        role: UserRoleType,
+        token: String? = null,
+        apiUserId: String? = null
     ) {
-        prefs.edit()
+        val editor = prefs.edit()
             .putInt("user_id", userId)
-            .putString("email", email)
+            .putString("email", email.trim())
             .putString("role", role.name)
             .putBoolean("is_logged_in", true)
-            .apply()
+        if (token != null) {
+            editor.putString("token", token)
+        }
+        if (apiUserId != null) {
+            editor.putString("api_user_id", apiUserId)
+        }
+        editor.commit()
     }
 
     fun isLoggedIn(): Boolean {
@@ -43,7 +51,15 @@ class SessionManager(
         }
     }
 
+    fun getToken(): String? {
+        return prefs.getString("token", null)
+    }
+
+    fun getApiUserId(): String? {
+        return prefs.getString("api_user_id", null)
+    }
+
     fun clearSession() {
-        prefs.edit().clear().apply()
+        prefs.edit().clear().commit()
     }
 }

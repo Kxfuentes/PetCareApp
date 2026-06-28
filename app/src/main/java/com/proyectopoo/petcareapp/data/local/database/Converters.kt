@@ -46,6 +46,16 @@ class Converters {
     }
 
     @TypeConverter
+    fun fromApplicationInitiator(value: ApplicationInitiator?): String? {
+        return value?.name
+    }
+
+    @TypeConverter
+    fun toApplicationInitiator(value: String?): ApplicationInitiator? {
+        return value?.let { ApplicationInitiator.valueOf(it) }
+    }
+
+    @TypeConverter
     fun fromNotificationType(value: NotificationType?): String? {
         return value?.name
     }

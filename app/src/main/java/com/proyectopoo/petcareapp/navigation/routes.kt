@@ -32,6 +32,12 @@ object CaregiverFeed
 object CaregiverService
 
 @Serializable
+data class RequestOffer(
+    val offeredServiceId: Int,
+    val caregiverId: Int
+)
+
+@Serializable
 data class CreateService(
     val serviceType: String = "",
     val petName: String = "",

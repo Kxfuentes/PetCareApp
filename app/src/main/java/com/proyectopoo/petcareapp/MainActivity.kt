@@ -68,6 +68,7 @@ class MainActivity : ComponentActivity() {
                                 !dest.hasRoute<Login>() &&
                                 !dest.hasRoute<Register>() &&
                                 !dest.hasRoute<RoleSection>() &&
+                                !dest.hasRoute<RequestOffer>() &&
                                 !dest.hasRoute<DogInfo>() &&
                                 !dest.hasRoute<PasswordRecovery>()
                     } ?: false

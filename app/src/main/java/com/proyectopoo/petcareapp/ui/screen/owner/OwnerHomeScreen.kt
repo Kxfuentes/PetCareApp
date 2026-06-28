@@ -20,6 +20,7 @@ import com.proyectopoo.petcareapp.data.local.entity.ApplicationStatus
 import com.proyectopoo.petcareapp.data.local.entity.PetEntity
 import com.proyectopoo.petcareapp.data.local.relation.ServiceApplicationDetails
 import com.proyectopoo.petcareapp.data.local.relation.ServiceRequestDetails
+import kotlin.math.roundToInt
 
 @Composable
 fun OwnerHomeScreen(
@@ -34,6 +35,7 @@ fun OwnerHomeScreen(
     onGoToOwnerProfile: () -> Unit,
     onAcceptApplication: (Int) -> Unit,
     onRejectApplication: (Int) -> Unit,
+    onCompleteAndRate: (ServiceApplicationDetails, Double, String) -> Unit,
     ownerId: Int
 ) {
 
@@ -41,8 +43,11 @@ fun OwnerHomeScreen(
     var selectedDogIndex by remember { mutableStateOf(0) }
     var petToDelete by remember { mutableStateOf<PetEntity?>(null) }
     var showHeader by remember { mutableStateOf(true) }
+    var applicationToRate by remember { mutableStateOf<ServiceApplicationDetails?>(null) }
+    var ratingScore by remember { mutableStateOf(5f) }
+    var ratingComment by remember { mutableStateOf("") }
 
-    // Índice seguro y mascota actual (ya se usaban correctamente)
+
     val safeIndex = if (dogs.isEmpty()) 0 else selectedDogIndex.coerceIn(0, dogs.lastIndex)
     val currentDog = dogs.getOrNull(safeIndex)
 
@@ -288,8 +293,10 @@ fun OwnerHomeScreen(
                                                 fontWeight = FontWeight.SemiBold
                                             )
                                             Text(
-                                                listOfNotNull(request.petName, request.serviceTypeName)
-                                                    .joinToString(" • "),
+                                                listOfNotNull(
+                                                    request.petNames?.takeIf { it.isNotBlank() } ?: request.petName,
+                                                    request.serviceTypeName
+                                                ).joinToString(" • "),
                                                 style = MaterialTheme.typography.bodyMedium,
                                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                                             )
@@ -322,6 +329,9 @@ fun OwnerHomeScreen(
 
                 val pendingApplications = caregiverApplications.filter {
                     it.applicationStatus == ApplicationStatus.PENDING
+                }
+                val acceptedApplications = caregiverApplications.filter {
+                    it.applicationStatus == ApplicationStatus.ACCEPTED
                 }
 
                 if (pendingApplications.isEmpty()) {
@@ -410,6 +420,43 @@ fun OwnerHomeScreen(
                                         ) {
                                             Text("Rechazar", fontWeight = FontWeight.Medium)
                                         }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (acceptedApplications.isNotEmpty()) {
+                    Text(
+                        "Servicios aceptados por calificar",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.SemiBold
+                    )
+
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        acceptedApplications.forEach { application ->
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(16.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Column(Modifier.weight(1f)) {
+                                        Text(application.caregiverName ?: "Cuidador", fontWeight = FontWeight.SemiBold)
+                                        Text(
+                                            application.serviceTypeName ?: application.requestTitle,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                    Button(onClick = {
+                                        applicationToRate = application
+                                        ratingScore = 5f
+                                        ratingComment = ""
+                                    }) {
+                                        Text("Calificar")
                                     }
                                 }
                             }
@@ -507,6 +554,39 @@ fun OwnerHomeScreen(
                 }
             }
         }
+    }
+
+    applicationToRate?.let { application ->
+        AlertDialog(
+            onDismissRequest = { applicationToRate = null },
+            title = { Text("Calificar cuidador") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text("${ratingScore.roundToInt()} estrellas")
+                    Slider(
+                        value = ratingScore,
+                        onValueChange = { ratingScore = it },
+                        valueRange = 1f..5f,
+                        steps = 3
+                    )
+                    OutlinedTextField(
+                        value = ratingComment,
+                        onValueChange = { ratingComment = it },
+                        label = { Text("Comentario opcional") },
+                        minLines = 2
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    onCompleteAndRate(application, ratingScore.toDouble(), ratingComment)
+                    applicationToRate = null
+                }) { Text("Guardar") }
+            },
+            dismissButton = {
+                TextButton(onClick = { applicationToRate = null }) { Text("Cancelar") }
+            }
+        )
     }
 }
 

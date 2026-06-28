@@ -49,4 +49,8 @@ class DogViewModel(
             loadDogs(dog.ownerId)
         }
     }
+
+    fun clear() {
+        _dogs.value = emptyList()
+    }
 }

@@ -45,6 +45,7 @@ class CaregiverServiceViewModel(
         isAvailable: Boolean = true
     ) {
         viewModelScope.launch {
+            if (price !in 20.0..6000.0) return@launch
             ensureServiceType(serviceTypeId, title)
             val newService = OfferedServiceEntity(
                 offeredServiceId = 0, // autoGenerate
@@ -67,6 +68,7 @@ class CaregiverServiceViewModel(
         isAvailable: Boolean
     ) {
         viewModelScope.launch {
+            if (price !in 20.0..6000.0) return@launch
             val service = offeredServiceDao.getServiceById(id) ?: return@launch
             offeredServiceDao.updateService(
                 service.copy(

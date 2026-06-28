@@ -6,6 +6,8 @@ import com.proyectopoo.petcareapp.data.local.entity.UserRoleType
 import com.proyectopoo.petcareapp.data.network.ApiService
 import com.proyectopoo.petcareapp.data.network.LoginRequest
 import com.proyectopoo.petcareapp.data.session.SessionManager
+import com.proyectopoo.petcareapp.data.session.resolveStableUserId
+import com.proyectopoo.petcareapp.data.session.upsertLocalUser
 
 class UserRepository(
     private val userDao: UserDao,
@@ -55,25 +57,27 @@ class UserRepository(
             else -> UserRoleType.OWNER
         }
 
-        val user = UserEntity(
-            userId = userDto.id.toLocalUserId(),
+        val stableUserId = resolveStableUserId(
+            userDao = userDao,
+            email = userDto.email,
+            apiUserId = userDto.id
+        )
+
+        val user = upsertLocalUser(
+            userDao = userDao,
+            userId = stableUserId,
             fullName = userDto.username,
             email = userDto.email,
-            phone = null,
-            password = null,
             role = mappedRole
         )
 
-
-        userDao.insertUser(user)
-
-        if (rememberSession) {
-            sessionManager.saveSession(
-                userId = user.userId,
-                email = user.email,
-                role = user.role
-            )
-        }
+        sessionManager.saveSession(
+            userId = user.userId,
+            email = user.email,
+            role = user.role,
+            token = body.session?.tokenSesion,
+            apiUserId = userDto.id
+        )
 
         return user
     }
@@ -103,11 +107,4 @@ class UserRepository(
     suspend fun deleteUser(user: UserEntity) {
         userDao.deleteUser(user)
     }
-}
-private fun String.toLocalUserId(): Int {
-    val numericId = this.toIntOrNull()
-    if (numericId != null && numericId > 0) return numericId
-
-    val generatedId = this.hashCode() and Int.MAX_VALUE
-    return if (generatedId > 0) generatedId else 1
 }

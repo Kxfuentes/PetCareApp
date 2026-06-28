@@ -22,7 +22,8 @@ import androidx.room.*
 
     indices = [
         Index("serviceRequestId"),
-        Index("caregiverId")
+        Index("caregiverId"),
+        Index("offeredServiceId")
     ]
 )
 data class ServiceApplicationEntity(
@@ -34,8 +35,17 @@ data class ServiceApplicationEntity(
 
     val caregiverId: Int,
 
+    val offeredServiceId: Int? = null,
+
+    val initiatedBy: ApplicationInitiator = ApplicationInitiator.CAREGIVER,
+
     val status: ApplicationStatus = ApplicationStatus.PENDING
 )
+
+enum class ApplicationInitiator {
+    OWNER,
+    CAREGIVER
+}
 
 enum class ApplicationStatus {
     PENDING,

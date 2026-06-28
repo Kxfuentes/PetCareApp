@@ -40,7 +40,7 @@ fun OwnerProfileScreen(
             .fillMaxSize()
             .verticalScroll(scrollState)
             .padding(16.dp),
-        horizontalAlignment = Alignment.Start
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
 
         Card(
@@ -50,8 +50,11 @@ fun OwnerProfileScreen(
             elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
         ) {
             Row(
-                modifier = Modifier.padding(20.dp),
-                verticalAlignment = Alignment.CenterVertically
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(20.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
             ) {
                 Box(
                     modifier = Modifier
@@ -65,16 +68,12 @@ fun OwnerProfileScreen(
 
                 Spacer(Modifier.width(16.dp))
 
-                Column(Modifier.weight(1f)) {
-                    Text(user?.username ?: "Usuario", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold)
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(user?.username ?: "Usuario", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center)
                     Spacer(Modifier.height(4.dp))
-                    Text(user?.email ?: "correo@ejemplo.com", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(user?.email ?: "correo@ejemplo.com", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
                     Spacer(Modifier.height(4.dp))
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Pets, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
-                        Spacer(Modifier.width(6.dp))
-                        Text("Dueño de Mascotas", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
+                    Text("Dueño de Mascotas", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
                 }
 
 
@@ -83,7 +82,6 @@ fun OwnerProfileScreen(
 
         Spacer(Modifier.height(24.dp))
 
-        // MIS MASCOTAS
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Default.Pets, null, tint = MaterialTheme.colorScheme.primary)
@@ -107,7 +105,6 @@ fun OwnerProfileScreen(
                 Column(Modifier.padding(16.dp)) {
                     dogs.forEach { pet ->
                         Row(Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.Pets, null, tint = MaterialTheme.colorScheme.primary)
                             Spacer(Modifier.width(12.dp))
                             Text("${pet.name} - ${pet.breed ?: pet.species ?: "Sin raza"}", style = MaterialTheme.typography.bodyLarge)
                         }
@@ -118,7 +115,6 @@ fun OwnerProfileScreen(
 
         Spacer(Modifier.height(28.dp))
 
-        // HISTORIAL (Solo Completados)
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Default.History, null, tint = MaterialTheme.colorScheme.primary)
@@ -138,7 +134,7 @@ fun OwnerProfileScreen(
                     Icon(Icons.Default.AssignmentTurnedIn, null, Modifier.size(80.dp), tint = MaterialTheme.colorScheme.outline)
                     Spacer(Modifier.height(16.dp))
                     Text("Aún no tienes servicios completados", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Medium)
-                    Text("Cuando realices servicios para tus mascotas, aparecerán aquí.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
+                    Text("Cuando se complenten servicios de tus mascotas, aparecerán aquí.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
                 }
             } else {
                 Column(Modifier.padding(16.dp)) {

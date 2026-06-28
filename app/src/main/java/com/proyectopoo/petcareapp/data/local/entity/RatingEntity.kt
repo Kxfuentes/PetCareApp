@@ -40,7 +40,8 @@ data class RatingEntity(
     val ratingId: Int = 0,
     val serviceRequestId: Int,   // ID de la solicitud de servicio calificada
     val caregiverId: Int,         // ID del cuidador calificado
-    val ownerId: Int,             // ID del dueño que califica
+    val ownerId: Int,             // ID del dueño vinculado al servicio
+    val ratedByRole: UserRoleType = UserRoleType.OWNER,
     val score: Double,            // Calificación (1.0 a 5.0)
     val comment: String? = null,  // Comentario opcional
     val createdAt: Long = System.currentTimeMillis()  // Timestamp

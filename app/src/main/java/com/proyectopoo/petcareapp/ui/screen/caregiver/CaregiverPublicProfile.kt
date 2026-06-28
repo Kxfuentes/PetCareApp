@@ -175,7 +175,7 @@ fun CaregiverPublicProfileScreen(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp)
             ) {
-                Text("Solicitar servicios")
+                Text("Solicitar este servicio")
             }
         }
     }

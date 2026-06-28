@@ -12,6 +12,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.proyectopoo.petcareapp.data.local.entity.PetEntity
@@ -26,7 +27,7 @@ fun CreateServiceScreen(
     dogs: List<PetEntity> = emptyList(),
     onBack: () -> Unit,
     onPublish: (
-        petName: String,
+        selectedPetNames: List<String>,
         serviceType: String,
         description: String,
         location: String,
@@ -34,11 +35,10 @@ fun CreateServiceScreen(
         date: String,
         startTime: String,
         endTime: String
-    ) -> Unit,
-    existingServices: List<String> = emptyList()
+    ) -> Unit
 ) {
 
-    var nombreMascota by remember(petName) { mutableStateOf(petName) }
+    var selectedPetIds by remember { mutableStateOf(setOf<Int>()) }
     var tipoServicio by remember(serviceType) { mutableStateOf(serviceType) }
     var descripcion by remember { mutableStateOf("") }
     var ubicacion by remember { mutableStateOf("") }
@@ -46,21 +46,35 @@ fun CreateServiceScreen(
     var fecha by remember { mutableStateOf("") }
     var horaInicio by remember { mutableStateOf("") }
     var horaFin by remember { mutableStateOf("") }
+    var fechaSalida by remember { mutableStateOf("") }
+    var ubicacionDestino by remember { mutableStateOf("") }
+    var necesitaTransporte by remember { mutableStateOf(false) }
+    var idaYVuelta by remember { mutableStateOf(false) }
+    var tipoPeluqueria by remember { mutableStateOf("") }
+    var expandedGrooming by remember { mutableStateOf(false) }
 
     var showDatePicker by remember { mutableStateOf(false) }
     var showStartTimePicker by remember { mutableStateOf(false) }
     var showEndTimePicker by remember { mutableStateOf(false) }
 
+    var showExitDatePicker by remember { mutableStateOf(false) }
+
     var showError by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
 
-    var expandedPet by remember { mutableStateOf(false) }
     var expandedService by remember { mutableStateOf(false) }
+
+    LaunchedEffect(dogs, petName) {
+        if (selectedPetIds.isEmpty() && dogs.isNotEmpty()) {
+            val preselected = dogs.find { it.name == petName }
+            if (preselected != null) selectedPetIds = setOf(preselected.petId)
+        }
+    }
 
     val serviceOptions = listOf("Alojamiento", "Guardería", "Paseo", "Taxi", "Peluquería", "Visitante")
 
-    val isDuplicate = tipoServicio.isNotBlank() &&
-            existingServices.any { it.equals(tipoServicio, ignoreCase = true) }
+    val parsedPrice = precio.toDoubleOrNull()
+    val isInvalidPrice = precio.isNotBlank() && (parsedPrice == null || parsedPrice !in 20.0..6000.0)
 
     val scrollState = rememberScrollState()
 
@@ -112,7 +126,7 @@ fun CreateServiceScreen(
         )
     }
 
-    LaunchedEffect(nombreMascota, tipoServicio, ubicacion, precio, fecha, horaInicio, horaFin) {
+    LaunchedEffect(selectedPetIds, tipoServicio, ubicacion, ubicacionDestino, precio, fecha, fechaSalida, horaInicio, horaFin, tipoPeluqueria) {
         if (showError) showError = false
     }
 
@@ -123,24 +137,6 @@ fun CreateServiceScreen(
             .padding(24.dp),
         horizontalAlignment = Alignment.Start
     ) {
-        // Card informativo
-        Card(
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
-            shape = RoundedCornerShape(16.dp),
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.Info, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                Spacer(Modifier.width(12.dp))
-                Text(
-                    "Cada solicitud puede ser solo para un perro.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-            }
-        }
-
-        Spacer(Modifier.height(24.dp))
 
         Text("Crear Solicitud de Servicio", style = MaterialTheme.typography.headlineMedium)
         Spacer(Modifier.height(8.dp))
@@ -148,24 +144,28 @@ fun CreateServiceScreen(
 
         Spacer(Modifier.height(24.dp))
 
-        // Dropdown Mascota - Fondo Blanco
-        ExposedDropdownMenuBox(expanded = expandedPet, onExpandedChange = { expandedPet = it }) {
-            OutlinedTextField(
-                value = nombreMascota,
-                onValueChange = {},
-                readOnly = true,
-                label = { Text("Nombre de la Mascota") },
-                modifier = Modifier.fillMaxWidth().menuAnchor(),
-                trailingIcon = { IconButton(onClick = { expandedPet = !expandedPet }) { Icon(Icons.Default.ArrowDropDown, null) } },
-                isError = showError && nombreMascota.isBlank()
-            )
-            ExposedDropdownMenu(
-                expanded = expandedPet,
-                onDismissRequest = { expandedPet = false },
-                containerColor = Color.White
-            ) {
-                dogs.forEach { dog ->
-                    DropdownMenuItem(text = { Text(dog.name) }, onClick = { nombreMascota = dog.name; expandedPet = false })
+        Text(
+            "¿Para cuáles de tus mascotas deseas este servicio?",
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.SemiBold
+        )
+        Spacer(Modifier.height(8.dp))
+
+        if (dogs.isEmpty()) {
+            Text("No tienes mascotas registradas.", color = MaterialTheme.colorScheme.error)
+        } else {
+            dogs.forEach { dog ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Checkbox(
+                        checked = selectedPetIds.contains(dog.petId),
+                        onCheckedChange = { checked ->
+                            selectedPetIds = if (checked) selectedPetIds + dog.petId else selectedPetIds - dog.petId
+                        }
+                    )
+                    Text(dog.name)
                 }
             }
         }
@@ -181,8 +181,7 @@ fun CreateServiceScreen(
                 label = { Text("Tipo de Servicio") },
                 modifier = Modifier.fillMaxWidth().menuAnchor(),
                 trailingIcon = { IconButton(onClick = { expandedService = !expandedService }) { Icon(Icons.Default.ArrowDropDown, null) } },
-                isError = (showError && tipoServicio.isBlank()) || isDuplicate,
-                supportingText = if (isDuplicate) {{ Text("Ya tienes este servicio creado", color = MaterialTheme.colorScheme.error) }} else null
+                isError = showError && tipoServicio.isBlank()
             )
             ExposedDropdownMenu(
                 expanded = expandedService,
@@ -209,75 +208,132 @@ fun CreateServiceScreen(
         Spacer(Modifier.height(12.dp))
 
         OutlinedTextField(
-            value = ubicacion,
-            onValueChange = { ubicacion = it },
-            label = { Text("Ubicación") },
-            modifier = Modifier.fillMaxWidth(),
-            isError = showError && ubicacion.isBlank()
-        )
-
-        Spacer(Modifier.height(12.dp))
-
-        OutlinedTextField(
             value = precio,
             onValueChange = { if (it.all { char -> char.isDigit() }) precio = it },
             label = { Text("Precio (C$)") },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             modifier = Modifier.fillMaxWidth(),
-            isError = showError && precio.isBlank()
+            isError = showError && (precio.isBlank() || isInvalidPrice),
+            supportingText = if (isInvalidPrice) {{ Text("El precio debe estar entre C$20 y C$6000", color = MaterialTheme.colorScheme.error) }} else null
         )
 
         Spacer(Modifier.height(12.dp))
 
-        OutlinedTextField(
-            value = fecha,
-            onValueChange = {},
-            label = { Text("Fecha del servicio") },
-            modifier = Modifier.fillMaxWidth(),
-            readOnly = true,
-            isError = showError && (fecha.isBlank() || isPastDate || isBeyondSixMonths),
-            supportingText = when {
-                isPastDate -> {{ Text("La fecha no puede ser pasada", color = MaterialTheme.colorScheme.error) }}
-                isBeyondSixMonths -> {{ Text("La fecha no puede ser mayor a 6 meses", color = MaterialTheme.colorScheme.error) }}
-                else -> null
-            },
-            trailingIcon = {
-                IconButton(onClick = { showDatePicker = true }) {
-                    Icon(Icons.Default.DateRange, contentDescription = null)
+        when (tipoServicio) {
+            "Alojamiento" -> {
+                Text("Detalles de Alojamiento", style = MaterialTheme.typography.titleMedium)
+                Spacer(Modifier.height(8.dp))
+                ServiceDateField(
+                    value = fecha,
+                    label = "Fecha de entrada",
+                    showError = showError && fecha.isBlank(),
+                    onClick = { showDatePicker = true }
+                )
+                Spacer(Modifier.height(12.dp))
+                ServiceDateField(
+                    value = fechaSalida,
+                    label = "Fecha de salida",
+                    showError = showError && fechaSalida.isBlank(),
+                    onClick = { showExitDatePicker = true }
+                )
+                Spacer(Modifier.height(12.dp))
+                TransportRow(
+                    checked = necesitaTransporte,
+                    onCheckedChange = { necesitaTransporte = it }
+                )
+                if (necesitaTransporte) {
+                    Spacer(Modifier.height(12.dp))
+                    OutlinedTextField(
+                        value = ubicacion,
+                        onValueChange = { ubicacion = it },
+                        label = { Text("Ubicación de recogida") },
+                        modifier = Modifier.fillMaxWidth(),
+                        isError = showError && ubicacion.isBlank()
+                    )
                 }
             }
-        )
-
-        Spacer(Modifier.height(12.dp))
-
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            OutlinedTextField(
-                value = horaInicio,
-                onValueChange = {},
-                label = { Text("Hora Inicio") },
-                modifier = Modifier.weight(1f),
-                readOnly = true,
-                isError = showError && horaInicio.isBlank(),
-                trailingIcon = {
-                    IconButton(onClick = { showStartTimePicker = true }) {
-                        Icon(Icons.Default.AccessTime, null)
+            "Guardería" -> {
+                Text("Detalles de Guardería", style = MaterialTheme.typography.titleMedium)
+                Spacer(Modifier.height(8.dp))
+                ServiceDateField(fecha, "Fecha del servicio", showError && fecha.isBlank()) { showDatePicker = true }
+                Spacer(Modifier.height(12.dp))
+                TimeRangeFields(horaInicio, horaFin, showError, { showStartTimePicker = true }, { showEndTimePicker = true }, "Hora de entrada", "Hora de salida")
+                Spacer(Modifier.height(12.dp))
+                TransportRow(necesitaTransporte) { necesitaTransporte = it }
+                if (necesitaTransporte) {
+                    Spacer(Modifier.height(12.dp))
+                    OutlinedTextField(
+                        value = ubicacion,
+                        onValueChange = { ubicacion = it },
+                        label = { Text("Ubicación") },
+                        modifier = Modifier.fillMaxWidth(),
+                        isError = showError && ubicacion.isBlank()
+                    )
+                }
+            }
+            "Paseo" -> {
+                Text("Detalles de Paseo", style = MaterialTheme.typography.titleMedium)
+                Spacer(Modifier.height(8.dp))
+                OutlinedTextField(value = ubicacion, onValueChange = { ubicacion = it }, label = { Text("Ubicación") }, modifier = Modifier.fillMaxWidth(), isError = showError && ubicacion.isBlank())
+                Spacer(Modifier.height(12.dp))
+                ServiceDateField(fecha, "Fecha", showError && fecha.isBlank()) { showDatePicker = true }
+                Spacer(Modifier.height(12.dp))
+                TimeRangeFields(horaInicio, horaFin, showError, { showStartTimePicker = true }, { showEndTimePicker = true }, "Hora de inicio", "Hora de fin")
+            }
+            "Taxi" -> {
+                Text("Detalles de Taxi", style = MaterialTheme.typography.titleMedium)
+                Spacer(Modifier.height(8.dp))
+                ServiceDateField(fecha, "Fecha", showError && fecha.isBlank()) { showDatePicker = true }
+                Spacer(Modifier.height(12.dp))
+                OutlinedTextField(value = ubicacion, onValueChange = { ubicacion = it }, label = { Text("Dirección de recogida") }, modifier = Modifier.fillMaxWidth(), isError = showError && ubicacion.isBlank())
+                Spacer(Modifier.height(12.dp))
+                OutlinedTextField(value = ubicacionDestino, onValueChange = { ubicacionDestino = it }, label = { Text("Dirección de destino") }, modifier = Modifier.fillMaxWidth(), isError = showError && ubicacionDestino.isBlank())
+                Spacer(Modifier.height(12.dp))
+                TimeField(horaInicio, "Hora de recogida", showError && horaInicio.isBlank()) { showStartTimePicker = true }
+                Spacer(Modifier.height(12.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Checkbox(checked = idaYVuelta, onCheckedChange = { idaYVuelta = it })
+                    Text("Ida y vuelta")
+                }
+            }
+            "Peluquería" -> {
+                Text("Detalles de Peluquería", style = MaterialTheme.typography.titleMedium)
+                Spacer(Modifier.height(8.dp))
+                OutlinedTextField(value = ubicacion, onValueChange = { ubicacion = it }, label = { Text("Ubicación") }, modifier = Modifier.fillMaxWidth(), isError = showError && ubicacion.isBlank())
+                Spacer(Modifier.height(12.dp))
+                ServiceDateField(fecha, "Fecha", showError && fecha.isBlank()) { showDatePicker = true }
+                Spacer(Modifier.height(12.dp))
+                TimeField(horaInicio, "Hora", showError && horaInicio.isBlank()) { showStartTimePicker = true }
+                Spacer(Modifier.height(12.dp))
+                ExposedDropdownMenuBox(expanded = expandedGrooming, onExpandedChange = { expandedGrooming = it }) {
+                    OutlinedTextField(
+                        value = tipoPeluqueria,
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Tipo de servicio") },
+                        modifier = Modifier.fillMaxWidth().menuAnchor(),
+                        trailingIcon = { Icon(Icons.Default.ArrowDropDown, null) },
+                        isError = showError && tipoPeluqueria.isBlank()
+                    )
+                    ExposedDropdownMenu(expanded = expandedGrooming, onDismissRequest = { expandedGrooming = false }, containerColor = Color.White) {
+                        listOf("Baño", "Corte", "Ambos").forEach { option ->
+                            DropdownMenuItem(text = { Text(option) }, onClick = { tipoPeluqueria = option; expandedGrooming = false })
+                        }
                     }
                 }
-            )
-
-            OutlinedTextField(
-                value = horaFin,
-                onValueChange = {},
-                label = { Text("Hora Fin") },
-                modifier = Modifier.weight(1f),
-                readOnly = true,
-                isError = showError && horaFin.isBlank(),
-                trailingIcon = {
-                    IconButton(onClick = { showEndTimePicker = true }) {
-                        Icon(Icons.Default.AccessTime, null)
-                    }
-                }
-            )
+            }
+            "Visitante" -> {
+                Text("Detalles de Visita", style = MaterialTheme.typography.titleMedium)
+                Spacer(Modifier.height(8.dp))
+                OutlinedTextField(value = ubicacion, onValueChange = { ubicacion = it }, label = { Text("Ubicación") }, modifier = Modifier.fillMaxWidth(), isError = showError && ubicacion.isBlank())
+                Spacer(Modifier.height(12.dp))
+                ServiceDateField(fecha, "Fecha de inicio", showError && fecha.isBlank()) { showDatePicker = true }
+                Spacer(Modifier.height(12.dp))
+                TimeRangeFields(horaInicio, horaFin, showError, { showStartTimePicker = true }, { showEndTimePicker = true }, "Hora de inicio", "Hora de fin")
+            }
+            else -> {
+                Text("Selecciona un tipo de servicio para ver sus campos.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
         }
 
         Spacer(Modifier.height(32.dp))
@@ -291,23 +347,32 @@ fun CreateServiceScreen(
             onClick = {
                 showError = true
                 when {
-                    nombreMascota.isBlank() -> errorMessage = "Selecciona una mascota"
+                    selectedPetIds.isEmpty() -> errorMessage = "Selecciona al menos una mascota"
                     tipoServicio.isBlank() -> errorMessage = "Selecciona un tipo de servicio"
-                    ubicacion.isBlank() -> errorMessage = "Ingresa la ubicación"
                     precio.isBlank() -> errorMessage = "Ingresa el precio"
-                    fecha.isBlank() -> errorMessage = "Selecciona una fecha"
-                    horaInicio.isBlank() || horaFin.isBlank() -> errorMessage = "Selecciona hora de inicio y fin"
+                    isInvalidPrice -> errorMessage = "El precio debe estar entre C$20 y C$6000"
+                    !isServiceFormValid(tipoServicio, ubicacion, ubicacionDestino, fecha, fechaSalida, horaInicio, horaFin, necesitaTransporte, tipoPeluqueria) -> errorMessage = "Completa los campos requeridos para $tipoServicio"
                     isPastDate -> errorMessage = "La fecha no puede ser pasada"
                     isBeyondSixMonths -> errorMessage = "La fecha no puede ser mayor a 6 meses"
-                    isDuplicate -> errorMessage = "Ya tienes este servicio creado"
                     else -> {
                         showError = false
-                        onPublish(nombreMascota, tipoServicio, descripcion, ubicacion, precio, fecha, horaInicio, horaFin)
+                        val selectedNames = dogs.filter { selectedPetIds.contains(it.petId) }.map { it.name }
+                        val details = buildServiceDetails(
+                            baseDescription = descripcion,
+                            serviceType = tipoServicio,
+                            pickupLocation = ubicacion,
+                            destination = ubicacionDestino,
+                            endDate = fechaSalida,
+                            needsTransport = necesitaTransporte,
+                            roundTrip = idaYVuelta,
+                            groomingType = tipoPeluqueria
+                        )
+                        onPublish(selectedNames, tipoServicio, details, ubicacion, precio, fecha, horaInicio, horaFin)
                     }
                 }
             },
             modifier = Modifier.fillMaxWidth(),
-            enabled = !isDuplicate && !isPastDate && !isBeyondSixMonths
+            enabled = !isPastDate && !isBeyondSixMonths && !isInvalidPrice
         ) {
             Text("Publicar Solicitud")
         }
@@ -318,7 +383,6 @@ fun CreateServiceScreen(
         }
     }
 
-    // ==================== DATE PICKER - TODO BLANCO ====================
     if (showDatePicker) {
         val datePickerState = rememberDatePickerState(
             initialSelectedDateMillis = todayPickerMillis,
@@ -373,7 +437,31 @@ fun CreateServiceScreen(
         }
     }
 
-    // ==================== TIME PICKERS ====================
+    if (showExitDatePicker) {
+        val exitDatePickerState = rememberDatePickerState(
+            initialSelectedDateMillis = todayPickerMillis,
+            selectableDates = object : SelectableDates {
+                override fun isSelectableDate(utcTimeMillis: Long): Boolean {
+                    return utcTimeMillis in todayPickerMillis..maxPickerDateMillis
+                }
+            }
+        )
+        DatePickerDialog(
+            onDismissRequest = { showExitDatePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    fechaSalida = exitDatePickerState.selectedDateMillis?.let { millis ->
+                        pickerDateFormatter.format(Date(millis))
+                    } ?: ""
+                    showExitDatePicker = false
+                }) { Text("Aceptar") }
+            },
+            dismissButton = { TextButton(onClick = { showExitDatePicker = false }) { Text("Cancelar") } }
+        ) {
+            DatePicker(state = exitDatePickerState, showModeToggle = false)
+        }
+    }
+
     if (showStartTimePicker) {
         TimePickerDialog(
             onDismiss = { showStartTimePicker = false },
@@ -401,6 +489,135 @@ private fun Calendar.startOfDayMillis(): Long {
     set(Calendar.SECOND, 0)
     set(Calendar.MILLISECOND, 0)
     return timeInMillis
+}
+
+@Composable
+private fun ServiceDateField(
+    value: String,
+    label: String,
+    showError: Boolean,
+    onClick: () -> Unit
+) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = {},
+        label = { Text(label) },
+        modifier = Modifier.fillMaxWidth(),
+        readOnly = true,
+        isError = showError,
+        trailingIcon = {
+            IconButton(onClick = onClick) {
+                Icon(Icons.Default.DateRange, contentDescription = null)
+            }
+        }
+    )
+}
+
+@Composable
+private fun TimeField(
+    value: String,
+    label: String,
+    showError: Boolean,
+    onClick: () -> Unit
+) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = {},
+        label = { Text(label) },
+        modifier = Modifier.fillMaxWidth(),
+        readOnly = true,
+        isError = showError,
+        trailingIcon = {
+            IconButton(onClick = onClick) {
+                Icon(Icons.Default.AccessTime, null)
+            }
+        }
+    )
+}
+
+@Composable
+private fun TimeRangeFields(
+    start: String,
+    end: String,
+    showError: Boolean,
+    onStartClick: () -> Unit,
+    onEndClick: () -> Unit,
+    startLabel: String,
+    endLabel: String
+) {
+    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        Box(modifier = Modifier.weight(1f)) {
+            TimeField(start, startLabel, showError && start.isBlank(), onStartClick)
+        }
+        Box(modifier = Modifier.weight(1f)) {
+            TimeField(end, endLabel, showError && end.isBlank(), onEndClick)
+        }
+    }
+}
+
+@Composable
+private fun TransportRow(
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit
+) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Checkbox(checked = checked, onCheckedChange = onCheckedChange)
+        Text("¿Necesita transporte?")
+    }
+}
+
+private fun isServiceFormValid(
+    serviceType: String,
+    location: String,
+    destination: String,
+    date: String,
+    endDate: String,
+    startTime: String,
+    endTime: String,
+    needsTransport: Boolean,
+    groomingType: String
+): Boolean {
+    return when (serviceType) {
+        "Alojamiento" -> date.isNotBlank() && endDate.isNotBlank() && (!needsTransport || location.isNotBlank())
+        "Guardería" -> date.isNotBlank() && startTime.isNotBlank() && endTime.isNotBlank() && (!needsTransport || location.isNotBlank())
+        "Paseo" -> location.isNotBlank() && date.isNotBlank() && startTime.isNotBlank() && endTime.isNotBlank()
+        "Taxi" -> location.isNotBlank() && destination.isNotBlank() && date.isNotBlank() && startTime.isNotBlank()
+        "Peluquería" -> location.isNotBlank() && date.isNotBlank() && startTime.isNotBlank() && groomingType.isNotBlank()
+        "Visitante" -> location.isNotBlank() && date.isNotBlank() && startTime.isNotBlank() && endTime.isNotBlank()
+        else -> false
+    }
+}
+
+private fun buildServiceDetails(
+    baseDescription: String,
+    serviceType: String,
+    pickupLocation: String,
+    destination: String,
+    endDate: String,
+    needsTransport: Boolean,
+    roundTrip: Boolean,
+    groomingType: String
+): String {
+    val details = mutableListOf<String>()
+    if (baseDescription.isNotBlank()) details += baseDescription.trim()
+    when (serviceType) {
+        "Alojamiento" -> {
+            details += "Fecha de salida: $endDate"
+            details += "Necesita transporte: ${if (needsTransport) "Sí" else "No"}"
+            if (needsTransport && pickupLocation.isNotBlank()) details += "Ubicación de recogida: $pickupLocation"
+        }
+        "Taxi" -> {
+            details += "Dirección de recogida: $pickupLocation"
+            details += "Dirección de destino: $destination"
+            details += "Ida y vuelta: ${if (roundTrip) "Sí" else "No"}"
+        }
+        "Peluquería" -> details += "Tipo de peluquería: $groomingType"
+        "Guardería" -> {
+            details += "Necesita transporte: ${if (needsTransport) "Sí" else "No"}"
+            if (needsTransport && pickupLocation.isNotBlank()) details += "Ubicación: $pickupLocation"
+        }
+    }
+    return details.joinToString("\n")
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

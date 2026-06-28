@@ -16,10 +16,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.proyectopoo.petcareapp.data.local.entity.ServiceRequestStatus
 import com.proyectopoo.petcareapp.data.local.relation.ServiceRequestDetails
+import com.proyectopoo.petcareapp.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -36,52 +37,11 @@ fun CaregiverFeedScreen(
 
     var expanded by remember { mutableStateOf(false) }
     var selectedFilter by remember { mutableStateOf("Todos") }
-    val hasRealRequests = requests.isNotEmpty()
-
-    val solicitudesBase = remember(requests) {
-        requests.ifEmpty {
-            listOf(
-                ServiceRequestDetails(
-                    serviceRequestId = 101, ownerId = 1, petId = 1, serviceTypeId = 3,
-                    title = "Paseo vespertino para Max",
-                    description = "Max necesita un paseo de 45 minutos por la tarde. Es muy amigable con otros perros, pero se emociona un poco al ver gatos.",
-                    requestedDate = "Hoy · 4:30 PM",
-                    status = ServiceRequestStatus.PENDING,
-                    petName = "Max", petBreed = "Golden Retriever",
-                    petSize = "L (20-40 kg)",
-                    serviceTypeName = "Paseo", ownerName = "Carlos Mendoza",
-                    ownerPhone = "+505 8888-1234", ownerEmail = "carlos.mendoza@email.com"
-                ),
-                ServiceRequestDetails(
-                    serviceRequestId = 102, ownerId = 2, petId = 2, serviceTypeId = 1,
-                    title = "Cuidado de fin de semana para Luna",
-                    description = "Busco un cuidador responsable para Luna. Necesita alojamiento desde el sábado en la mañana hasta el domingo por la tarde. Es muy tranquila.",
-                    requestedDate = "Sábado · 8:00 AM",
-                    status = ServiceRequestStatus.PENDING,
-                    petName = "Luna", petBreed = "Siberian Husky",
-                    petSize = "M (10-20 kg)",
-                    serviceTypeName = "Alojamiento", ownerName = "Andrea Espinoza",
-                    ownerPhone = "+505 7777-5678", ownerEmail = "andrea.es@email.com"
-                ),
-                ServiceRequestDetails(
-                    serviceRequestId = 103, ownerId = 3, petId = 3, serviceTypeId = 5,
-                    title = "Baño y corte de pelo urgente",
-                    description = "Grooming completo para mi perrita consentida. Requiere corte de uñas, limpieza de oídos y un corte de pelo estilo cachorro.",
-                    requestedDate = "Mañana · 10:00 AM",
-                    status = ServiceRequestStatus.PENDING,
-                    petName = "Bella", petBreed = "Poodle",
-                    petSize = "S (5-10 kg)",
-                    serviceTypeName = "Peluquería", ownerName = "Marcela Rostrán",
-                    ownerPhone = "+505 8444-9012", ownerEmail = "marce.rostran@email.com"
-                )
-            )
-        }
-    }
 
     val serviciosFiltrados = if (selectedFilter == "Todos") {
-        solicitudesBase
+        requests
     } else {
-        solicitudesBase.filter {
+        requests.filter {
             it.serviceTypeName == selectedFilter
         }
     }
@@ -89,7 +49,7 @@ fun CaregiverFeedScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(colorScheme.background)
+            .background(FondoClaro)
     ) {
         TopAppBar(
             title = {
@@ -97,19 +57,17 @@ fun CaregiverFeedScreen(
                     Icon(
                         imageVector = Icons.Default.Search,
                         contentDescription = "Buscar",
-                        tint = colorScheme.onPrimary
+                        tint = CafeMedio
                     )
                     Spacer(modifier = Modifier.width(10.dp))
                     Text(
                         text = "Solicitudes disponibles",
-                        color = colorScheme.onPrimary,
+                        color = CafeOscuro,
                         fontWeight = FontWeight.Bold
                     )
                 }
             },
-            colors = TopAppBarDefaults.topAppBarColors(
-                containerColor = colorScheme.primary
-            )
+            colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
         )
 
         Column(
@@ -131,10 +89,10 @@ fun CaregiverFeedScreen(
                         .menuAnchor(),
                     shape = RoundedCornerShape(16.dp),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = colorScheme.surface,
-                        unfocusedContainerColor = colorScheme.surface,
-                        focusedBorderColor = colorScheme.primary,
-                        unfocusedBorderColor = colorScheme.outline
+                        focusedContainerColor = FondoCampo,
+                        unfocusedContainerColor = FondoCampo,
+                        focusedBorderColor = CafeMedio,
+                        unfocusedBorderColor = BordeCampo
                     )
                 )
 
@@ -145,7 +103,7 @@ fun CaregiverFeedScreen(
                 ) {
                     tiposServicio.forEach { tipo ->
                         DropdownMenuItem(
-                            text = { Text(tipo, color = Color.Black) },
+                            text = { Text(tipo, color = CafeOscuro) },
                             onClick = {
                                 selectedFilter = tipo
                                 expanded = false
@@ -160,6 +118,36 @@ fun CaregiverFeedScreen(
             LazyColumn(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
+                if (serviciosFiltrados.isEmpty()) {
+                    item {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(20.dp),
+                            colors = CardDefaults.cardColors(containerColor = colorScheme.surfaceVariant)
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(28.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text(
+                                    "No hay solicitudes disponibles",
+                                    color = colorScheme.onSurface,
+                                    fontWeight = FontWeight.Bold,
+                                    textAlign = TextAlign.Center
+                                )
+                                Spacer(Modifier.height(8.dp))
+                                Text(
+                                    "Cuando un owner publique solicitudes pendientes, aparecerán aquí.",
+                                    color = colorScheme.onSurfaceVariant,
+                                    textAlign = TextAlign.Center
+                                )
+                            }
+                        }
+                    }
+                }
+
                 items(serviciosFiltrados) { servicio ->
                     Card(
                         modifier = Modifier
@@ -251,10 +239,9 @@ fun CaregiverFeedScreen(
                             Button(
                                 onClick = { onApplyToRequest(servicio.serviceRequestId) },
                                 modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(16.dp),
-                                enabled = hasRealRequests
+                                shape = RoundedCornerShape(16.dp)
                             ) {
-                                Text("Solicitar trabajo", fontWeight = FontWeight.Bold)
+                                Text("Aceptar solicitud", fontWeight = FontWeight.Bold)
                             }
                         }
                     }

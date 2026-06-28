@@ -25,7 +25,7 @@ data class OwnerEntity(
     @PrimaryKey
     val ownerId: Int,
 
-    val userId: String,
+    val userId: Int,
 
     val address: String? = null
 )

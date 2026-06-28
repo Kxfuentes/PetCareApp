@@ -32,16 +32,19 @@ import com.proyectopoo.petcareapp.data.repository.ServiceApplicationRepository
 import com.proyectopoo.petcareapp.data.repository.ServiceRequestRepository
 import com.proyectopoo.petcareapp.data.repository.UserRepository
 import com.proyectopoo.petcareapp.data.session.SessionManager
+import com.proyectopoo.petcareapp.data.session.resolveStableUserId
+import com.proyectopoo.petcareapp.data.session.toStableLocalUserId
+import com.proyectopoo.petcareapp.data.session.upsertLocalUser
 import com.proyectopoo.petcareapp.model.UserRole
 import com.proyectopoo.petcareapp.ui.screen.auth.LoginScreen
 import com.proyectopoo.petcareapp.ui.screen.auth.PasswordRecoveryScreen
 import com.proyectopoo.petcareapp.ui.screen.auth.RegisterScreen
-import com.proyectopoo.petcareapp.ui.screen.auth.RoleSectionScreen
 import com.proyectopoo.petcareapp.ui.screen.caregiver.CaregiverFeedScreen
 import com.proyectopoo.petcareapp.ui.screen.caregiver.CaregiverHomeScreen
 import com.proyectopoo.petcareapp.ui.screen.caregiver.CaregiverProfileScreen
 import com.proyectopoo.petcareapp.ui.screen.caregiver.CaregiverPublicProfileScreen
 import com.proyectopoo.petcareapp.ui.screen.caregiver.CaregiverServiceScreen
+import com.proyectopoo.petcareapp.ui.screen.owner.RoleSectionScreen
 import com.proyectopoo.petcareapp.ui.screen.caregiver.EditCaregiverProfileScreen
 import com.proyectopoo.petcareapp.ui.screen.owner.CreateServiceScreen
 import com.proyectopoo.petcareapp.ui.screen.owner.DogInfoScreen
@@ -49,6 +52,7 @@ import com.proyectopoo.petcareapp.ui.screen.owner.EditOwnerProfileScreen
 import com.proyectopoo.petcareapp.ui.screen.owner.OwnerFeedScreen
 import com.proyectopoo.petcareapp.ui.screen.owner.OwnerHomeScreen
 import com.proyectopoo.petcareapp.ui.screen.owner.OwnerProfileScreen
+import com.proyectopoo.petcareapp.ui.screen.owner.RequestOfferScreen
 import com.proyectopoo.petcareapp.ui.screen.owner.OwnerPublicProfileScreen
 import com.proyectopoo.petcareapp.viewmodel.CaregiverProfileViewModel
 import com.proyectopoo.petcareapp.viewmodel.CaregiverServiceViewModel
@@ -69,8 +73,8 @@ fun AppNavigation(
 ) {
     val userRoleViewModel = LocalUserRoleViewModel.current
     val context = LocalContext.current
-    val sessionManager = SessionManager(context)
-    val database = PetCareDatabase.getDatabase(context)
+    val sessionManager = remember { SessionManager(context) }
+    val database = remember { PetCareDatabase.getDatabase(context) }
     val scope = rememberCoroutineScope()
 
     val dogViewModel: DogViewModel = viewModel(
@@ -85,17 +89,33 @@ fun AppNavigation(
         factory = viewModelFactory {
             initializer {
                 ServiceRequestViewModel(
-                    requestRepo = ServiceRequestRepository(database.serviceRequestDao()),
-                    applicationRepo = ServiceApplicationRepository(database.serviceApplicationDao()),
+                    requestRepo = ServiceRequestRepository(
+                        database.serviceRequestDao(),
+                        database.serviceRequestPetDao()
+                    ),
+                    applicationRepo = ServiceApplicationRepository(
+                        database.serviceApplicationDao(),
+                        database.serviceRequestDao(),
+                        database.serviceBookingDao()
+                    ),
                     userDao = database.userDao(),
                     ownerDao = database.ownerDao(),
                     caregiverDao = database.caregiverDao(),
                     petDao = database.petDao(),
-                    serviceTypeDao = database.serviceTypeDao()
+                    serviceTypeDao = database.serviceTypeDao(),
+                    ratingDao = database.ratingDao(),
+                    offeredServiceDao = database.offeredServiceDao(),
+                    bookingDao = database.serviceBookingDao()
                 )
             }
         }
     )
+
+    val performLogout: () -> Unit = {
+        dogViewModel.clear()
+        serviceRequestViewModel.clear()
+        sessionLogout(navController, userRoleViewModel)
+    }
 
     val dogs by dogViewModel.dogs.collectAsStateWithLifecycle()
     val recentOwnerRequests by serviceRequestViewModel.recentOwnerRequests.collectAsStateWithLifecycle()
@@ -144,14 +164,22 @@ fun AppNavigation(
                     }
 
                     try {
-                        prepareLocalAccount(
+                        val stableUserId = prepareLocalAccount(
                             database = database,
                             sessionManager = sessionManager,
                             userId = user.userId,
                             username = user.fullName,
                             email = user.email,
-                            role = UserRoleType.OWNER
+                            role = user.role,
+                            apiUserId = null
                         )
+
+                        if (role == UserRole.OWNER) {
+                            dogViewModel.loadDogs(stableUserId)
+                            serviceRequestViewModel.loadOwnerData(stableUserId)
+                        } else {
+                            serviceRequestViewModel.loadCaregiverData(stableUserId)
+                        }
 
                         navigationError = null
                         userRoleViewModel.setRole(role)
@@ -240,11 +268,14 @@ fun AppNavigation(
                                 userId = data.userId,
                                 username = data.username,
                                 email = data.email,
-                                role = UserRoleType.OWNER
+                                role = UserRoleType.OWNER,
+                                apiUserId = data.apiUserId
                             )
 
                             userRoleViewModel.setRole(UserRole.OWNER)
-                            dogViewModel.loadDogs(data.userId)
+                            dogViewModel.loadDogs(
+                                sessionManager.getUserId()
+                            )
 
                             navController.navigate(DogInfo()) {
                                 popUpTo(Login) { inclusive = true }
@@ -281,10 +312,14 @@ fun AppNavigation(
                                 userId = data.userId,
                                 username = data.username,
                                 email = data.email,
-                                role = UserRoleType.CAREGIVER
+                                role = UserRoleType.CAREGIVER,
+                                apiUserId = data.apiUserId
                             )
 
                             userRoleViewModel.setRole(UserRole.CAREGIVER)
+                            serviceRequestViewModel.loadCaregiverData(
+                                sessionManager.getUserId()
+                            )
 
                             navController.navigate(CaregiverHome) {
                                 popUpTo(Login) { inclusive = true }
@@ -374,6 +409,7 @@ fun AppNavigation(
             val ownerId = sessionManager.getUserId()
 
             LaunchedEffect(ownerId) {
+                dogViewModel.loadDogs(ownerId)
                 serviceRequestViewModel.loadOwnerData(ownerId)
             }
 
@@ -401,10 +437,22 @@ fun AppNavigation(
                     navController.navigate(OwnerProfile(ownerId = ownerId))
                 },
                 onAcceptApplication = { applicationId ->
-                    serviceRequestViewModel.acceptApplication(applicationId, ownerId)
+                    serviceRequestViewModel.acceptApplication(applicationId, ownerId = ownerId)
                 },
                 onRejectApplication = { applicationId ->
                     serviceRequestViewModel.rejectApplication(applicationId, ownerId)
+                },
+                onCompleteAndRate = { application, score, comment ->
+                    serviceRequestViewModel.completeAndRateService(
+                        applicationId = application.applicationId,
+                        serviceRequestId = application.serviceRequestId,
+                        caregiverId = application.caregiverId,
+                        ownerId = application.ownerId,
+                        ratedByRole = UserRoleType.OWNER,
+                        score = score,
+                        comment = comment,
+                        reloadOwnerId = ownerId
+                    )
                 },
                 ownerId = ownerId
             )
@@ -413,34 +461,62 @@ fun AppNavigation(
         // ===== OWNER FEED =====
         composable<OwnerFeed> {
             val ownerId = sessionManager.getUserId()
+            var offeredServices by remember { mutableStateOf(emptyList<com.proyectopoo.petcareapp.data.local.relation.OfferedServiceDetails>()) }
 
             LaunchedEffect(ownerId) {
                 serviceRequestViewModel.loadOwnerData(ownerId)
+                offeredServices = database.offeredServiceDao().getAvailableServiceDetails()
             }
 
             OwnerFeedScreen(
+                services = offeredServices,
                 onGoToCaregiverProfile = { caregiverId ->
                     navController.navigate(CaregiverProfile(caregiverId = caregiverId))
                 },
-                onRequestServices = { caregiverId ->
-                    val request = recentOwnerRequests.firstOrNull()
-
-                    if (request == null) {
-                        Toast.makeText(
-                            context,
-                            "Primero crea una solicitud de servicio.",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    } else {
-                        serviceRequestViewModel.applyToRequest(request.serviceRequestId, caregiverId)
-                        Toast.makeText(
-                            context,
-                            "Solicitud enviada al cuidador.",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    }
+                onRequestService = { caregiverId, offeredServiceId ->
+                    navController.navigate(
+                        RequestOffer(
+                            offeredServiceId = offeredServiceId,
+                            caregiverId = caregiverId
+                        )
+                    )
                 }
             )
+        }
+
+        // ===== REQUEST OFFER (Flow A) =====
+        composable<RequestOffer> { backStackEntry ->
+            val args = backStackEntry.toRoute<RequestOffer>()
+            val ownerId = sessionManager.getUserId()
+            var offerDetails by remember { mutableStateOf<com.proyectopoo.petcareapp.data.local.relation.OfferedServiceDetails?>(null) }
+
+            LaunchedEffect(args.offeredServiceId) {
+                dogViewModel.loadDogs(ownerId)
+                val allOffers = database.offeredServiceDao().getAvailableServiceDetails()
+                offerDetails = allOffers.find { it.offeredServiceId == args.offeredServiceId }
+            }
+
+            offerDetails?.let { offer ->
+                RequestOfferScreen(
+                    offer = offer,
+                    dogs = dogs,
+                    onBack = { navController.popBackStack() },
+                    onSubmit = { petIds, date, startTime, notes ->
+                        serviceRequestViewModel.requestServiceFromOffer(
+                            ownerId = ownerId,
+                            caregiverId = args.caregiverId,
+                            offeredServiceId = args.offeredServiceId,
+                            petIds = petIds,
+                            requestedDate = date,
+                            startTime = startTime,
+                            notes = notes,
+                            suggestedPrice = null
+                        )
+                        Toast.makeText(context, "Solicitud de reserva enviada.", Toast.LENGTH_SHORT).show()
+                        navController.navigate(OwnerHome) { launchSingleTop = true }
+                    }
+                )
+            }
         }
 
         // ===== CREATE SERVICE =====
@@ -452,30 +528,16 @@ fun AppNavigation(
                 serviceType = args.serviceType,
                 dogs = dogs,
                 onBack = { navController.popBackStack() },
-                onPublish = { petName, serviceType, description, location, price, date, startTime, endTime ->
-                    val existingPet = dogs.firstOrNull {
-                        it.name.equals(petName, ignoreCase = true)
-                    }
+                onPublish = { selectedPetNames, serviceType, description, location, price, date, startTime, endTime ->
+                    val petIds = dogs
+                        .filter { dog -> selectedPetNames.any { it.equals(dog.name, ignoreCase = true) } }
+                        .map { it.petId }
 
-                    val petId = existingPet?.petId ?: generatePetId(dogs)
-
-                    if (existingPet == null) {
-                        dogViewModel.addDog(
-                            PetEntity(
-                                petId = petId,
-                                ownerId = ownerId,
-                                name = petName,
-                                breed = null,
-                                size = null,
-                                species = "Dog"
-                            )
-                        )
-                    }
+                    if (petIds.isEmpty()) return@CreateServiceScreen
 
                     serviceRequestViewModel.createRequestFromForm(
                         ownerId = ownerId,
-                        petId = petId,
-                        petName = petName,
+                        petIds = petIds,
                         serviceTypeName = serviceType,
                         description = description,
                         location = location,
@@ -486,8 +548,7 @@ fun AppNavigation(
                     )
 
                     navController.navigate(OwnerHome) { launchSingleTop = true }
-                },
-                existingServices = recentOwnerRequests.mapNotNull { it.serviceTypeName }
+                }
             )
         }
 
@@ -503,10 +564,22 @@ fun AppNavigation(
                 onGoToServices = { navController.navigate(CaregiverService) },
                 ownerRequests = caregiverApplicationDetails,
                 onAcceptApplication = { applicationId ->
-                    serviceRequestViewModel.acceptApplication(applicationId, caregiverId)
+                    serviceRequestViewModel.acceptApplication(applicationId, caregiverId = caregiverId)
                 },
                 onRejectApplication = { applicationId ->
                     serviceRequestViewModel.rejectApplication(applicationId, caregiverId)
+                },
+                onCompleteAndRate = { request, score, comment ->
+                    serviceRequestViewModel.completeAndRateService(
+                        applicationId = request.applicationId,
+                        serviceRequestId = request.serviceRequestId,
+                        caregiverId = request.caregiverId,
+                        ownerId = request.ownerId,
+                        ratedByRole = UserRoleType.CAREGIVER,
+                        score = score,
+                        comment = comment,
+                        reloadCaregiverId = caregiverId
+                    )
                 },
                 caregiverId = caregiverId
             )
@@ -592,13 +665,17 @@ fun AppNavigation(
             val dogs by profileViewModel.dogs.collectAsStateWithLifecycle()
 
             if (isOwnProfile) {
+                LaunchedEffect(targetOwnerId) {
+                    serviceRequestViewModel.loadOwnerData(targetOwnerId)
+                }
+
                 OwnerProfileScreen(
                     user = user,
                     dogs = dogs,
                     historyServices = recentOwnerRequests.filter {
                         it.status.name == "COMPLETED"
                     },
-                    onLogout = { sessionLogout(navController, userRoleViewModel) },
+                    onLogout = performLogout,
                     onEditProfile = {
                         navController.navigate(EditOwnerProfile(targetOwnerId))
                     },
@@ -667,7 +744,7 @@ fun AppNavigation(
                     rating = rating,
                     isLoading = isLoading,
                     onBack = { navController.popBackStack() },
-                    onLogout = { sessionLogout(navController, userRoleViewModel) },
+                    onLogout = performLogout,
                     onEditProfile = {
                         navController.navigate(EditCaregiverProfile(targetCaregiverId))
                     },
@@ -679,25 +756,24 @@ fun AppNavigation(
                     viewModel = caregiverProfileViewModel,
                     onBack = { navController.popBackStack() },
                     onRequestServices = {
-                        val request = recentOwnerRequests.firstOrNull()
-
-                        if (request == null) {
-                            Toast.makeText(
-                                context,
-                                "Primero crea una solicitud de servicio.",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                        } else {
-                            serviceRequestViewModel.applyToRequest(
-                                request.serviceRequestId,
-                                targetCaregiverId
-                            )
-
-                            Toast.makeText(
-                                context,
-                                "Solicitud enviada al cuidador.",
-                                Toast.LENGTH_SHORT
-                            ).show()
+                        scope.launch {
+                            val offers = database.offeredServiceDao()
+                                .getAvailableServicesByCaregiver(targetCaregiverId)
+                            val firstOffer = offers.firstOrNull()
+                            if (firstOffer == null) {
+                                Toast.makeText(
+                                    context,
+                                    "Este cuidador no tiene ofertas activas disponibles.",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            } else {
+                                navController.navigate(
+                                    RequestOffer(
+                                        offeredServiceId = firstOffer.offeredServiceId,
+                                        caregiverId = targetCaregiverId
+                                    )
+                                )
+                            }
                         }
                     }
                 )
@@ -791,16 +867,65 @@ private fun generatePetId(existingPets: List<PetEntity>): Int {
     return candidate
 }
 
-private fun String.toLocalUserId(): Int {
-    val numericId = this.toIntOrNull()
+private fun String.toLocalUserId(): Int = toStableLocalUserId()
 
-    if (numericId != null && numericId > 0) {
-        return numericId
+private suspend fun prepareLocalAccount(
+    database: PetCareDatabase,
+    sessionManager: SessionManager,
+    userId: Int,
+    username: String,
+    email: String,
+    role: UserRoleType,
+    apiUserId: String? = null
+): Int {
+    require(email.isNotBlank()) { "La API devolvió un correo inválido." }
+
+    val stableUserId = resolveStableUserId(
+        userDao = database.userDao(),
+        email = email,
+        apiUserId = apiUserId ?: userId.toString()
+    )
+
+    upsertLocalUser(
+        userDao = database.userDao(),
+        userId = stableUserId,
+        fullName = username,
+        email = email,
+        role = role
+    )
+
+    when (role) {
+        UserRoleType.OWNER -> {
+            if (database.ownerDao().getOwnerById(stableUserId) == null) {
+                database.ownerDao().insertOwner(
+                    OwnerEntity(
+                        ownerId = stableUserId,
+                        userId = stableUserId
+                    )
+                )
+            }
+        }
+
+        UserRoleType.CAREGIVER -> {
+            if (database.caregiverDao().getCaregiverById(stableUserId) == null) {
+                database.caregiverDao().insertCaregiver(
+                    CaregiverEntity(
+                        caregiverId = stableUserId,
+                        userId = stableUserId
+                    )
+                )
+            }
+        }
     }
 
-    val generatedId = this.hashCode() and Int.MAX_VALUE
+    sessionManager.saveSession(
+        userId = stableUserId,
+        email = email,
+        role = role,
+        apiUserId = apiUserId
+    )
 
-    return if (generatedId > 0) generatedId else 1
+    return stableUserId
 }
 
 private suspend fun ensureOwnerExists(
@@ -827,52 +952,7 @@ private suspend fun ensureOwnerExists(
     database.ownerDao().insertOwner(
         OwnerEntity(
             ownerId = ownerId,
-            userId = ownerId.toString()
+            userId = ownerId
         )
-    )
-}
-
-private suspend fun prepareLocalAccount(
-    database: PetCareDatabase,
-    sessionManager: SessionManager,
-    userId: Int,
-    username: String,
-    email: String,
-    role: UserRoleType
-) {
-    require(userId > 0) { "La API devolvió un ID de usuario inválido." }
-    require(email.isNotBlank()) { "La API devolvió un correo inválido." }
-
-    database.userDao().insertUser(
-        UserEntity(
-            userId = userId,
-            fullName = username.ifBlank { email.substringBefore("@") },
-            email = email,
-            password = null,
-            role = role
-        )
-    )
-
-    when (role) {
-        UserRoleType.OWNER -> database.ownerDao().insertOwner(
-            OwnerEntity(
-                ownerId = userId,
-                userId = userId.toString()
-
-            )
-        )
-
-        UserRoleType.CAREGIVER -> database.caregiverDao().insertCaregiver(
-            CaregiverEntity(
-                caregiverId = userId,
-                userId = userId.toString()
-            )
-        )
-    }
-
-    sessionManager.saveSession(
-        userId = userId,
-        email = email,
-        role = role
     )
 }

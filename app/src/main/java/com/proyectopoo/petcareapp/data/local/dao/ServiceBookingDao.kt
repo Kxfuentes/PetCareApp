@@ -55,6 +55,12 @@ interface ServiceBookingDao {
         booking: ServiceBookingEntity
     )
 
-    @Query("DELETE FROM service_bookings")
-    suspend fun deleteAllBookings()
+    @Query("""
+        SELECT * FROM service_bookings
+        WHERE serviceRequestId IN (
+            SELECT serviceRequestId FROM service_requests WHERE ownerId = :ownerId
+        )
+        ORDER BY bookingId DESC
+    """)
+    suspend fun getBookingsByOwner(ownerId: Int): List<ServiceBookingEntity>
 }

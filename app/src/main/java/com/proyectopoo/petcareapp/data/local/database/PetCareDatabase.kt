@@ -17,12 +17,14 @@ import com.proyectopoo.petcareapp.data.local.entity.*
         PetEntity::class,
         ServiceTypeEntity::class,
         ServiceRequestEntity::class,
+        ServiceRequestPetEntity::class,
         ServiceApplicationEntity::class,
         OfferedServiceEntity::class,
         AvailabilityEntity::class,
-        RatingEntity::class
+        RatingEntity::class,
+        ServiceBookingEntity::class
     ],
-    version = 4,
+    version = 8,
     exportSchema = false
 )
 abstract class PetCareDatabase : RoomDatabase() {
@@ -33,61 +35,91 @@ abstract class PetCareDatabase : RoomDatabase() {
     abstract fun petDao(): PetDao
     abstract fun serviceTypeDao(): ServiceTypeDao
     abstract fun serviceRequestDao(): ServiceRequestDao
+    abstract fun serviceRequestPetDao(): ServiceRequestPetDao
     abstract fun serviceApplicationDao(): ServiceApplicationDao
     abstract fun offeredServiceDao(): OfferedServiceDao
     abstract fun availabilityDao(): AvailabilityDao
     abstract fun ratingDao(): RatingDao
+    abstract fun serviceBookingDao(): ServiceBookingDao
 
     companion object {
         @Volatile
         private var INSTANCE: PetCareDatabase? = null
 
-        private val MIGRATION_1_2 = object : Migration(1, 2) {
+        private val MIGRATION_5_6 = object : Migration(5, 6) {
             override fun migrate(database: SupportSQLiteDatabase) {
-
+                database.execSQL(
+                    "ALTER TABLE `service_applications` ADD COLUMN `initiatedBy` TEXT NOT NULL DEFAULT 'CAREGIVER'"
+                )
+                database.execSQL(
+                    "ALTER TABLE `ratings` ADD COLUMN `ratedByRole` TEXT NOT NULL DEFAULT 'OWNER'"
+                )
             }
         }
 
-        private val MIGRATION_2_3 = object : Migration(2, 3) {
+        private val MIGRATION_6_7 = object : Migration(6, 7) {
             override fun migrate(database: SupportSQLiteDatabase) {
-                database.execSQL("""
-                    CREATE TABLE IF NOT EXISTS `ratings` (
-                        `ratingId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                database.execSQL(
+                    "ALTER TABLE `service_applications` ADD COLUMN `offeredServiceId` INTEGER"
+                )
+                database.execSQL(
+                    "CREATE INDEX IF NOT EXISTS `index_service_applications_offeredServiceId` ON `service_applications` (`offeredServiceId`)"
+                )
+            }
+        }
+
+        private val MIGRATION_7_8 = object : Migration(7, 8) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL(
+                    "ALTER TABLE `service_requests` ADD COLUMN `offeredServiceId` INTEGER"
+                )
+                database.execSQL(
+                    "ALTER TABLE `service_requests` ADD COLUMN `sourceType` TEXT NOT NULL DEFAULT 'OPEN'"
+                )
+                database.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `service_request_pets` (
+                        `serviceRequestId` INTEGER NOT NULL,
+                        `petId` INTEGER NOT NULL,
+                        PRIMARY KEY(`serviceRequestId`, `petId`),
+                        FOREIGN KEY(`serviceRequestId`) REFERENCES `service_requests`(`serviceRequestId`) ON DELETE CASCADE,
+                        FOREIGN KEY(`petId`) REFERENCES `pets`(`petId`) ON DELETE CASCADE
+                    )
+                    """
+                )
+                database.execSQL(
+                    "CREATE INDEX IF NOT EXISTS `index_service_request_pets_serviceRequestId` ON `service_request_pets` (`serviceRequestId`)"
+                )
+                database.execSQL(
+                    "CREATE INDEX IF NOT EXISTS `index_service_request_pets_petId` ON `service_request_pets` (`petId`)"
+                )
+                database.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `service_bookings` (
+                        `bookingId` INTEGER NOT NULL PRIMARY KEY,
                         `serviceRequestId` INTEGER NOT NULL,
                         `caregiverId` INTEGER NOT NULL,
-                        `ownerId` INTEGER NOT NULL,
-                        `score` REAL NOT NULL,
-                        `comment` TEXT,
-                        `createdAt` INTEGER NOT NULL,
-                        FOREIGN KEY(`serviceRequestId`) REFERENCES `service_requests`(`serviceRequestId`) ON UPDATE NO ACTION ON DELETE CASCADE,
-                        FOREIGN KEY(`caregiverId`) REFERENCES `caregivers`(`caregiverId`) ON UPDATE NO ACTION ON DELETE CASCADE,
-                        FOREIGN KEY(`ownerId`) REFERENCES `owners`(`ownerId`) ON UPDATE NO ACTION ON DELETE CASCADE
+                        `startDate` TEXT,
+                        `endDate` TEXT,
+                        `status` TEXT NOT NULL DEFAULT 'ACTIVE',
+                        FOREIGN KEY(`serviceRequestId`) REFERENCES `service_requests`(`serviceRequestId`) ON DELETE CASCADE,
+                        FOREIGN KEY(`caregiverId`) REFERENCES `caregivers`(`caregiverId`) ON DELETE CASCADE
                     )
-                """)
-                database.execSQL("CREATE INDEX IF NOT EXISTS `index_ratings_serviceRequestId` ON `ratings` (`serviceRequestId`)")
-                database.execSQL("CREATE INDEX IF NOT EXISTS `index_ratings_caregiverId` ON `ratings` (`caregiverId`)")
-                database.execSQL("CREATE INDEX IF NOT EXISTS `index_ratings_ownerId` ON `ratings` (`ownerId`)")
-            }
-        }
-
-        private val MIGRATION_3_4 = object : Migration(3, 4) {
-            override fun migrate(database: SupportSQLiteDatabase) {
-                database.execSQL("""
-                    CREATE TABLE IF NOT EXISTS `offered_services` (
-                        `offeredServiceId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-                        `caregiverId` INTEGER NOT NULL,
-                        `serviceTypeId` INTEGER NOT NULL,
-                        `title` TEXT NOT NULL,
-                        `description` TEXT,
-                        `price` REAL NOT NULL,
-                        `isAvailable` INTEGER NOT NULL,
-                        `createdAt` INTEGER NOT NULL,
-                        FOREIGN KEY(`caregiverId`) REFERENCES `caregivers`(`caregiverId`) ON UPDATE NO ACTION ON DELETE CASCADE,
-                        FOREIGN KEY(`serviceTypeId`) REFERENCES `service_types`(`serviceTypeId`) ON UPDATE NO ACTION ON DELETE CASCADE
-                    )
-                """)
-                database.execSQL("CREATE INDEX IF NOT EXISTS `index_offered_services_caregiverId` ON `offered_services` (`caregiverId`)")
-                database.execSQL("CREATE INDEX IF NOT EXISTS `index_offered_services_serviceTypeId` ON `offered_services` (`serviceTypeId`)")
+                    """
+                )
+                database.execSQL(
+                    "CREATE INDEX IF NOT EXISTS `index_service_bookings_serviceRequestId` ON `service_bookings` (`serviceRequestId`)"
+                )
+                database.execSQL(
+                    "CREATE INDEX IF NOT EXISTS `index_service_bookings_caregiverId` ON `service_bookings` (`caregiverId`)"
+                )
+                // Migrate existing single-pet requests into junction table
+                database.execSQL(
+                    """
+                    INSERT OR IGNORE INTO service_request_pets (serviceRequestId, petId)
+                    SELECT serviceRequestId, petId FROM service_requests WHERE petId > 0
+                    """
+                )
             }
         }
 
@@ -98,6 +130,7 @@ abstract class PetCareDatabase : RoomDatabase() {
                     PetCareDatabase::class.java,
                     "petcare_database"
                 )
+                    .addMigrations(MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8)
                     .fallbackToDestructiveMigration()
                     .build()
 

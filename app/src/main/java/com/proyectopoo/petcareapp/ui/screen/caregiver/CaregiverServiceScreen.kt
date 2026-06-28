@@ -63,6 +63,7 @@ fun CaregiverServiceScreen(
     var tipoServicio by remember { mutableStateOf("") }
     var precio by remember { mutableStateOf("") }
     var descripcion by remember { mutableStateOf("") }
+    var direccionAlojamiento by remember { mutableStateOf("") }
     var activo by remember { mutableStateOf(true) }
 
     // Estados del formulario de edición
@@ -148,7 +149,7 @@ fun CaregiverServiceScreen(
                         Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
                             OutlinedTextField(
                                 value = precioEditado,
-                                onValueChange = { precioEditado = it },
+                                onValueChange = { if (it.all { char -> char.isDigit() }) precioEditado = it },
                                 label = { Text("Precio (C$)") },
                                 singleLine = true,
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
@@ -209,7 +210,7 @@ fun CaregiverServiceScreen(
                                 )
                                 servicioEditando = null
                             },
-                            enabled = precioEditado.isNotBlank() && precioEditado.toDoubleOrNull() != null
+                            enabled = precioEditado.toDoubleOrNull()?.let { it in 20.0..6000.0 } == true
                         ) {
                             Text("Guardar")
                         }
@@ -286,7 +287,7 @@ fun CaregiverServiceScreen(
 
                     OutlinedTextField(
                         value = precio,
-                        onValueChange = { precio = it },
+                        onValueChange = { if (it.all { char -> char.isDigit() }) precio = it },
                         label = { Text("Precio (C$)") },
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
@@ -299,8 +300,32 @@ fun CaregiverServiceScreen(
                             unfocusedTextColor = Color.Black
                         )
                     )
+                    if (precio.isNotBlank() && precio.toDoubleOrNull()?.let { it !in 20.0..6000.0 } != false) {
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Text("El precio debe estar entre C$20 y C$6000", color = colorScheme.error)
+                    }
 
                     Spacer(modifier = Modifier.height(18.dp))
+
+                    if (tipoServicio == "Alojamiento") {
+                        OutlinedTextField(
+                            value = direccionAlojamiento,
+                            onValueChange = { direccionAlojamiento = it },
+                            label = { Text("Dirección") },
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = false,
+                            minLines = 2,
+                            shape = RoundedCornerShape(16.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedContainerColor = colorScheme.background,
+                                unfocusedContainerColor = colorScheme.background,
+                                focusedTextColor = Color.Black,
+                                unfocusedTextColor = Color.Black
+                            )
+                        )
+
+                        Spacer(modifier = Modifier.height(18.dp))
+                    }
 
                     OutlinedTextField(
                         value = descripcion,
@@ -340,7 +365,9 @@ fun CaregiverServiceScreen(
 
                     Spacer(modifier = Modifier.height(30.dp))
 
-                    val formularioValido = tipoServicio.isNotBlank() && precio.isNotBlank() && precio.toDoubleOrNull() != null
+                    val formularioValido = tipoServicio.isNotBlank() &&
+                            precio.toDoubleOrNull()?.let { it in 20.0..6000.0 } == true &&
+                            (tipoServicio != "Alojamiento" || direccionAlojamiento.isNotBlank())
 
                     Button(
                         onClick = {
@@ -349,12 +376,17 @@ fun CaregiverServiceScreen(
                                 serviceTypeId = serviceTypeId,
                                 title = tipoServicio,
                                 price = precio.toDoubleOrNull() ?: 0.0,
-                                description = descripcion,
+                                description = buildCaregiverServiceDescription(
+                                    description = descripcion,
+                                    serviceType = tipoServicio,
+                                    lodgingAddress = direccionAlojamiento
+                                ),
                                 isAvailable = activo
                             )
                             tipoServicio = ""
                             precio = ""
                             descripcion = ""
+                            direccionAlojamiento = ""
                             activo = true
                             mostrarFormulario = false
                         },
@@ -560,4 +592,17 @@ fun CaregiverServiceScreen(
             }
         }
     }
+}
+
+private fun buildCaregiverServiceDescription(
+    description: String,
+    serviceType: String,
+    lodgingAddress: String
+): String {
+    val parts = mutableListOf<String>()
+    if (description.isNotBlank()) parts += description.trim()
+    if (serviceType == "Alojamiento" && lodgingAddress.isNotBlank()) {
+        parts += "Dirección del caregiver: ${lodgingAddress.trim()}"
+    }
+    return parts.joinToString("\n")
 }

@@ -19,61 +19,30 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.proyectopoo.petcareapp.model.Cuidador
+import com.proyectopoo.petcareapp.data.local.relation.OfferedServiceDetails
 import com.proyectopoo.petcareapp.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OwnerFeedScreen(
+    services: List<OfferedServiceDetails>,
     onGoToCaregiverProfile: (Int) -> Unit,
-    onRequestServices: (Int) -> Unit
+    onRequestService: (Int, Int) -> Unit
 ) {
     val tiposServicio = listOf(
         "Todos", "Alojamiento", "Guardería", "Paseo", "Taxi", "Peluquería", "Visitante"
     )
 
-    val cuidadores = listOf(
-        Cuidador(
-            id = 1,
-            nombre = "Carlos Martínez",
-            ubicacion = "Managua, Nicaragua",
-            precio = "C$250 por paseo",
-            rating = 4.8,
-            reviews = 42,
-            servicios = listOf("Paseo", "Visitante"),
-            review = "Ideal para paseos programados y visitas a domicilio."
-        ),
-        Cuidador(
-            id = 2,
-            nombre = "Valeria López",
-            ubicacion = "León, Nicaragua",
-            precio = "C$900 por alojamiento",
-            rating = 4.9,
-            reviews = 81,
-            servicios = listOf("Alojamiento", "Guardería", "Peluquería"),
-            review = "Recibe mascotas para guardería, alojamiento y grooming."
-        ),
-        Cuidador(
-            id = 3,
-            nombre = "María Fernanda",
-            ubicacion = "Masaya, Nicaragua",
-            precio = "C$350 por taxi",
-            rating = 4.7,
-            reviews = 35,
-            servicios = listOf("Taxi", "Peluquería"),
-            review = "Apoya con traslados a veterinaria y servicios de peluquería."
-        )
-    )
-
     var expanded by remember { mutableStateOf(false) }
     var selectedFilter by remember { mutableStateOf("Todos") }
 
-    val filteredCaregivers = if (selectedFilter == "Todos") {
-        cuidadores
+    val filteredServices = if (selectedFilter == "Todos") {
+        services
     } else {
-        cuidadores.filter { it.servicios.contains(selectedFilter) }
+        services.filter { it.serviceTypeName == selectedFilter }
     }
 
     Column(
@@ -139,7 +108,39 @@ fun OwnerFeedScreen(
             LazyColumn(
                 verticalArrangement = Arrangement.spacedBy(18.dp)
             ) {
-                items(filteredCaregivers) { cuidador ->
+                if (filteredServices.isEmpty()) {
+                    item {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(20.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color.White)
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(32.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text(
+                                    text = "No hay servicios disponibles",
+                                    color = CafeOscuro,
+                                    fontWeight = FontWeight.Bold,
+                                    textAlign = TextAlign.Center
+                                )
+                                Spacer(Modifier.height(8.dp))
+                                Text(
+                                    text = "Cuando un cuidador publique servicios activos, aparecerán aquí.",
+                                    color = TextoSuave,
+                                    textAlign = TextAlign.Center
+                                )
+                            }
+                        }
+                    }
+                }
+
+                items(filteredServices) { service ->
+                    val caregiverName = service.caregiverName ?: "Cuidador"
+                    val rating = service.caregiverRating ?: 0.0
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -163,7 +164,7 @@ fun OwnerFeedScreen(
                                         contentAlignment = Alignment.Center
                                     ) {
                                         Text(
-                                            text = cuidador.nombre.first().toString(),
+                                            text = caregiverName.first().toString(),
                                             color = Color.White,
                                             fontWeight = FontWeight.Bold,
                                             fontSize = 22.sp
@@ -175,7 +176,7 @@ fun OwnerFeedScreen(
 
                                 Column {
                                     Text(
-                                        text = cuidador.nombre,
+                                        text = caregiverName,
                                         color = CafeOscuro,
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 19.sp
@@ -189,12 +190,12 @@ fun OwnerFeedScreen(
                                             modifier = Modifier.size(18.dp)
                                         )
                                         Text(
-                                            text = cuidador.rating.toString(),
+                                            text = "%.1f".format(rating),
                                             color = CafeOscuro,
                                             fontWeight = FontWeight.SemiBold
                                         )
                                         Text(
-                                            text = " (${cuidador.reviews})",
+                                            text = " (${service.caregiverRatingCount})",
                                             color = TextoSuave
                                         )
                                     }
@@ -214,7 +215,7 @@ fun OwnerFeedScreen(
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(
-                                    text = cuidador.ubicacion,
+                                    text = service.caregiverEmail ?: service.caregiverPhone ?: "Contacto no disponible",
                                     color = CafeOscuro
                                 )
                             }
@@ -222,7 +223,7 @@ fun OwnerFeedScreen(
                             Spacer(modifier = Modifier.height(12.dp))
 
                             Text(
-                                text = "Precio: ${cuidador.precio}",
+                                text = "Precio: C$${"%.2f".format(service.price)}",
                                 color = CafeOscuro,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 16.sp
@@ -233,7 +234,7 @@ fun OwnerFeedScreen(
                             Row(
                                 horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
-                                cuidador.servicios.forEach { servicio ->
+                                listOfNotNull(service.serviceTypeName).ifEmpty { listOf(service.title) }.forEach { servicio ->
                                     AssistChip(
                                         onClick = { },
                                         label = { Text(servicio) },
@@ -248,7 +249,7 @@ fun OwnerFeedScreen(
                             Spacer(modifier = Modifier.height(16.dp))
 
                             Text(
-                                text = "\"${cuidador.review}\"",
+                                text = service.description?.ifBlank { null } ?: service.title,
                                 color = TextoSuave,
                                 fontStyle = FontStyle.Italic,
                                 fontSize = 15.sp
@@ -257,7 +258,7 @@ fun OwnerFeedScreen(
                             Spacer(modifier = Modifier.height(20.dp))
 
                             OutlinedButton(
-                                onClick = { onGoToCaregiverProfile(cuidador.id) },
+                                onClick = { onGoToCaregiverProfile(service.caregiverId) },
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(16.dp),
                                 colors = ButtonDefaults.outlinedButtonColors(contentColor = CafeMedio)
@@ -268,11 +269,11 @@ fun OwnerFeedScreen(
                             Spacer(modifier = Modifier.height(10.dp))
 
                             Button(
-                                onClick = { onRequestServices(cuidador.id) },
+                                onClick = { onRequestService(service.caregiverId, service.offeredServiceId) },
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(16.dp)
                             ) {
-                                Text("Solicitar servicios", fontWeight = FontWeight.Bold)
+                                Text("Solicitar este servicio", fontWeight = FontWeight.Bold)
                             }
                         }
                     }
