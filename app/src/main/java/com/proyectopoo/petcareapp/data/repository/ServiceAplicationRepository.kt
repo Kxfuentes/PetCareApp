@@ -77,6 +77,14 @@ class ServiceApplicationRepository(
         dao.updateRequestStatusForApplication(applicationId, ServiceRequestStatus.COMPLETED)
     }
 
+    /** Cancela el servicio aceptado: marca la postulación, la solicitud y la reserva como canceladas. */
+    suspend fun cancelService(applicationId: Int) {
+        val application = dao.getById(applicationId) ?: return
+        dao.updateStatus(applicationId, ApplicationStatus.CANCELLED)
+        dao.updateRequestStatusForApplication(applicationId, ServiceRequestStatus.CANCELLED)
+        bookingDao.updateStatusByRequest(application.serviceRequestId, BookingStatus.CANCELLED)
+    }
+
     suspend fun updateRequestSchedule(
         requestId: Int,
         date: String?,

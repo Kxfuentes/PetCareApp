@@ -35,6 +35,7 @@ import com.proyectopoo.petcareapp.data.session.SessionManager
 import com.proyectopoo.petcareapp.data.session.resolveStableUserId
 import com.proyectopoo.petcareapp.data.session.upsertLocalUser
 import com.proyectopoo.petcareapp.model.UserRole
+import com.proyectopoo.petcareapp.notifications.AppNotifier
 import com.proyectopoo.petcareapp.ui.screen.auth.LoginScreen
 import com.proyectopoo.petcareapp.ui.screen.auth.PasswordRecoveryScreen
 import com.proyectopoo.petcareapp.ui.screen.auth.RegisterScreen
@@ -104,7 +105,11 @@ fun AppNavigation(
                     serviceTypeDao = database.serviceTypeDao(),
                     ratingDao = database.ratingDao(),
                     offeredServiceDao = database.offeredServiceDao(),
-                    bookingDao = database.serviceBookingDao()
+                    bookingDao = database.serviceBookingDao(),
+                    notifier = AppNotifier(
+                        context = context.applicationContext,
+                        notificationDao = database.notificationDao()
+                    )
                 )
             }
         }
@@ -121,7 +126,15 @@ fun AppNavigation(
     val ownerApplicationDetails by serviceRequestViewModel.ownerApplicationDetails.collectAsStateWithLifecycle()
     val caregiverApplicationDetails by serviceRequestViewModel.caregiverApplicationDetails.collectAsStateWithLifecycle()
     val availableRequests by serviceRequestViewModel.availableRequests.collectAsStateWithLifecycle()
+    val serviceUserMessage by serviceRequestViewModel.userMessage.collectAsStateWithLifecycle()
     val currentUserId = sessionManager.getUserId()
+
+    LaunchedEffect(serviceUserMessage) {
+        serviceUserMessage?.let { message ->
+            Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+            serviceRequestViewModel.clearUserMessage()
+        }
+    }
 
     LaunchedEffect(currentUserId) {
         if (currentUserId > 0) {
@@ -419,6 +432,12 @@ fun AppNavigation(
                         reloadOwnerId = ownerId
                     )
                 },
+                onCancelService = { application ->
+                    serviceRequestViewModel.cancelService(
+                        applicationId = application.applicationId,
+                        reloadOwnerId = ownerId
+                    )
+                },
                 ownerId = ownerId
             )
         }
@@ -536,6 +555,12 @@ fun AppNavigation(
                         ratedByRole = UserRoleType.CAREGIVER,
                         score = score,
                         comment = comment,
+                        reloadCaregiverId = caregiverId
+                    )
+                },
+                onCancelService = { request ->
+                    serviceRequestViewModel.cancelService(
+                        applicationId = request.applicationId,
                         reloadCaregiverId = caregiverId
                     )
                 },

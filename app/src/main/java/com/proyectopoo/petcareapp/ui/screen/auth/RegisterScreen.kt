@@ -55,7 +55,7 @@ fun RegisterScreen(
             return "Formato de correo inválido"
 
         if (password.isBlank()) return "La contraseña es requerida"
-        if (password.length < 3) return "Mínimo 3 caracteres"
+        if (password.length < 6) return "La contraseña debe tener al menos 6 caracteres"
         if (!password.any { !it.isLetterOrDigit() })
             return "La contraseña debe incluir un carácter especial"
 

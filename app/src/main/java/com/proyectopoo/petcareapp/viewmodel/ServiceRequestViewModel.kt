@@ -23,6 +23,7 @@ import com.proyectopoo.petcareapp.data.local.entity.ServiceRequestEntity
 import com.proyectopoo.petcareapp.data.local.entity.ServiceRequestStatus
 import com.proyectopoo.petcareapp.data.local.entity.ServiceTypeEntity
 import com.proyectopoo.petcareapp.data.local.entity.UserEntity
+import com.proyectopoo.petcareapp.data.local.entity.NotificationType
 import com.proyectopoo.petcareapp.data.local.entity.UserRoleType
 import com.proyectopoo.petcareapp.data.local.relation.OfferedServiceDetails
 import com.proyectopoo.petcareapp.data.local.relation.ServiceApplicationDetails
@@ -31,6 +32,7 @@ import com.proyectopoo.petcareapp.data.local.relation.RequestWithApplications
 import com.proyectopoo.petcareapp.data.local.entity.ServiceBookingEntity
 import com.proyectopoo.petcareapp.data.repository.ServiceApplicationRepository
 import com.proyectopoo.petcareapp.data.repository.ServiceRequestRepository
+import com.proyectopoo.petcareapp.notifications.AppNotifier
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -45,7 +47,8 @@ class ServiceRequestViewModel(
     private val serviceTypeDao: ServiceTypeDao,
     private val ratingDao: RatingDao,
     private val offeredServiceDao: OfferedServiceDao,
-    private val bookingDao: ServiceBookingDao
+    private val bookingDao: ServiceBookingDao,
+    private val notifier: AppNotifier
 ) : ViewModel() {
 
     private val _ownerRequests = MutableStateFlow<List<RequestWithApplications>>(emptyList())
@@ -74,6 +77,14 @@ class ServiceRequestViewModel(
 
     private val _caregiverBookings = MutableStateFlow<List<ServiceBookingEntity>>(emptyList())
     val caregiverBookings = _caregiverBookings.asStateFlow()
+
+    // Mensajes puntuales para mostrar al usuario (errores de validación, confirmaciones).
+    private val _userMessage = MutableStateFlow<String?>(null)
+    val userMessage = _userMessage.asStateFlow()
+
+    fun clearUserMessage() {
+        _userMessage.value = null
+    }
 
     fun loadOwnerData(ownerId: Int) {
         if (ownerId <= 0) return
@@ -216,6 +227,13 @@ class ServiceRequestViewModel(
 
             refreshOwnerData(ownerId)
             loadCaregiverData(caregiverId)
+
+            notifier.push(
+                recipientUserId = caregiverId,
+                title = "Nueva solicitud de un dueño",
+                message = "Un dueño solicitó tu servicio de $serviceTypeName.",
+                type = NotificationType.SERVICE_REQUEST
+            )
         }
     }
 
@@ -231,6 +249,16 @@ class ServiceRequestViewModel(
             )
             _availableRequests.value = requestRepo.getAvailableDetails()
             _caregiverApplicationDetails.value = applicationRepo.getIncomingOwnerRequestsForCaregiver(caregiverId)
+
+            val request = requestRepo.getRequestById(serviceRequestId)
+            if (request != null) {
+                notifier.push(
+                    recipientUserId = request.ownerId,
+                    title = "Nueva postulación a tu solicitud",
+                    message = "Un cuidador se postuló a tu solicitud de \"${request.title}\".",
+                    type = NotificationType.SERVICE_REQUEST
+                )
+            }
         }
     }
 
@@ -254,15 +282,31 @@ class ServiceRequestViewModel(
                 )
             }
 
+            // Regla: un cuidador no puede aceptar dos servicios que se solapen en el tiempo.
+            val newRequest = requestRepo.getRequestById(application.serviceRequestId)
+            if (newRequest != null && caregiverHasConflict(application.caregiverId, newRequest)) {
+                _userMessage.value =
+                    "Este cuidador ya tiene un servicio aceptado en ese horario. No puede aceptar dos servicios a la vez."
+                return@launch
+            }
+
             applicationRepo.acceptAndCreateBooking(applicationId)
             _availableRequests.value = requestRepo.getAvailableDetails()
             ownerId?.let { refreshOwnerData(it) }
             caregiverId?.let { loadCaregiverData(it) }
+
+            notifier.push(
+                recipientUserId = application.caregiverId,
+                title = "Solicitud aceptada",
+                message = "Tu solicitud fue aceptada. ¡Prepárate para el servicio!",
+                type = NotificationType.REQUEST_ACCEPTED
+            )
         }
     }
 
     fun rejectApplication(applicationId: Int, ownerId: Int? = null, caregiverId: Int? = null) {
         viewModelScope.launch {
+            val application = applicationRepo.getApplicationById(applicationId)
             applicationRepo.updateStatus(applicationId, ApplicationStatus.REJECTED)
             ownerId?.let {
                 _ownerApplicationDetails.value = applicationRepo.getIncomingCaregiverOffersForOwner(it)
@@ -271,6 +315,15 @@ class ServiceRequestViewModel(
                 _caregiverApplicationDetails.value = applicationRepo.getIncomingOwnerRequestsForCaregiver(it)
             }
             loadAvailableRequests()
+
+            application?.let {
+                notifier.push(
+                    recipientUserId = it.caregiverId,
+                    title = "Solicitud rechazada",
+                    message = "Una de tus solicitudes fue rechazada.",
+                    type = NotificationType.REQUEST_REJECTED
+                )
+            }
         }
     }
 
@@ -304,6 +357,87 @@ class ServiceRequestViewModel(
             reloadOwnerId?.let { refreshOwnerData(it) }
             reloadCaregiverId?.let { loadCaregiverData(it) }
             _availableRequests.value = requestRepo.getAvailableDetails()
+        }
+    }
+
+    /**
+     * Cancela un servicio aceptado. Solo se permite hasta 2 horas antes de su inicio.
+     */
+    fun cancelService(
+        applicationId: Int,
+        reloadOwnerId: Int? = null,
+        reloadCaregiverId: Int? = null
+    ) {
+        viewModelScope.launch {
+            val application = applicationRepo.getApplicationById(applicationId) ?: return@launch
+            val request = requestRepo.getRequestById(application.serviceRequestId)
+            val startMillis = request?.let { parseDateTime(it.requestedDate, it.startTime) }
+
+            if (startMillis != null && System.currentTimeMillis() > startMillis - TWO_HOURS_MS) {
+                _userMessage.value =
+                    "Solo puedes cancelar un servicio hasta 2 horas antes de que empiece."
+                return@launch
+            }
+
+            applicationRepo.cancelService(applicationId)
+            reloadOwnerId?.let { refreshOwnerData(it) }
+            reloadCaregiverId?.let { loadCaregiverData(it) }
+            _availableRequests.value = requestRepo.getAvailableDetails()
+            _userMessage.value = "Servicio cancelado."
+
+            notifier.push(
+                recipientUserId = application.caregiverId,
+                title = "Servicio cancelado",
+                message = "Un servicio fue cancelado.",
+                type = NotificationType.REQUEST_CANCELLED
+            )
+        }
+    }
+
+    /** Verifica si el cuidador ya tiene una reserva ACTIVA que se solapa con [candidate]. */
+    private suspend fun caregiverHasConflict(
+        caregiverId: Int,
+        candidate: ServiceRequestEntity
+    ): Boolean {
+        return bookingDao.getBookingsByCaregiver(caregiverId)
+            .filter { it.status == BookingStatus.ACTIVE }
+            .filter { it.serviceRequestId != candidate.serviceRequestId }
+            .any { booking ->
+                requestRepo.getRequestById(booking.serviceRequestId)
+                    ?.let { overlaps(it, candidate) } == true
+            }
+    }
+
+    private fun overlaps(a: ServiceRequestEntity, b: ServiceRequestEntity): Boolean {
+        val wa = windowOf(a)
+        val wb = windowOf(b)
+        if (wa != null && wb != null) {
+            return wa.first < wb.second && wb.first < wa.second
+        }
+        // Sin horas parseables: consideramos conflicto si es el mismo día.
+        return !a.requestedDate.isNullOrBlank() && a.requestedDate == b.requestedDate
+    }
+
+    /** Devuelve la ventana [inicio, fin] del servicio en milisegundos, o null si no se puede parsear. */
+    private fun windowOf(request: ServiceRequestEntity): Pair<Long, Long>? {
+        val start = parseDateTime(request.requestedDate, request.startTime) ?: return null
+        val end = parseDateTime(request.requestedDate, request.endTime)
+            ?: (start + ONE_HOUR_MS)
+        return start to (if (end > start) end else start + ONE_HOUR_MS)
+    }
+
+    private fun parseDateTime(date: String?, time: String?): Long? {
+        if (date.isNullOrBlank()) return null
+        return try {
+            val hasTime = !time.isNullOrBlank()
+            val pattern = if (hasTime) "dd/MM/yyyy HH:mm" else "dd/MM/yyyy"
+            val text = if (hasTime) "$date $time" else date
+            java.text.SimpleDateFormat(pattern, java.util.Locale.getDefault())
+                .apply { isLenient = false }
+                .parse(text)
+                ?.time
+        } catch (e: Exception) {
+            null
         }
     }
 
@@ -402,5 +536,10 @@ class ServiceRequestViewModel(
         _caregiverOffers.value = emptyList()
         _ownerBookings.value = emptyList()
         _caregiverBookings.value = emptyList()
+    }
+
+    companion object {
+        private const val ONE_HOUR_MS = 60 * 60 * 1000L
+        private const val TWO_HOURS_MS = 2 * ONE_HOUR_MS
     }
 }

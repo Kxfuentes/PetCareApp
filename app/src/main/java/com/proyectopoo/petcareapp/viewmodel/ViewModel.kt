@@ -171,20 +171,17 @@ class MainViewModel : ViewModel() {
         }
     }
 
-    // 🔥 CORREGIDO: Limpia resultados y el query, pero mantiene selectedLocation
     fun clearSearchResults() {
         _locationSearchState.update {
             it.copy(
                 results = emptyList(),
                 error = null,
                 isLoading = false,
-                query = ""  // 🔥 Limpia también el query
-                // 🔥 selectedLocation se mantiene
+                query = ""
             )
         }
     }
 
-    // 🔥 CORREGIDO: Limpia TODO incluyendo selectedLocation
     fun clearLocationData() {
         _locationSearchState.update {
             LocationSearchState() // Reset a estado inicial

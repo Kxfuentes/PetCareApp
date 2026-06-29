@@ -45,6 +45,16 @@ interface ServiceBookingDao {
         status: BookingStatus
     ): List<ServiceBookingEntity>
 
+    @Query("""
+        UPDATE service_bookings
+        SET status = :status
+        WHERE serviceRequestId = :serviceRequestId
+    """)
+    suspend fun updateStatusByRequest(
+        serviceRequestId: Int,
+        status: BookingStatus
+    )
+
     @Update
     suspend fun updateBooking(
         booking: ServiceBookingEntity

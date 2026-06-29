@@ -24,18 +24,22 @@ class NotificationRepository(
     }
 
     suspend fun getNotificationsByUser(
-        userId: String
+        userId: Int
     ): List<NotificationEntity> {
 
         return notificationDao.getNotificationsByUser(userId)
     }
 
     suspend fun getUnreadNotificationsByUser(
-        userId: String
+        userId: Int
     ): List<NotificationEntity> {
 
         return notificationDao
             .getUnreadNotificationsByUser(userId)
+    }
+
+    suspend fun getUnreadCount(userId: Int): Int {
+        return notificationDao.getUnreadCount(userId)
     }
 
     suspend fun markAsRead(

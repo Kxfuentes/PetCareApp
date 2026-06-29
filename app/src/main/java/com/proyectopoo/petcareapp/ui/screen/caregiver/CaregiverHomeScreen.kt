@@ -28,6 +28,7 @@ fun CaregiverHomeScreen(
     onAcceptApplication: (Int) -> Unit,
     onRejectApplication: (Int) -> Unit,
     onCompleteAndRate: (ServiceApplicationDetails, Double, String) -> Unit,
+    onCancelService: (ServiceApplicationDetails) -> Unit = {},
     caregiverId: Int
 ) {
     var available by remember { mutableStateOf(true) }
@@ -259,6 +260,15 @@ fun CaregiverHomeScreen(
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
+                                OutlinedButton(
+                                    onClick = { onCancelService(request) },
+                                    colors = ButtonDefaults.outlinedButtonColors(
+                                        contentColor = MaterialTheme.colorScheme.error
+                                    )
+                                ) {
+                                    Text("Cancelar")
+                                }
+                                Spacer(Modifier.width(8.dp))
                                 Button(onClick = {
                                     requestToRate = request
                                     ratingScore = 5f
