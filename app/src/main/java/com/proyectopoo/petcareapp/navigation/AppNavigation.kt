@@ -216,13 +216,14 @@ fun AppNavigation(
                 onRegisterSuccess = { response ->
                     val userData = response.user ?: response.useer
 
-                    if (userData != null && userData.id.isNotBlank() && userData.email.isNotBlank()) {
-                        val localUserId = userData.id.toLocalUserId()
+                    if (userData != null && userData.id > 0 && userData.email.isNotBlank()) {
+                        val apiUserId = userData.id.toString()
+                        val localUserId = apiUserId.toLocalUserId()
 
                         navController.navigate(
                             RoleSection(
-                                userId = userData.id.toLocalUserId(),
-                                apiUserId = userData.id,
+                                userId = localUserId,
+                                apiUserId = apiUserId,
                                 username = userData.username,
                                 email = userData.email
                             )

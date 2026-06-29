@@ -197,7 +197,7 @@ fun RegisterScreen(
                                 val registerResponse = response.body()
                                 val registeredUser = registerResponse?.user ?: registerResponse?.useer
 
-                                if (registerResponse != null && registeredUser != null && registeredUser.id.isNotBlank()) {
+                                if (registerResponse != null && registeredUser != null && registeredUser.id > 0) {
                                     onRegisterSuccess(registerResponse)
                                 } else {
                                     errorMessage = "La API respondió OK, pero no devolvió usuario. Body: ${response.body()}"

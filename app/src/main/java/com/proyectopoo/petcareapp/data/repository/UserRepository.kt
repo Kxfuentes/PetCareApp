@@ -63,7 +63,7 @@ class UserRepository(
             val stableUserId = resolveStableUserId(
                 userDao = userDao,
                 email = userDto.email,
-                apiUserId = userDto.id
+                apiUserId = userDto.id.toString()
             )
 
             val user = upsertLocalUser(
@@ -80,7 +80,7 @@ class UserRepository(
                 email = user.email,
                 role = user.role,
                 token = token,
-                apiUserId = userDto.id
+                apiUserId = userDto.id.toString()
             )
 
             if (token != null) {
