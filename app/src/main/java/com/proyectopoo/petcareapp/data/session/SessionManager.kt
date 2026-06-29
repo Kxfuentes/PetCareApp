@@ -23,13 +23,9 @@ class SessionManager(
             .putString("email", email.trim())
             .putString("role", role.name)
             .putBoolean("is_logged_in", true)
-        if (token != null) {
-            editor.putString("token", token)
-        }
-        if (apiUserId != null) {
-            editor.putString("api_user_id", apiUserId)
-        }
-        editor.commit()
+        token?.let { editor.putString("token", it) }
+        apiUserId?.let { editor.putString("api_user_id", it) }
+        editor.apply()
     }
 
     fun isLoggedIn(): Boolean {
@@ -59,15 +55,15 @@ class SessionManager(
 
     fun saveToken(token: String, rememberSession: Boolean) {
         if (rememberSession) {
-            prefs.edit().putString("auth_token", token).commit()
+            prefs.edit().putString("auth_token", token).apply()
         }
     }
 
     fun clearToken() {
-        prefs.edit().remove("auth_token").commit()
+        prefs.edit().remove("auth_token").apply()
     }
 
     fun clearSession() {
-        prefs.edit().clear().commit()
+        prefs.edit().clear().apply()
     }
 }

@@ -36,7 +36,7 @@ data class LoginResponse(
 
 @Serializable
 data class UserDto(
-    val id: String,
+    val id: Int,
     val username: String,
     val email: String,
     @SerialName("rol") val role: String? = null
@@ -44,7 +44,7 @@ data class UserDto(
 
 @Serializable
 data class SessionDto(
-    val id: String? = null,
+    val id: Int? = null,
     @SerialName("token_sesion") val tokenSesion: String? = null,
     @SerialName("fecha_inicio") val fechaInicio: String? = null,
     val token: String? = null,

@@ -12,10 +12,6 @@ fun String.toStableLocalUserId(): Int {
     return if (generatedId > 0) generatedId else 1
 }
 
-/**
- * Resuelve un userId estable reutilizando el registro local existente por correo.
- * Evita que mascotas, solicitudes y ofertas queden huérfanas al volver a iniciar sesión.
- */
 suspend fun resolveStableUserId(
     userDao: UserDao,
     email: String,
