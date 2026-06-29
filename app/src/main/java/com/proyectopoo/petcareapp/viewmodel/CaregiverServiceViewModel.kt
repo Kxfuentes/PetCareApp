@@ -42,7 +42,9 @@ class CaregiverServiceViewModel(
         title: String,
         price: Double,
         description: String? = null,
-        isAvailable: Boolean = true
+        isAvailable: Boolean = true,
+        latitude: Double? = null,
+        longitude: Double? = null
     ) {
         viewModelScope.launch {
             if (price !in 20.0..6000.0) return@launch
@@ -54,7 +56,9 @@ class CaregiverServiceViewModel(
                 title = title,
                 description = description,
                 price = price,
-                isAvailable = isAvailable
+                isAvailable = isAvailable,
+                latitude = latitude,
+                longitude = longitude
             )
             offeredServiceDao.insertOfferedService(newService)
             loadServices() // refrescar lista

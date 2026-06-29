@@ -132,7 +132,9 @@ class ServiceRequestViewModel(
         price: String,
         requestedDate: String,
         startTime: String,
-        endTime: String
+        endTime: String,
+        latitude: Double? = null,
+        longitude: Double? = null
     ) {
         viewModelScope.launch {
             val numericPrice = price.toDoubleOrNull()
@@ -163,7 +165,9 @@ class ServiceRequestViewModel(
                     requestedDate = requestedDate,
                     startTime = startTime.ifBlank { null },
                     endTime = endTime.ifBlank { null },
-                    sourceType = RequestSource.OPEN
+                    sourceType = RequestSource.OPEN,
+                    latitude = latitude,
+                    longitude = longitude
                 ),
                 petIds = petIds
             )

@@ -25,7 +25,7 @@ import com.proyectopoo.petcareapp.data.local.entity.*
         ServiceBookingEntity::class,
         NotificationEntity::class
     ],
-    version = 9,
+    version = 10,
     exportSchema = false
 )
 abstract class PetCareDatabase : RoomDatabase() {
@@ -147,6 +147,15 @@ abstract class PetCareDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_9_10 = object : Migration(9, 10) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL("ALTER TABLE `service_requests` ADD COLUMN `latitude` REAL")
+                database.execSQL("ALTER TABLE `service_requests` ADD COLUMN `longitude` REAL")
+                database.execSQL("ALTER TABLE `offered_services` ADD COLUMN `latitude` REAL")
+                database.execSQL("ALTER TABLE `offered_services` ADD COLUMN `longitude` REAL")
+            }
+        }
+
         fun getDatabase(context: Context): PetCareDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -154,7 +163,7 @@ abstract class PetCareDatabase : RoomDatabase() {
                     PetCareDatabase::class.java,
                     "petcare_database"
                 )
-                    .addMigrations(MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9)
+                    .addMigrations(MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10)
                     .fallbackToDestructiveMigration()
                     .build()
 

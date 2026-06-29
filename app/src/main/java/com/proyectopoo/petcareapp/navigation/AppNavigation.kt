@@ -85,6 +85,9 @@ fun AppNavigation(
         }
     )
 
+    // 🔥 CORREGIDO: Crear AppNotifier y pasarlo al ViewModel
+    val notifier = remember { AppNotifier(context.applicationContext, database.notificationDao()) }
+
     val serviceRequestViewModel: ServiceRequestViewModel = viewModel(
         factory = viewModelFactory {
             initializer {
@@ -106,10 +109,7 @@ fun AppNavigation(
                     ratingDao = database.ratingDao(),
                     offeredServiceDao = database.offeredServiceDao(),
                     bookingDao = database.serviceBookingDao(),
-                    notifier = AppNotifier(
-                        context = context.applicationContext,
-                        notificationDao = database.notificationDao()
-                    )
+                    notifier = notifier  // ✅ Ahora se pasa
                 )
             }
         }
@@ -126,15 +126,7 @@ fun AppNavigation(
     val ownerApplicationDetails by serviceRequestViewModel.ownerApplicationDetails.collectAsStateWithLifecycle()
     val caregiverApplicationDetails by serviceRequestViewModel.caregiverApplicationDetails.collectAsStateWithLifecycle()
     val availableRequests by serviceRequestViewModel.availableRequests.collectAsStateWithLifecycle()
-    val serviceUserMessage by serviceRequestViewModel.userMessage.collectAsStateWithLifecycle()
     val currentUserId = sessionManager.getUserId()
-
-    LaunchedEffect(serviceUserMessage) {
-        serviceUserMessage?.let { message ->
-            Toast.makeText(context, message, Toast.LENGTH_LONG).show()
-            serviceRequestViewModel.clearUserMessage()
-        }
-    }
 
     LaunchedEffect(currentUserId) {
         if (currentUserId > 0) {
@@ -262,7 +254,7 @@ fun AppNavigation(
                         try {
                             val roleResponse = RetrofitClient.apiService.updateUserRole(
                                 userId = data.apiUserId,
-                                request = RoleUpdateRequest(rol = "propietario")
+                                request = RoleUpdateRequest(rol = "OWNER")
                             )
                             if (!roleResponse.isSuccessful) {
                                 throw Exception("No se pudo guardar el rol de propietario. HTTP ${roleResponse.code()}")
@@ -297,7 +289,7 @@ fun AppNavigation(
                         try {
                             val roleResponse = RetrofitClient.apiService.updateUserRole(
                                 userId = data.apiUserId,
-                                request = RoleUpdateRequest(rol = "cuidador")
+                                request = RoleUpdateRequest(rol = "CAREGIVER")
                             )
                             if (!roleResponse.isSuccessful) {
                                 throw Exception("No se pudo guardar el rol de cuidador. HTTP ${roleResponse.code()}")
@@ -432,12 +424,6 @@ fun AppNavigation(
                         reloadOwnerId = ownerId
                     )
                 },
-                onCancelService = { application ->
-                    serviceRequestViewModel.cancelService(
-                        applicationId = application.applicationId,
-                        reloadOwnerId = ownerId
-                    )
-                },
                 ownerId = ownerId
             )
         }
@@ -499,7 +485,7 @@ fun AppNavigation(
             }
         }
 
-        // ===== CREATE SERVICE =====
+        // ===== CREATE SERVICE (CORREGIDO) =====
         composable<CreateService> { backStackEntry ->
             val args = backStackEntry.toRoute<CreateService>()
             val ownerId = sessionManager.getUserId()
@@ -508,7 +494,8 @@ fun AppNavigation(
                 serviceType = args.serviceType,
                 dogs = dogs,
                 onBack = { navController.popBackStack() },
-                onPublish = { selectedPetNames, serviceType, description, location, price, date, startTime, endTime ->
+                // 🔥 CORREGIDO: Añadir latitude y longitude
+                onPublish = { selectedPetNames, serviceType, description, location, price, date, startTime, endTime, latitude, longitude ->
                     val petIds = dogs
                         .filter { dog -> selectedPetNames.any { it.equals(dog.name, ignoreCase = true) } }
                         .map { it.petId }
@@ -522,7 +509,9 @@ fun AppNavigation(
                         price = price,
                         requestedDate = date,
                         startTime = startTime,
-                        endTime = endTime
+                        endTime = endTime,
+                        latitude = latitude,
+                        longitude = longitude
                     )
                     navController.navigate(OwnerHome) { launchSingleTop = true }
                 }
@@ -555,12 +544,6 @@ fun AppNavigation(
                         ratedByRole = UserRoleType.CAREGIVER,
                         score = score,
                         comment = comment,
-                        reloadCaregiverId = caregiverId
-                    )
-                },
-                onCancelService = { request ->
-                    serviceRequestViewModel.cancelService(
-                        applicationId = request.applicationId,
                         reloadCaregiverId = caregiverId
                     )
                 },
