@@ -38,7 +38,7 @@ fun CaregiverPublicProfileScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Perfil de Cuidador") },
+                title = { Text("Perfil de Gestor") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
@@ -83,7 +83,7 @@ fun CaregiverPublicProfileScreen(
                     Spacer(Modifier.width(16.dp))
                     Column(Modifier.weight(1f)) {
                         Text(
-                            user?.username ?: "Cuidador",
+                            user?.username ?: "Gestor",
                             style = MaterialTheme.typography.headlineSmall,
                             fontWeight = FontWeight.SemiBold
                         )
@@ -95,7 +95,7 @@ fun CaregiverPublicProfileScreen(
                         )
                         Spacer(Modifier.height(4.dp))
                         Text(
-                            "Cuidador de mascotas",
+                            "Gestor de mascotas",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.primary,
                             fontWeight = FontWeight.Medium

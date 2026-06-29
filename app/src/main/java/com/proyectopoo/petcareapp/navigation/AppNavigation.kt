@@ -35,7 +35,6 @@ import com.proyectopoo.petcareapp.data.session.SessionManager
 import com.proyectopoo.petcareapp.data.session.resolveStableUserId
 import com.proyectopoo.petcareapp.data.session.upsertLocalUser
 import com.proyectopoo.petcareapp.model.UserRole
-import com.proyectopoo.petcareapp.notifications.AppNotifier
 import com.proyectopoo.petcareapp.ui.screen.auth.LoginScreen
 import com.proyectopoo.petcareapp.ui.screen.auth.PasswordRecoveryScreen
 import com.proyectopoo.petcareapp.ui.screen.auth.RegisterScreen
@@ -63,6 +62,7 @@ import com.proyectopoo.petcareapp.viewmodel.LoginViewModel
 import com.proyectopoo.petcareapp.viewmodel.OwnerProfileViewModel
 import com.proyectopoo.petcareapp.viewmodel.ServiceRequestViewModel
 import com.proyectopoo.petcareapp.viewmodel.UserRoleViewModel
+import com.proyectopoo.petcareapp.notifications.AppNotifier
 import kotlinx.coroutines.launch
 
 @Composable
@@ -75,6 +75,7 @@ fun AppNavigation(
     val context = LocalContext.current
     val sessionManager = remember { SessionManager(context) }
     val database = remember { PetCareDatabase.getDatabase(context) }
+    val appNotifier = remember { AppNotifier(context, database.notificationDao()) }
     val scope = rememberCoroutineScope()
 
     val dogViewModel: DogViewModel = viewModel(
@@ -84,9 +85,6 @@ fun AppNavigation(
             }
         }
     )
-
-    // 🔥 CORREGIDO: Crear AppNotifier y pasarlo al ViewModel
-    val notifier = remember { AppNotifier(context.applicationContext, database.notificationDao()) }
 
     val serviceRequestViewModel: ServiceRequestViewModel = viewModel(
         factory = viewModelFactory {
@@ -109,7 +107,7 @@ fun AppNavigation(
                     ratingDao = database.ratingDao(),
                     offeredServiceDao = database.offeredServiceDao(),
                     bookingDao = database.serviceBookingDao(),
-                    notifier = notifier  // ✅ Ahora se pasa
+                    notifier = appNotifier
                 )
             }
         }
@@ -253,8 +251,8 @@ fun AppNavigation(
                         onboardingError = null
                         try {
                             val roleResponse = RetrofitClient.apiService.updateUserRole(
-                                userId = data.apiUserId,
-                                request = RoleUpdateRequest(rol = "OWNER")
+                                userId = data.userId,
+                                request = RoleUpdateRequest(rol = "propietario")
                             )
                             if (!roleResponse.isSuccessful) {
                                 throw Exception("No se pudo guardar el rol de propietario. HTTP ${roleResponse.code()}")
@@ -288,8 +286,8 @@ fun AppNavigation(
                         onboardingError = null
                         try {
                             val roleResponse = RetrofitClient.apiService.updateUserRole(
-                                userId = data.apiUserId,
-                                request = RoleUpdateRequest(rol = "CAREGIVER")
+                                userId = data.userId,
+                                request = RoleUpdateRequest(rol = "gestor")
                             )
                             if (!roleResponse.isSuccessful) {
                                 throw Exception("No se pudo guardar el rol de cuidador. HTTP ${roleResponse.code()}")
@@ -485,7 +483,7 @@ fun AppNavigation(
             }
         }
 
-        // ===== CREATE SERVICE (CORREGIDO) =====
+        // ===== CREATE SERVICE =====
         composable<CreateService> { backStackEntry ->
             val args = backStackEntry.toRoute<CreateService>()
             val ownerId = sessionManager.getUserId()
@@ -494,8 +492,7 @@ fun AppNavigation(
                 serviceType = args.serviceType,
                 dogs = dogs,
                 onBack = { navController.popBackStack() },
-                // 🔥 CORREGIDO: Añadir latitude y longitude
-                onPublish = { selectedPetNames, serviceType, description, location, price, date, startTime, endTime, latitude, longitude ->
+                onPublish = { selectedPetNames, serviceType, description, location, price, date, startTime, endTime, lat, lon ->
                     val petIds = dogs
                         .filter { dog -> selectedPetNames.any { it.equals(dog.name, ignoreCase = true) } }
                         .map { it.petId }
@@ -510,8 +507,8 @@ fun AppNavigation(
                         requestedDate = date,
                         startTime = startTime,
                         endTime = endTime,
-                        latitude = latitude,
-                        longitude = longitude
+                        latitude = lat,
+                        longitude = lon
                     )
                     navController.navigate(OwnerHome) { launchSingleTop = true }
                 }

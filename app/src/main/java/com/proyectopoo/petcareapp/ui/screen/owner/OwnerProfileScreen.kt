@@ -73,7 +73,7 @@ fun OwnerProfileScreen(
                     Spacer(Modifier.height(4.dp))
                     Text(user?.email ?: "correo@ejemplo.com", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
                     Spacer(Modifier.height(4.dp))
-                    Text("Dueño de Mascotas", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
+                    Text("Propietario", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
                 }
 
 

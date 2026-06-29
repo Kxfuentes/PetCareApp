@@ -36,7 +36,7 @@ fun OwnerPublicProfileScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Perfil de Dueño") },
+                title = { Text("Perfil de Propietario") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
@@ -100,7 +100,7 @@ fun OwnerPublicProfileScreen(
                             )
                             Spacer(Modifier.width(6.dp))
                             Text(
-                                "Dueño de Mascotas",
+                                "Propietario",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
