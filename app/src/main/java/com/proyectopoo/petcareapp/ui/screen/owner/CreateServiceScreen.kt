@@ -16,6 +16,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.proyectopoo.petcareapp.data.local.entity.PetEntity
+import com.proyectopoo.petcareapp.model.NominatimResponse
+import com.proyectopoo.petcareapp.ui.components.LocationAutocompleteField
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -34,7 +36,9 @@ fun CreateServiceScreen(
         price: String,
         date: String,
         startTime: String,
-        endTime: String
+        endTime: String,
+        latitude: Double?,
+        longitude: Double?
     ) -> Unit
 ) {
 
@@ -42,6 +46,8 @@ fun CreateServiceScreen(
     var tipoServicio by remember(serviceType) { mutableStateOf(serviceType) }
     var descripcion by remember { mutableStateOf("") }
     var ubicacion by remember { mutableStateOf("") }
+    var ubicacionLat by remember { mutableStateOf<Double?>(null) }
+    var ubicacionLon by remember { mutableStateOf<Double?>(null) }
     var precio by remember { mutableStateOf("") }
     var fecha by remember { mutableStateOf("") }
     var horaInicio by remember { mutableStateOf("") }
@@ -219,6 +225,18 @@ fun CreateServiceScreen(
 
         Spacer(Modifier.height(12.dp))
 
+        // Handlers compartidos para el campo de ubicación con autocompletado (Nominatim).
+        val onUbicacionChange: (String) -> Unit = {
+            ubicacion = it
+            ubicacionLat = null
+            ubicacionLon = null
+        }
+        val onUbicacionPicked: (NominatimResponse) -> Unit = {
+            ubicacion = it.display_name
+            ubicacionLat = it.lat.toDoubleOrNull()
+            ubicacionLon = it.lon.toDoubleOrNull()
+        }
+
         when (tipoServicio) {
             "Alojamiento" -> {
                 Text("Detalles de Alojamiento", style = MaterialTheme.typography.titleMedium)
@@ -243,11 +261,11 @@ fun CreateServiceScreen(
                 )
                 if (necesitaTransporte) {
                     Spacer(Modifier.height(12.dp))
-                    OutlinedTextField(
-                        value = ubicacion,
-                        onValueChange = { ubicacion = it },
-                        label = { Text("Ubicación de recogida") },
-                        modifier = Modifier.fillMaxWidth(),
+                    LocationAutocompleteField(
+                        query = ubicacion,
+                        onQueryChange = onUbicacionChange,
+                        onLocationPicked = onUbicacionPicked,
+                        label = "Ubicación de recogida",
                         isError = showError && ubicacion.isBlank()
                     )
                 }
@@ -262,11 +280,11 @@ fun CreateServiceScreen(
                 TransportRow(necesitaTransporte) { necesitaTransporte = it }
                 if (necesitaTransporte) {
                     Spacer(Modifier.height(12.dp))
-                    OutlinedTextField(
-                        value = ubicacion,
-                        onValueChange = { ubicacion = it },
-                        label = { Text("Ubicación") },
-                        modifier = Modifier.fillMaxWidth(),
+                    LocationAutocompleteField(
+                        query = ubicacion,
+                        onQueryChange = onUbicacionChange,
+                        onLocationPicked = onUbicacionPicked,
+                        label = "Ubicación",
                         isError = showError && ubicacion.isBlank()
                     )
                 }
@@ -274,7 +292,13 @@ fun CreateServiceScreen(
             "Paseo" -> {
                 Text("Detalles de Paseo", style = MaterialTheme.typography.titleMedium)
                 Spacer(Modifier.height(8.dp))
-                OutlinedTextField(value = ubicacion, onValueChange = { ubicacion = it }, label = { Text("Ubicación") }, modifier = Modifier.fillMaxWidth(), isError = showError && ubicacion.isBlank())
+                LocationAutocompleteField(
+                    query = ubicacion,
+                    onQueryChange = onUbicacionChange,
+                    onLocationPicked = onUbicacionPicked,
+                    label = "Ubicación",
+                    isError = showError && ubicacion.isBlank()
+                )
                 Spacer(Modifier.height(12.dp))
                 ServiceDateField(fecha, "Fecha", showError && fecha.isBlank()) { showDatePicker = true }
                 Spacer(Modifier.height(12.dp))
@@ -285,9 +309,21 @@ fun CreateServiceScreen(
                 Spacer(Modifier.height(8.dp))
                 ServiceDateField(fecha, "Fecha", showError && fecha.isBlank()) { showDatePicker = true }
                 Spacer(Modifier.height(12.dp))
-                OutlinedTextField(value = ubicacion, onValueChange = { ubicacion = it }, label = { Text("Dirección de recogida") }, modifier = Modifier.fillMaxWidth(), isError = showError && ubicacion.isBlank())
+                LocationAutocompleteField(
+                    query = ubicacion,
+                    onQueryChange = onUbicacionChange,
+                    onLocationPicked = onUbicacionPicked,
+                    label = "Dirección de recogida",
+                    isError = showError && ubicacion.isBlank()
+                )
                 Spacer(Modifier.height(12.dp))
-                OutlinedTextField(value = ubicacionDestino, onValueChange = { ubicacionDestino = it }, label = { Text("Dirección de destino") }, modifier = Modifier.fillMaxWidth(), isError = showError && ubicacionDestino.isBlank())
+                LocationAutocompleteField(
+                    query = ubicacionDestino,
+                    onQueryChange = { ubicacionDestino = it },
+                    onLocationPicked = { ubicacionDestino = it.display_name },
+                    label = "Dirección de destino",
+                    isError = showError && ubicacionDestino.isBlank()
+                )
                 Spacer(Modifier.height(12.dp))
                 TimeField(horaInicio, "Hora de recogida", showError && horaInicio.isBlank()) { showStartTimePicker = true }
                 Spacer(Modifier.height(12.dp))
@@ -299,7 +335,13 @@ fun CreateServiceScreen(
             "Peluquería" -> {
                 Text("Detalles de Peluquería", style = MaterialTheme.typography.titleMedium)
                 Spacer(Modifier.height(8.dp))
-                OutlinedTextField(value = ubicacion, onValueChange = { ubicacion = it }, label = { Text("Ubicación") }, modifier = Modifier.fillMaxWidth(), isError = showError && ubicacion.isBlank())
+                LocationAutocompleteField(
+                    query = ubicacion,
+                    onQueryChange = onUbicacionChange,
+                    onLocationPicked = onUbicacionPicked,
+                    label = "Ubicación",
+                    isError = showError && ubicacion.isBlank()
+                )
                 Spacer(Modifier.height(12.dp))
                 ServiceDateField(fecha, "Fecha", showError && fecha.isBlank()) { showDatePicker = true }
                 Spacer(Modifier.height(12.dp))
@@ -325,7 +367,13 @@ fun CreateServiceScreen(
             "Visitante" -> {
                 Text("Detalles de Visita", style = MaterialTheme.typography.titleMedium)
                 Spacer(Modifier.height(8.dp))
-                OutlinedTextField(value = ubicacion, onValueChange = { ubicacion = it }, label = { Text("Ubicación") }, modifier = Modifier.fillMaxWidth(), isError = showError && ubicacion.isBlank())
+                LocationAutocompleteField(
+                    query = ubicacion,
+                    onQueryChange = onUbicacionChange,
+                    onLocationPicked = onUbicacionPicked,
+                    label = "Ubicación",
+                    isError = showError && ubicacion.isBlank()
+                )
                 Spacer(Modifier.height(12.dp))
                 ServiceDateField(fecha, "Fecha de inicio", showError && fecha.isBlank()) { showDatePicker = true }
                 Spacer(Modifier.height(12.dp))
@@ -367,7 +415,7 @@ fun CreateServiceScreen(
                             roundTrip = idaYVuelta,
                             groomingType = tipoPeluqueria
                         )
-                        onPublish(selectedNames, tipoServicio, details, ubicacion, precio, fecha, horaInicio, horaFin)
+                        onPublish(selectedNames, tipoServicio, details, ubicacion, precio, fecha, horaInicio, horaFin, ubicacionLat, ubicacionLon)
                     }
                 }
             },

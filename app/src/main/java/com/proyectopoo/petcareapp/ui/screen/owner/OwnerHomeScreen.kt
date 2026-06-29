@@ -36,6 +36,7 @@ fun OwnerHomeScreen(
     onAcceptApplication: (Int) -> Unit,
     onRejectApplication: (Int) -> Unit,
     onCompleteAndRate: (ServiceApplicationDetails, Double, String) -> Unit,
+    onCancelService: (ServiceApplicationDetails) -> Unit = {},
     ownerId: Int
 ) {
 
@@ -451,6 +452,15 @@ fun OwnerHomeScreen(
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
                                     }
+                                    OutlinedButton(
+                                        onClick = { onCancelService(application) },
+                                        colors = ButtonDefaults.outlinedButtonColors(
+                                            contentColor = MaterialTheme.colorScheme.error
+                                        )
+                                    ) {
+                                        Text("Cancelar")
+                                    }
+                                    Spacer(Modifier.width(8.dp))
                                     Button(onClick = {
                                         applicationToRate = application
                                         ratingScore = 5f

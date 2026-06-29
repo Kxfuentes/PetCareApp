@@ -54,7 +54,11 @@ data class ServiceRequestEntity(
 
     val offeredServiceId: Int? = null,
 
-    val sourceType: RequestSource = RequestSource.OPEN
+    val sourceType: RequestSource = RequestSource.OPEN,
+
+    // Coordenadas de la ubicación (obtenidas de la API de Nominatim).
+    val latitude: Double? = null,
+    val longitude: Double? = null
 )
 
 enum class RequestSource {

@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.proyectopoo.petcareapp.data.local.entity.OfferedServiceEntity
+import com.proyectopoo.petcareapp.ui.components.LocationAutocompleteField
 import com.proyectopoo.petcareapp.viewmodel.CaregiverServiceViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -64,6 +65,8 @@ fun CaregiverServiceScreen(
     var precio by remember { mutableStateOf("") }
     var descripcion by remember { mutableStateOf("") }
     var direccionAlojamiento by remember { mutableStateOf("") }
+    var direccionLat by remember { mutableStateOf<Double?>(null) }
+    var direccionLon by remember { mutableStateOf<Double?>(null) }
     var activo by remember { mutableStateOf(true) }
 
     // Estados del formulario de edición
@@ -308,20 +311,19 @@ fun CaregiverServiceScreen(
                     Spacer(modifier = Modifier.height(18.dp))
 
                     if (tipoServicio == "Alojamiento") {
-                        OutlinedTextField(
-                            value = direccionAlojamiento,
-                            onValueChange = { direccionAlojamiento = it },
-                            label = { Text("Dirección") },
-                            modifier = Modifier.fillMaxWidth(),
-                            singleLine = false,
-                            minLines = 2,
-                            shape = RoundedCornerShape(16.dp),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedContainerColor = colorScheme.background,
-                                unfocusedContainerColor = colorScheme.background,
-                                focusedTextColor = Color.Black,
-                                unfocusedTextColor = Color.Black
-                            )
+                        LocationAutocompleteField(
+                            query = direccionAlojamiento,
+                            onQueryChange = {
+                                direccionAlojamiento = it
+                                direccionLat = null
+                                direccionLon = null
+                            },
+                            onLocationPicked = {
+                                direccionAlojamiento = it.display_name
+                                direccionLat = it.lat.toDoubleOrNull()
+                                direccionLon = it.lon.toDoubleOrNull()
+                            },
+                            label = "Dirección"
                         )
 
                         Spacer(modifier = Modifier.height(18.dp))
@@ -381,12 +383,16 @@ fun CaregiverServiceScreen(
                                     serviceType = tipoServicio,
                                     lodgingAddress = direccionAlojamiento
                                 ),
-                                isAvailable = activo
+                                isAvailable = activo,
+                                latitude = if (tipoServicio == "Alojamiento") direccionLat else null,
+                                longitude = if (tipoServicio == "Alojamiento") direccionLon else null
                             )
                             tipoServicio = ""
                             precio = ""
                             descripcion = ""
                             direccionAlojamiento = ""
+                            direccionLat = null
+                            direccionLon = null
                             activo = true
                             mostrarFormulario = false
                         },

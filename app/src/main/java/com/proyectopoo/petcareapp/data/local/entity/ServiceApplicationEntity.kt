@@ -52,5 +52,7 @@ enum class ApplicationStatus {
     ACCEPTED,
     REJECTED,
 
-    COMPLETED
+    COMPLETED,
+
+    CANCELLED
 }

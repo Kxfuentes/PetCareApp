@@ -60,6 +60,7 @@ class UserRepository(
                 else -> UserRoleType.OWNER
             }
 
+            // 🔥 CORREGIDO: convertir userDto.id a String
             val stableUserId = resolveStableUserId(
                 userDao = userDao,
                 email = userDto.email,

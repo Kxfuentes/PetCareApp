@@ -27,7 +27,7 @@ class UserRoleViewModel(private val prefs: SharedPreferences) : ViewModel() {
     private fun loadRole() {
         val savedRole = prefs.getString("user_role", null)
         _userRole.value = savedRole?.let {
-            try { UserRole.valueOf(it) } catch (e: Exception) { null }
+            UserRole.fromBackendValue(it)  // ← Usa fromBackendValue
         }
         _isRoleLoaded.value = true
     }
@@ -35,7 +35,7 @@ class UserRoleViewModel(private val prefs: SharedPreferences) : ViewModel() {
     fun setRole(role: UserRole?) {
         viewModelScope.launch {
             _userRole.value = role
-            prefs.edit().putString("user_role", role?.name).apply()
+            prefs.edit().putString("user_role", role?.backendValue).apply()  // ← Guarda backendValue
         }
     }
 

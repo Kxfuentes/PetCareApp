@@ -12,7 +12,7 @@ interface ApiService {
 
     @PUT("api/users/{id}")
     suspend fun updateUserRole(
-        @Path("id") userId: String,
+        @Path("id") userId: Int,
         @Body request: RoleUpdateRequest
     ): Response<UserDto>
 

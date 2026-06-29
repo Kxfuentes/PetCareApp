@@ -1,3 +1,4 @@
+// Routes.kt
 package com.proyectopoo.petcareapp.navigation
 
 import kotlinx.serialization.Serializable

@@ -18,10 +18,10 @@ import androidx.room.PrimaryKey
     indices = [Index("userId")]
 )
 data class NotificationEntity(
-    @PrimaryKey
-    val notificationId: Int,
+    @PrimaryKey(autoGenerate = true)
+    val notificationId: Int = 0,
 
-    val userId: String,
+    val userId: Int,
 
     val title: String,
 
@@ -31,7 +31,7 @@ data class NotificationEntity(
 
     val isRead: Boolean = false,
 
-    val createdAt: String? = null
+    val createdAt: Long = System.currentTimeMillis()
 )
 
 enum class NotificationType {

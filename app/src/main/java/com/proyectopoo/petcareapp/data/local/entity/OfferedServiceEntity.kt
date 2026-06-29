@@ -38,5 +38,9 @@ data class OfferedServiceEntity(
     val price: Double,
     val isAvailable: Boolean = true,
 
+    // Coordenadas de la ubicación (obtenidas de la API de Nominatim).
+    val latitude: Double? = null,
+    val longitude: Double? = null,
+
     val createdAt: Long = System.currentTimeMillis()
 )

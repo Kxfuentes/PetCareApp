@@ -139,8 +139,8 @@ fun RoleSectionScreen(
             Spacer(modifier = Modifier.height(32.dp))
 
             RoleCard(
-                title = "Soy dueño de perritos",
-                description = "Busco personas que me ayuden con el cuidado de mis mascota.",
+                title = "Soy propietario",
+                description = "Busco personas que me ayuden con el cuidado de mis mascotas.",
                 icon = Icons.Outlined.Pets,
                 isSelected = selectedRole == "OWNER",
                 onClick = { selectedRole = "OWNER" }
@@ -149,7 +149,7 @@ fun RoleSectionScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             RoleCard(
-                title = "Quiero ser cuidador",
+                title = "Quiero ser gestor",
                 description = "Ofrezco mis servicios para ayudar en el cuidado de los perritos.",
                 icon = Icons.Outlined.Favorite,
                 isSelected = selectedRole == "CAREGIVER",

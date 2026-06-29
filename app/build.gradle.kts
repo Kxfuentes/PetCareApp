@@ -23,7 +23,7 @@ android {
         // Si no se define BASE_URL en el sistema o gradle.properties, usa la del emulador por defecto
         val baseUrl = project.findProperty("BASE_URL")?.toString()
             ?: System.getenv("BASE_URL")
-            ?: "http://10.0.2.2:8080/"
+            ?: "http://10.0.2.2:3001/"
         buildConfigField("String", "BASE_URL", "\"$baseUrl\"")
     }
 

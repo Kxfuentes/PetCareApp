@@ -17,14 +17,17 @@ interface NotificationDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertNotifications(notifications: List<NotificationEntity>)
 
-    @Query("SELECT * FROM notifications")
+    @Query("SELECT * FROM notifications ORDER BY createdAt DESC")
     suspend fun getAllNotifications(): List<NotificationEntity>
 
-    @Query("SELECT * FROM notifications WHERE userId = :userId")
-    suspend fun getNotificationsByUser(userId: String): List<NotificationEntity>
+    @Query("SELECT * FROM notifications WHERE userId = :userId ORDER BY createdAt DESC")
+    suspend fun getNotificationsByUser(userId: Int): List<NotificationEntity>
 
-    @Query("SELECT * FROM notifications WHERE userId = :userId AND isRead = 0")
-    suspend fun getUnreadNotificationsByUser(userId: String): List<NotificationEntity>
+    @Query("SELECT * FROM notifications WHERE userId = :userId AND isRead = 0 ORDER BY createdAt DESC")
+    suspend fun getUnreadNotificationsByUser(userId: Int): List<NotificationEntity>
+
+    @Query("SELECT COUNT(*) FROM notifications WHERE userId = :userId AND isRead = 0")
+    suspend fun getUnreadCount(userId: Int): Int
 
     @Query("UPDATE notifications SET isRead = 1 WHERE notificationId = :notificationId")
     suspend fun markAsRead(notificationId: Int)

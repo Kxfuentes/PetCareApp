@@ -22,9 +22,10 @@ import com.proyectopoo.petcareapp.data.local.entity.*
         OfferedServiceEntity::class,
         AvailabilityEntity::class,
         RatingEntity::class,
-        ServiceBookingEntity::class
+        ServiceBookingEntity::class,
+        NotificationEntity::class
     ],
-    version = 8,
+    version = 10,
     exportSchema = false
 )
 abstract class PetCareDatabase : RoomDatabase() {
@@ -41,6 +42,7 @@ abstract class PetCareDatabase : RoomDatabase() {
     abstract fun availabilityDao(): AvailabilityDao
     abstract fun ratingDao(): RatingDao
     abstract fun serviceBookingDao(): ServiceBookingDao
+    abstract fun notificationDao(): NotificationDao
 
     companion object {
         @Volatile
@@ -123,6 +125,37 @@ abstract class PetCareDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_8_9 = object : Migration(8, 9) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `notifications` (
+                        `notificationId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        `userId` INTEGER NOT NULL,
+                        `title` TEXT NOT NULL,
+                        `message` TEXT NOT NULL,
+                        `type` TEXT NOT NULL,
+                        `isRead` INTEGER NOT NULL,
+                        `createdAt` INTEGER NOT NULL,
+                        FOREIGN KEY(`userId`) REFERENCES `users`(`userId`) ON UPDATE NO ACTION ON DELETE CASCADE
+                    )
+                    """
+                )
+                database.execSQL(
+                    "CREATE INDEX IF NOT EXISTS `index_notifications_userId` ON `notifications` (`userId`)"
+                )
+            }
+        }
+
+        private val MIGRATION_9_10 = object : Migration(9, 10) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL("ALTER TABLE `service_requests` ADD COLUMN `latitude` REAL")
+                database.execSQL("ALTER TABLE `service_requests` ADD COLUMN `longitude` REAL")
+                database.execSQL("ALTER TABLE `offered_services` ADD COLUMN `latitude` REAL")
+                database.execSQL("ALTER TABLE `offered_services` ADD COLUMN `longitude` REAL")
+            }
+        }
+
         fun getDatabase(context: Context): PetCareDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -130,7 +163,7 @@ abstract class PetCareDatabase : RoomDatabase() {
                     PetCareDatabase::class.java,
                     "petcare_database"
                 )
-                    .addMigrations(MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8)
+                    .addMigrations(MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10)
                     .fallbackToDestructiveMigration()
                     .build()
 
