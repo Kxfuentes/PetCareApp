@@ -22,7 +22,9 @@ class ServiceApplicationRepository(
         )
 
         if (existing == null) {
-            dao.insert(application)
+            if (application.applicationId > 0) dao.upsert(application) else dao.insert(application)
+        } else {
+            dao.upsert(application.copy(applicationId = if (application.applicationId > 0) application.applicationId else existing.applicationId))
         }
     }
 
@@ -42,6 +44,12 @@ class ServiceApplicationRepository(
 
     suspend fun getOwnerRequestsToCaregivers(ownerId: Int) =
         dao.getDetailsByOwner(ownerId, ApplicationInitiator.OWNER)
+
+    suspend fun getAcceptedApplicationsForOwner(ownerId: Int) =
+        dao.getAcceptedDetailsByOwner(ownerId)
+
+    suspend fun getAcceptedApplicationsForCaregiver(caregiverId: Int) =
+        dao.getAcceptedDetailsByCaregiver(caregiverId)
 
     suspend fun getApplicationById(id: Int) = dao.getById(id)
 

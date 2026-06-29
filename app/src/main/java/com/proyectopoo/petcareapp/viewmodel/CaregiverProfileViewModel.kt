@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.proyectopoo.petcareapp.data.local.database.PetCareDatabase
 import com.proyectopoo.petcareapp.data.local.entity.ApplicationStatus
+import com.proyectopoo.petcareapp.data.network.ApiService
+import com.proyectopoo.petcareapp.data.network.RatingDto
 import com.proyectopoo.petcareapp.model.User
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -12,7 +14,8 @@ import kotlinx.coroutines.launch
 
 class CaregiverProfileViewModel(
     private val database: PetCareDatabase,
-    private val caregiverId: Int
+    private val caregiverId: Int,
+    private val apiService: ApiService? = null
 ) : ViewModel() {
 
     private val _user = MutableStateFlow<User?>(null)
@@ -23,6 +26,9 @@ class CaregiverProfileViewModel(
 
     private val _rating = MutableStateFlow(0.0)
     val rating: StateFlow<Double> = _rating.asStateFlow()
+
+    private val _reviews = MutableStateFlow<List<RatingDto>>(emptyList())
+    val reviews: StateFlow<List<RatingDto>> = _reviews.asStateFlow()
 
     private val _isLoading = MutableStateFlow(true)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
@@ -50,6 +56,27 @@ class CaregiverProfileViewModel(
 
                     val caregiverEntity = database.caregiverDao().getCaregiverById(caregiverId)
                     _rating.value = caregiverEntity?.rating ?: 0.0
+
+                    val remoteSummary = runCatching {
+                        apiService?.getCaregiverRatingSummary(caregiverId)
+                            ?.takeIf { it.isSuccessful }
+                            ?.body()
+                    }.getOrNull()
+
+                    if (remoteSummary != null) {
+                        _rating.value = remoteSummary.average
+                        caregiverEntity?.let {
+                            database.caregiverDao().updateCaregiver(
+                                it.copy(rating = remoteSummary.average)
+                            )
+                        }
+                    }
+
+                    _reviews.value = runCatching {
+                        apiService?.getCaregiverReviews(caregiverId)
+                            ?.takeIf { it.isSuccessful }
+                            ?.body()
+                    }.getOrNull().orEmpty()
 
                     val applications = database.serviceApplicationDao().getByCaregiver(caregiverId)
                     _completedServicesCount.value = applications.count { it.status == ApplicationStatus.COMPLETED }

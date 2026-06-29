@@ -53,6 +53,10 @@ class SessionManager(
         return prefs.getString("api_user_id", null)
     }
 
+    fun getBackendUserId(): Int {
+        return getApiUserId()?.toIntOrNull()?.takeIf { it > 0 } ?: getUserId()
+    }
+
     fun saveToken(token: String, rememberSession: Boolean) {
         if (rememberSession) {
             prefs.edit().putString("auth_token", token).apply()

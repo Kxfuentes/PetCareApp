@@ -1,6 +1,7 @@
 package com.proyectopoo.petcareapp.navigation
 
 import com.proyectopoo.petcareapp.data.network.RoleUpdateRequest
+import com.proyectopoo.petcareapp.data.network.OfferedServiceDto
 import android.widget.Toast
 import androidx.compose.runtime.Composable
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -23,8 +24,10 @@ import com.proyectopoo.petcareapp.LocalUserRoleViewModel
 import com.proyectopoo.petcareapp.data.local.database.PetCareDatabase
 import com.proyectopoo.petcareapp.data.local.entity.CaregiverEntity
 import com.proyectopoo.petcareapp.data.local.entity.OwnerEntity
+import com.proyectopoo.petcareapp.data.local.entity.OfferedServiceEntity
 import com.proyectopoo.petcareapp.data.local.entity.PetEntity
 import com.proyectopoo.petcareapp.data.local.entity.UserEntity
+import com.proyectopoo.petcareapp.data.local.entity.ServiceTypeEntity
 import com.proyectopoo.petcareapp.data.local.entity.UserRoleType
 import com.proyectopoo.petcareapp.data.network.RetrofitClient
 import com.proyectopoo.petcareapp.data.repository.PetRepository
@@ -36,6 +39,7 @@ import com.proyectopoo.petcareapp.data.session.resolveStableUserId
 import com.proyectopoo.petcareapp.data.session.toStableLocalUserId
 import com.proyectopoo.petcareapp.data.session.upsertLocalUser
 import com.proyectopoo.petcareapp.model.UserRole
+import com.proyectopoo.petcareapp.notifications.AppNotifier
 import com.proyectopoo.petcareapp.ui.screen.auth.LoginScreen
 import com.proyectopoo.petcareapp.ui.screen.auth.PasswordRecoveryScreen
 import com.proyectopoo.petcareapp.ui.screen.auth.RegisterScreen
@@ -63,6 +67,7 @@ import com.proyectopoo.petcareapp.viewmodel.LoginViewModel
 import com.proyectopoo.petcareapp.viewmodel.OwnerProfileViewModel
 import com.proyectopoo.petcareapp.viewmodel.ServiceRequestViewModel
 import com.proyectopoo.petcareapp.viewmodel.UserRoleViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @Composable
@@ -75,12 +80,13 @@ fun AppNavigation(
     val context = LocalContext.current
     val sessionManager = remember { SessionManager(context) }
     val database = remember { PetCareDatabase.getDatabase(context) }
+    val notifier = remember(context, database) { AppNotifier(context, database.notificationDao()) }
     val scope = rememberCoroutineScope()
 
     val dogViewModel: DogViewModel = viewModel(
         factory = viewModelFactory {
             initializer {
-                DogViewModel(PetRepository(database.petDao()))
+                DogViewModel(PetRepository(database.petDao(), RetrofitClient.apiService))
             }
         }
     )
@@ -105,7 +111,9 @@ fun AppNavigation(
                     serviceTypeDao = database.serviceTypeDao(),
                     ratingDao = database.ratingDao(),
                     offeredServiceDao = database.offeredServiceDao(),
-                    bookingDao = database.serviceBookingDao()
+                    bookingDao = database.serviceBookingDao(),
+                    notifier = notifier,
+                    apiService = RetrofitClient.apiService
                 )
             }
         }
@@ -120,9 +128,19 @@ fun AppNavigation(
     val dogs by dogViewModel.dogs.collectAsStateWithLifecycle()
     val recentOwnerRequests by serviceRequestViewModel.recentOwnerRequests.collectAsStateWithLifecycle()
     val ownerApplicationDetails by serviceRequestViewModel.ownerApplicationDetails.collectAsStateWithLifecycle()
+    val ownerScheduledServices by serviceRequestViewModel.ownerScheduledServices.collectAsStateWithLifecycle()
     val caregiverApplicationDetails by serviceRequestViewModel.caregiverApplicationDetails.collectAsStateWithLifecycle()
+    val caregiverScheduledServices by serviceRequestViewModel.caregiverScheduledServices.collectAsStateWithLifecycle()
     val availableRequests by serviceRequestViewModel.availableRequests.collectAsStateWithLifecycle()
+    val userMessage by serviceRequestViewModel.userMessage.collectAsStateWithLifecycle()
     val currentUserId = sessionManager.getUserId()
+
+    LaunchedEffect(userMessage) {
+        userMessage?.let { message ->
+            Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+            serviceRequestViewModel.clearUserMessage()
+        }
+    }
 
     LaunchedEffect(currentUserId) {
         if (currentUserId > 0) {
@@ -255,7 +273,7 @@ fun AppNavigation(
 
                         try {
                             val roleResponse = RetrofitClient.apiService.updateUserRole(
-                                userId = data.apiUserId,
+                                userId = data.apiUserId.toInt(),
                                 request = RoleUpdateRequest(rol = "propietario")
                             )
 
@@ -275,7 +293,7 @@ fun AppNavigation(
 
                             userRoleViewModel.setRole(UserRole.OWNER)
                             dogViewModel.loadDogs(
-                                sessionManager.getUserId()
+                                sessionManager.getBackendUserId()
                             )
 
                             navController.navigate(DogInfo()) {
@@ -299,7 +317,7 @@ fun AppNavigation(
 
                         try {
                             val roleResponse = RetrofitClient.apiService.updateUserRole(
-                                userId = data.apiUserId,
+                                userId = data.apiUserId.toInt(),
                                 request = RoleUpdateRequest(rol = "cuidador")
                             )
 
@@ -319,7 +337,7 @@ fun AppNavigation(
 
                             userRoleViewModel.setRole(UserRole.CAREGIVER)
                             serviceRequestViewModel.loadCaregiverData(
-                                sessionManager.getUserId()
+                                sessionManager.getBackendUserId()
                             )
 
                             navController.navigate(CaregiverHome) {
@@ -342,7 +360,7 @@ fun AppNavigation(
         // ===== DOG INFO =====
         composable<DogInfo> { backStackEntry ->
             val args = backStackEntry.toRoute<DogInfo>()
-            val ownerId = sessionManager.getUserId()
+            val ownerId = sessionManager.getBackendUserId()
 
             LaunchedEffect(ownerId, args.petId) {
                 if (ownerId > 0) {
@@ -407,12 +425,16 @@ fun AppNavigation(
 
         // ===== OWNER HOME =====
         composable<OwnerHome> {
-            val ownerId = sessionManager.getUserId()
+            val ownerId = sessionManager.getBackendUserId()
 
             LaunchedEffect(ownerId) {
                 if (ownerId > 0) {
-                    dogViewModel.loadDogs(ownerId)
-                    serviceRequestViewModel.loadOwnerData(ownerId)
+                    while (true) {
+                        dogViewModel.loadDogs(ownerId)
+                        serviceRequestViewModel.loadOwnerData(ownerId)
+                        cacheAvailableOfferedServices(database)
+                        delay(10_000L)
+                    }
                 }
             }
 
@@ -420,6 +442,7 @@ fun AppNavigation(
                 dogs = dogs,
                 recentRequests = recentOwnerRequests,
                 caregiverApplications = ownerApplicationDetails,
+                scheduledServices = ownerScheduledServices,
                 onGoToCreate = { serviceType ->
                     navController.navigate(
                         CreateService(
@@ -457,18 +480,31 @@ fun AppNavigation(
                         reloadOwnerId = ownerId
                     )
                 },
+                onCancelService = { application ->
+                    serviceRequestViewModel.cancelService(
+                        applicationId = application.applicationId,
+                        reloadOwnerId = ownerId,
+                        reloadCaregiverId = application.caregiverId
+                    )
+                },
                 ownerId = ownerId
             )
         }
 
         // ===== OWNER FEED =====
         composable<OwnerFeed> {
-            val ownerId = sessionManager.getUserId()
+            val ownerId = sessionManager.getBackendUserId()
             var offeredServices by remember { mutableStateOf(emptyList<com.proyectopoo.petcareapp.data.local.relation.OfferedServiceDetails>()) }
 
             LaunchedEffect(ownerId) {
-                serviceRequestViewModel.loadOwnerData(ownerId)
-                offeredServices = database.offeredServiceDao().getAvailableServiceDetails()
+                if (ownerId > 0) {
+                    while (true) {
+                        serviceRequestViewModel.loadOwnerData(ownerId)
+                        cacheAvailableOfferedServices(database)
+                        offeredServices = database.offeredServiceDao().getAvailableServiceDetails()
+                        delay(10_000L)
+                    }
+                }
             }
 
             OwnerFeedScreen(
@@ -490,7 +526,7 @@ fun AppNavigation(
         // ===== REQUEST OFFER (Flow A) =====
         composable<RequestOffer> { backStackEntry ->
             val args = backStackEntry.toRoute<RequestOffer>()
-            val ownerId = sessionManager.getUserId()
+            val ownerId = sessionManager.getBackendUserId()
             var offerDetails by remember { mutableStateOf<com.proyectopoo.petcareapp.data.local.relation.OfferedServiceDetails?>(null) }
 
             LaunchedEffect(args.offeredServiceId) {
@@ -504,7 +540,7 @@ fun AppNavigation(
                     offer = offer,
                     dogs = dogs,
                     onBack = { navController.popBackStack() },
-                    onSubmit = { petIds, date, startTime, notes ->
+                    onSubmit = { petIds, date, startTime, endTime, notes ->
                         serviceRequestViewModel.requestServiceFromOffer(
                             ownerId = ownerId,
                             caregiverId = args.caregiverId,
@@ -512,6 +548,7 @@ fun AppNavigation(
                             petIds = petIds,
                             requestedDate = date,
                             startTime = startTime,
+                            endTime = endTime,
                             notes = notes,
                             suggestedPrice = null
                         )
@@ -525,13 +562,13 @@ fun AppNavigation(
         // ===== CREATE SERVICE =====
         composable<CreateService> { backStackEntry ->
             val args = backStackEntry.toRoute<CreateService>()
-            val ownerId = sessionManager.getUserId()
+            val ownerId = sessionManager.getBackendUserId()
             CreateServiceScreen(
                 petName = args.petName,
                 serviceType = args.serviceType,
                 dogs = dogs,
                 onBack = { navController.popBackStack() },
-                onPublish = { selectedPetNames, serviceType, description, location, price, date, startTime, endTime ->
+                onPublish = { selectedPetNames, serviceType, description, location, price, date, startTime, endTime, latitude, longitude ->
                     val petIds = dogs
                         .filter { dog -> selectedPetNames.any { it.equals(dog.name, ignoreCase = true) } }
                         .map { it.petId }
@@ -547,32 +584,42 @@ fun AppNavigation(
                         price = price,
                         requestedDate = date,
                         startTime = startTime,
-                        endTime = endTime
+                        endTime = endTime,
+                        latitude = latitude,
+                        longitude = longitude,
+                        onSuccess = {
+                            navController.navigate(OwnerHome) {
+                                popUpTo(OwnerHome) { inclusive = false }
+                                launchSingleTop = true
+                            }
+                        }
                     )
-
-                    navController.navigate(OwnerHome) { launchSingleTop = true }
                 }
             )
         }
 
         // ===== CAREGIVER HOME =====
         composable<CaregiverHome> {
-            val caregiverId = sessionManager.getUserId()
+            val caregiverId = sessionManager.getBackendUserId()
 
             LaunchedEffect(caregiverId) {
                 if (caregiverId > 0) {
-                    serviceRequestViewModel.loadCaregiverData(caregiverId)
+                    while (true) {
+                        serviceRequestViewModel.loadCaregiverData(caregiverId)
+                        delay(10_000L)
+                    }
                 }
             }
 
             CaregiverHomeScreen(
                 onGoToServices = { navController.navigate(CaregiverService) },
                 ownerRequests = caregiverApplicationDetails,
+                scheduledServices = caregiverScheduledServices,
                 onAcceptApplication = { applicationId ->
                     serviceRequestViewModel.acceptApplication(applicationId, caregiverId = caregiverId)
                 },
                 onRejectApplication = { applicationId ->
-                    serviceRequestViewModel.rejectApplication(applicationId, caregiverId)
+                    serviceRequestViewModel.rejectApplication(applicationId, caregiverId = caregiverId)
                 },
                 onCompleteAndRate = { request, score, comment ->
                     serviceRequestViewModel.completeAndRateService(
@@ -586,18 +633,30 @@ fun AppNavigation(
                         reloadCaregiverId = caregiverId
                     )
                 },
+                onCancelService = { request ->
+                    serviceRequestViewModel.cancelService(
+                        applicationId = request.applicationId,
+                        reloadCaregiverId = caregiverId,
+                        reloadOwnerId = request.ownerId
+                    )
+                },
                 caregiverId = caregiverId
             )
         }
 
         // ===== CAREGIVER FEED =====
         composable<CaregiverFeed> {
-            val caregiverId = sessionManager.getUserId()
+            val caregiverId = sessionManager.getBackendUserId()
 
             LaunchedEffect(caregiverId) {
-                serviceRequestViewModel.loadAvailableRequests()
                 if (caregiverId > 0) {
-                    serviceRequestViewModel.loadCaregiverData(caregiverId)
+                    while (true) {
+                        serviceRequestViewModel.loadAvailableRequests()
+                        serviceRequestViewModel.loadCaregiverData(caregiverId)
+                        delay(10_000L)
+                    }
+                } else {
+                    serviceRequestViewModel.loadAvailableRequests()
                 }
             }
 
@@ -625,7 +684,7 @@ fun AppNavigation(
 
         // ===== CAREGIVER SERVICE =====
         composable<CaregiverService> {
-            val caregiverId = sessionManager.getUserId()
+            val caregiverId = sessionManager.getBackendUserId()
 
             val caregiverServiceViewModel: CaregiverServiceViewModel = viewModel(
                 key = "caregiver_services_$caregiverId",
@@ -634,7 +693,8 @@ fun AppNavigation(
                         CaregiverServiceViewModel(
                             offeredServiceDao = database.offeredServiceDao(),
                             serviceTypeDao = database.serviceTypeDao(),
-                            caregiverId = caregiverId
+                            caregiverId = caregiverId,
+                            apiService = RetrofitClient.apiService
                         )
                     }
                 }
@@ -678,7 +738,7 @@ fun AppNavigation(
 
                 OwnerProfileScreen(
                     user = user,
-                    dogs = dogs,
+                    dogs = profileDogs,
                     historyServices = recentOwnerRequests.filter {
                         it.status.name == "COMPLETED"
                     },
@@ -726,11 +786,13 @@ fun AppNavigation(
             val targetCaregiverId = if (isOwnProfile) loggedUserId else args.caregiverId
 
             val viewModel: CaregiverProfileViewModel = viewModel(
+                key = "caregiver_profile_$targetCaregiverId",
                 factory = viewModelFactory {
                     initializer {
                         CaregiverProfileViewModel(
                             database = database,
-                            caregiverId = targetCaregiverId
+                            caregiverId = targetCaregiverId,
+                            apiService = RetrofitClient.apiService
                         )
                     }
                 }
@@ -740,6 +802,10 @@ fun AppNavigation(
             val completedServicesCount by viewModel.completedServicesCount.collectAsStateWithLifecycle()
             val rating by viewModel.rating.collectAsStateWithLifecycle()
             val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
+
+            LaunchedEffect(targetCaregiverId) {
+                viewModel.loadCaregiverData()
+            }
 
             if (isOwnProfile) {
                 CaregiverProfileScreen(
@@ -931,6 +997,66 @@ private suspend fun prepareLocalAccount(
     )
 
     return stableUserId
+}
+
+
+private suspend fun cacheAvailableOfferedServices(database: PetCareDatabase) {
+    val remote = runCatching {
+        RetrofitClient.apiService.getAvailableOfferedServices()
+            .takeIf { it.isSuccessful }
+            ?.body()
+    }.getOrNull() ?: return
+
+    remote.forEach { dto ->
+        ensureCaregiverExists(database, dto.caregiverId)
+        if (database.serviceTypeDao().getServiceTypeById(dto.serviceTypeId) == null) {
+            database.serviceTypeDao().insertServiceType(
+                ServiceTypeEntity(
+                    serviceTypeId = dto.serviceTypeId,
+                    name = dto.title,
+                    description = null
+                )
+            )
+        }
+        database.offeredServiceDao().insertOfferedService(dto.toEntity())
+    }
+}
+
+private suspend fun ensureCaregiverExists(database: PetCareDatabase, caregiverId: Int) {
+    if (database.userDao().getUserById(caregiverId) == null) {
+        database.userDao().insertUser(
+            UserEntity(
+                userId = caregiverId,
+                fullName = "Cuidador",
+                email = "cuidador$caregiverId@petcare.local",
+                password = null,
+                role = UserRoleType.CAREGIVER
+            )
+        )
+    }
+
+    if (database.caregiverDao().getCaregiverById(caregiverId) == null) {
+        database.caregiverDao().insertCaregiver(
+            CaregiverEntity(
+                caregiverId = caregiverId,
+                userId = caregiverId
+            )
+        )
+    }
+}
+
+private fun OfferedServiceDto.toEntity(): OfferedServiceEntity {
+    return OfferedServiceEntity(
+        offeredServiceId = id ?: 0,
+        caregiverId = caregiverId,
+        serviceTypeId = serviceTypeId,
+        title = title,
+        description = description,
+        price = price,
+        isAvailable = isAvailable,
+        latitude = latitude,
+        longitude = longitude
+    )
 }
 
 private suspend fun ensureOwnerExists(

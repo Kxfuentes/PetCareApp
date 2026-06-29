@@ -132,6 +132,10 @@ fun CreateServiceScreen(
         )
     }
 
+    val requiresTimeRange = tipoServicio in listOf("Guardería", "Paseo", "Visitante")
+    val usesTime = tipoServicio in listOf("Guardería", "Paseo", "Taxi", "Peluquería", "Visitante")
+    val timeValidationError = validateServiceTimes(fecha, horaInicio, horaFin.takeIf { requiresTimeRange }, usesTime)
+
     LaunchedEffect(selectedPetIds, tipoServicio, ubicacion, ubicacionDestino, precio, fecha, fechaSalida, horaInicio, horaFin, tipoPeluqueria) {
         if (showError) showError = false
     }
@@ -402,6 +406,7 @@ fun CreateServiceScreen(
                     !isServiceFormValid(tipoServicio, ubicacion, ubicacionDestino, fecha, fechaSalida, horaInicio, horaFin, necesitaTransporte, tipoPeluqueria) -> errorMessage = "Completa los campos requeridos para $tipoServicio"
                     isPastDate -> errorMessage = "La fecha no puede ser pasada"
                     isBeyondSixMonths -> errorMessage = "La fecha no puede ser mayor a 6 meses"
+                    timeValidationError != null -> errorMessage = timeValidationError.orEmpty()
                     else -> {
                         showError = false
                         val selectedNames = dogs.filter { selectedPetIds.contains(it.petId) }.map { it.name }
@@ -420,7 +425,7 @@ fun CreateServiceScreen(
                 }
             },
             modifier = Modifier.fillMaxWidth(),
-            enabled = !isPastDate && !isBeyondSixMonths && !isInvalidPrice
+            enabled = !isPastDate && !isBeyondSixMonths && !isInvalidPrice && timeValidationError == null
         ) {
             Text("Publicar Solicitud")
         }
@@ -530,6 +535,24 @@ fun CreateServiceScreen(
         )
     }
 }
+
+
+private fun validateServiceTimes(date: String, startTime: String, endTime: String?, usesTime: Boolean): String? {
+    if (!usesTime || date.isBlank() || startTime.isBlank()) return null
+    val start = parseServiceDateTime(date, startTime) ?: return null
+    if (start <= System.currentTimeMillis()) return "La hora seleccionada ya pasó."
+    if (!endTime.isNullOrBlank()) {
+        val end = parseServiceDateTime(date, endTime) ?: return null
+        if (start >= end) return "La hora de inicio debe ser menor que la hora de salida."
+    }
+    return null
+}
+
+private fun parseServiceDateTime(date: String, time: String): Long? = runCatching {
+    SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).apply { isLenient = false }
+        .parse("$date $time")
+        ?.time
+}.getOrNull()
 
 private fun Calendar.startOfDayMillis(): Long {
     set(Calendar.HOUR_OF_DAY, 0)

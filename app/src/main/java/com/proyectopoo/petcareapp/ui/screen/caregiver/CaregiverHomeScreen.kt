@@ -12,6 +12,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -25,6 +26,7 @@ import kotlin.math.roundToInt
 fun CaregiverHomeScreen(
     onGoToServices: () -> Unit,
     ownerRequests: List<ServiceApplicationDetails>,
+    scheduledServices: List<ServiceApplicationDetails>,
     onAcceptApplication: (Int) -> Unit,
     onRejectApplication: (Int) -> Unit,
     onCompleteAndRate: (ServiceApplicationDetails, Double, String) -> Unit,
@@ -36,14 +38,15 @@ fun CaregiverHomeScreen(
 
     val scrollState = rememberScrollState()
 
-    val nextCommitment = ownerRequests
+    val nextCommitment = scheduledServices
         .filter { it.applicationStatus == ApplicationStatus.ACCEPTED }
         .minByOrNull { it.requestedDate ?: "" }
 
     val pendingRequests = ownerRequests.filter {
-        it.applicationStatus == ApplicationStatus.PENDING
+        it.applicationStatus == ApplicationStatus.PENDING &&
+            it.initiatedBy == com.proyectopoo.petcareapp.data.local.entity.ApplicationInitiator.OWNER
     }
-    val acceptedRequests = ownerRequests.filter {
+    val acceptedRequests = scheduledServices.filter {
         it.applicationStatus == ApplicationStatus.ACCEPTED
     }
     var requestToRate by remember { mutableStateOf<ServiceApplicationDetails?>(null) }
@@ -231,7 +234,7 @@ fun CaregiverHomeScreen(
 
             if (acceptedRequests.isNotEmpty()) {
                 Text(
-                    text = "Servicios aceptados por calificar",
+                    text = "Servicios agendados",
                     color = MaterialTheme.colorScheme.onBackground,
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold
@@ -262,6 +265,7 @@ fun CaregiverHomeScreen(
                                 }
                                 OutlinedButton(
                                     onClick = { onCancelService(request) },
+                                    enabled = canCancelService(request.requestedDate, request.startTime),
                                     colors = ButtonDefaults.outlinedButtonColors(
                                         contentColor = MaterialTheme.colorScheme.error
                                     )
@@ -269,11 +273,14 @@ fun CaregiverHomeScreen(
                                     Text("Cancelar")
                                 }
                                 Spacer(Modifier.width(8.dp))
-                                Button(onClick = {
-                                    requestToRate = request
-                                    ratingScore = 5f
-                                    ratingComment = ""
-                                }) {
+                                Button(
+                                    onClick = {
+                                        requestToRate = request
+                                        ratingScore = 5f
+                                        ratingComment = ""
+                                    },
+                                    enabled = canRateService(request.requestedDate, request.startTime, request.endTime)
+                                ) {
                                     Text("Calificar")
                                 }
                             }
@@ -313,7 +320,8 @@ fun CaregiverHomeScreen(
             },
             dismissButton = {
                 TextButton(onClick = { requestToRate = null }) { Text("Cancelar") }
-            }
+            },
+            containerColor = Color.White
         )
     }
 }
@@ -373,5 +381,35 @@ private fun CommitmentCard(commitment: ServiceApplicationDetails?) {
                 }
             }
         }
+    }
+}
+
+
+private const val CANCELLATION_WINDOW_MS_UI = 3L * 60L * 60L * 1000L
+private const val ONE_HOUR_MS_UI = 60L * 60L * 1000L
+
+private fun canCancelService(date: String?, startTime: String?): Boolean {
+    val startMillis = parseServiceDateTime(date, startTime) ?: return true
+    return System.currentTimeMillis() <= startMillis - CANCELLATION_WINDOW_MS_UI
+}
+
+private fun canRateService(date: String?, startTime: String?, endTime: String?): Boolean {
+    val startMillis = parseServiceDateTime(date, startTime) ?: return false
+    val endMillis = parseServiceDateTime(date, endTime) ?: (startMillis + ONE_HOUR_MS_UI)
+    return System.currentTimeMillis() >= endMillis
+}
+
+private fun parseServiceDateTime(date: String?, time: String?): Long? {
+    if (date.isNullOrBlank()) return null
+    return try {
+        val hasTime = !time.isNullOrBlank()
+        val pattern = if (hasTime) "dd/MM/yyyy HH:mm" else "dd/MM/yyyy"
+        val text = if (hasTime) "$date $time" else date
+        java.text.SimpleDateFormat(pattern, java.util.Locale.getDefault())
+            .apply { isLenient = false }
+            .parse(text)
+            ?.time
+    } catch (e: Exception) {
+        null
     }
 }

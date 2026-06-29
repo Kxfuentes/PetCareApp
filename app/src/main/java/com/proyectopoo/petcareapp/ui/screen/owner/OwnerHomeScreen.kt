@@ -27,6 +27,7 @@ fun OwnerHomeScreen(
     dogs: List<PetEntity>,
     recentRequests: List<ServiceRequestDetails>,
     caregiverApplications: List<ServiceApplicationDetails>,
+    scheduledServices: List<ServiceApplicationDetails>,
     onGoToCreate: (String) -> Unit,
     onEditPets: (PetEntity) -> Unit,
     onDeletePet: (PetEntity) -> Unit,
@@ -328,12 +329,13 @@ fun OwnerHomeScreen(
                     fontWeight = FontWeight.SemiBold
                 )
 
-                val pendingApplications = caregiverApplications.filter {
-                    it.applicationStatus == ApplicationStatus.PENDING
-                }
-                val acceptedApplications = caregiverApplications.filter {
-                    it.applicationStatus == ApplicationStatus.ACCEPTED
-                }
+    val pendingApplications = caregiverApplications.filter {
+        it.applicationStatus == ApplicationStatus.PENDING &&
+            it.initiatedBy == com.proyectopoo.petcareapp.data.local.entity.ApplicationInitiator.CAREGIVER
+    }
+    val acceptedApplications = scheduledServices.filter {
+        it.applicationStatus == ApplicationStatus.ACCEPTED
+    }
 
                 if (pendingApplications.isEmpty()) {
                     Card(
@@ -430,7 +432,7 @@ fun OwnerHomeScreen(
 
                 if (acceptedApplications.isNotEmpty()) {
                     Text(
-                        "Servicios aceptados por calificar",
+                        "Servicios agendados",
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.SemiBold
                     )
@@ -451,9 +453,15 @@ fun OwnerHomeScreen(
                                             application.serviceTypeName ?: application.requestTitle,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
+                                        Text(
+                                            "${application.requestedDate ?: "Sin fecha"} ${application.startTime.orEmpty()}".trim(),
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
                                     }
                                     OutlinedButton(
                                         onClick = { onCancelService(application) },
+                                        enabled = canCancelService(application.requestedDate, application.startTime),
                                         colors = ButtonDefaults.outlinedButtonColors(
                                             contentColor = MaterialTheme.colorScheme.error
                                         )
@@ -461,11 +469,14 @@ fun OwnerHomeScreen(
                                         Text("Cancelar")
                                     }
                                     Spacer(Modifier.width(8.dp))
-                                    Button(onClick = {
-                                        applicationToRate = application
-                                        ratingScore = 5f
-                                        ratingComment = ""
-                                    }) {
+                                    Button(
+                                        onClick = {
+                                            applicationToRate = application
+                                            ratingScore = 5f
+                                            ratingComment = ""
+                                        },
+                                        enabled = canRateService(application.requestedDate, application.startTime, application.endTime)
+                                    ) {
                                         Text("Calificar")
                                     }
                                 }
@@ -606,7 +617,9 @@ private fun StatusChip(status: Enum<*>) {
         "PENDING" -> "Pendiente" to Color(0xFFFF9800)
         "ACCEPTED" -> "Aceptado" to Color(0xFF4CAF50)
         "REJECTED" -> "Rechazado" to Color(0xFFF44336)
-        else -> status.name.replaceFirstChar { it.uppercase() } to MaterialTheme.colorScheme.outline
+        "CANCELLED" -> "Cancelado" to Color(0xFF795548)
+        "COMPLETED" -> "Completado" to Color(0xFF607D8B)
+        else -> status.name.replace('_', ' ').lowercase().replaceFirstChar { it.uppercase() } to MaterialTheme.colorScheme.outline
     }
 
     AssistChip(
@@ -630,4 +643,34 @@ private fun StatusChip(status: Enum<*>) {
         ),
         shape = RoundedCornerShape(20.dp)
     )
+}
+
+
+private const val CANCELLATION_WINDOW_MS_UI = 3L * 60L * 60L * 1000L
+private const val ONE_HOUR_MS_UI = 60L * 60L * 1000L
+
+private fun canCancelService(date: String?, startTime: String?): Boolean {
+    val startMillis = parseServiceDateTime(date, startTime) ?: return true
+    return System.currentTimeMillis() <= startMillis - CANCELLATION_WINDOW_MS_UI
+}
+
+private fun canRateService(date: String?, startTime: String?, endTime: String?): Boolean {
+    val startMillis = parseServiceDateTime(date, startTime) ?: return false
+    val endMillis = parseServiceDateTime(date, endTime) ?: (startMillis + ONE_HOUR_MS_UI)
+    return System.currentTimeMillis() >= endMillis
+}
+
+private fun parseServiceDateTime(date: String?, time: String?): Long? {
+    if (date.isNullOrBlank()) return null
+    return try {
+        val hasTime = !time.isNullOrBlank()
+        val pattern = if (hasTime) "dd/MM/yyyy HH:mm" else "dd/MM/yyyy"
+        val text = if (hasTime) "$date $time" else date
+        java.text.SimpleDateFormat(pattern, java.util.Locale.getDefault())
+            .apply { isLenient = false }
+            .parse(text)
+            ?.time
+    } catch (e: Exception) {
+        null
+    }
 }

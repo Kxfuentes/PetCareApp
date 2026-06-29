@@ -46,9 +46,6 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        val sessionManager = SessionManager(this)
-        sessionManager.clearSession()
-
         askNotificationPermission()
 
         setContent {

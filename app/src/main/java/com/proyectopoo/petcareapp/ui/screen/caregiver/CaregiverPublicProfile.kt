@@ -15,6 +15,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -33,6 +34,7 @@ fun CaregiverPublicProfileScreen(
     val user by viewModel.user.collectAsStateWithLifecycle()
     val completedServicesCount by viewModel.completedServicesCount.collectAsStateWithLifecycle()
     val rating by viewModel.rating.collectAsStateWithLifecycle()
+    val reviews by viewModel.reviews.collectAsStateWithLifecycle()
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
 
     Scaffold(
@@ -166,6 +168,45 @@ fun CaregiverPublicProfileScreen(
                     modifier = Modifier.fillMaxWidth(),
                     color = MaterialTheme.colorScheme.primary
                 )
+            }
+
+
+            Spacer(Modifier.height(16.dp))
+
+            Text(
+                text = "Reseñas",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold
+            )
+            Spacer(Modifier.height(8.dp))
+            if (reviews.isEmpty()) {
+                Text(
+                    text = "Aún no hay reseñas públicas.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            } else {
+                reviews.take(5).forEach { review ->
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 8.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                    ) {
+                        Column(Modifier.padding(12.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.Star, contentDescription = null, tint = Color(0xFFFFB300), modifier = Modifier.size(18.dp))
+                                Spacer(Modifier.width(4.dp))
+                                Text(String.format("%.1f", review.score), fontWeight = FontWeight.SemiBold)
+                            }
+                            review.comment?.takeIf { it.isNotBlank() }?.let { comment ->
+                                Spacer(Modifier.height(4.dp))
+                                Text(comment, style = MaterialTheme.typography.bodyMedium)
+                            }
+                        }
+                    }
+                }
             }
 
             Spacer(Modifier.weight(1f))

@@ -204,9 +204,18 @@ fun RegisterScreen(
                                 }
                             } else {
                                 val errorBody = response.errorBody()?.string()
+                                val normalizedError = errorBody.orEmpty().lowercase()
                                 errorMessage = when {
-                                    errorBody?.contains("duplicada") == true -> "Este correo electrónico ya está registrado"
-                                    errorBody?.contains("email") == true -> "Error con el formato del correo"
+                                    normalizedError.contains("duplicate") ||
+                                        normalizedError.contains("duplicada") ||
+                                        normalizedError.contains("duplicado") ||
+                                        normalizedError.contains("already") ||
+                                        normalizedError.contains("ya está registrado") ||
+                                        normalizedError.contains("unique") -> "Este correo electrónico o usuario ya está registrado"
+                                    normalizedError.contains("invalid email") ||
+                                        normalizedError.contains("email inválido") ||
+                                        normalizedError.contains("email invalido") ||
+                                        normalizedError.contains("format") -> "Error con el formato del correo"
                                     else -> "HTTP ${response.code()}: $errorBody"
                                 }
                             }
