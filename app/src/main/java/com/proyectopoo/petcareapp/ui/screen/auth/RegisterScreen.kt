@@ -55,7 +55,7 @@ fun RegisterScreen(
             return "Formato de correo inválido"
 
         if (password.isBlank()) return "La contraseña es requerida"
-        if (password.length < 6) return "La contraseña debe tener al menos 6 caracteres"
+        if (password.length < 3) return "Mínimo 3 caracteres"
         if (!password.any { !it.isLetterOrDigit() })
             return "La contraseña debe incluir un carácter especial"
 
@@ -197,17 +197,25 @@ fun RegisterScreen(
                                 val registerResponse = response.body()
                                 val registeredUser = registerResponse?.user ?: registerResponse?.useer
 
-                                // 🔥 CORREGIDO: id es Int, usar > 0 en lugar de isNotBlank()
-                                if (registerResponse != null && registeredUser != null && registeredUser.id > 0 && registeredUser.email.isNotBlank()) {
+                                if (registerResponse != null && registeredUser != null && registeredUser.id > 0) {
                                     onRegisterSuccess(registerResponse)
                                 } else {
                                     errorMessage = "La API respondió OK, pero no devolvió usuario. Body: ${response.body()}"
                                 }
                             } else {
                                 val errorBody = response.errorBody()?.string()
+                                val normalizedError = errorBody.orEmpty().lowercase()
                                 errorMessage = when {
-                                    errorBody?.contains("duplicada") == true -> "Este correo electrónico ya está registrado"
-                                    errorBody?.contains("email") == true -> "Error con el formato del correo"
+                                    normalizedError.contains("duplicate") ||
+                                        normalizedError.contains("duplicada") ||
+                                        normalizedError.contains("duplicado") ||
+                                        normalizedError.contains("already") ||
+                                        normalizedError.contains("ya está registrado") ||
+                                        normalizedError.contains("unique") -> "Este correo electrónico o usuario ya está registrado"
+                                    normalizedError.contains("invalid email") ||
+                                        normalizedError.contains("email inválido") ||
+                                        normalizedError.contains("email invalido") ||
+                                        normalizedError.contains("format") -> "Error con el formato del correo"
                                     else -> "HTTP ${response.code()}: $errorBody"
                                 }
                             }

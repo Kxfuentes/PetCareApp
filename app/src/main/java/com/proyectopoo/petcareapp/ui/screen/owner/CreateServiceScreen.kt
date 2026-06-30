@@ -1,7 +1,10 @@
 package com.proyectopoo.petcareapp.ui.screen.owner
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -132,46 +135,72 @@ fun CreateServiceScreen(
         )
     }
 
+    val requiresTimeRange = tipoServicio in listOf("Guardería", "Paseo", "Visitante")
+    val usesTime = tipoServicio in listOf("Guardería", "Paseo", "Taxi", "Peluquería", "Visitante")
+    val timeValidationError = validateServiceTimes(fecha, horaInicio, horaFin.takeIf { requiresTimeRange }, usesTime)
+
     LaunchedEffect(selectedPetIds, tipoServicio, ubicacion, ubicacionDestino, precio, fecha, fechaSalida, horaInicio, horaFin, tipoPeluqueria) {
         if (showError) showError = false
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(scrollState)
-            .padding(24.dp),
-        horizontalAlignment = Alignment.Start
-    ) {
+    Scaffold(containerColor = MaterialTheme.colorScheme.background) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .verticalScroll(scrollState)
+                .padding(20.dp),
+            horizontalAlignment = Alignment.Start
+        ) {
+            Column(modifier = Modifier.padding(start = 4.dp)) {
+                Text("Crear Solicitud de Servicio", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                Text("Cuéntanos qué necesita tu mascota", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
 
-        Text("Crear Solicitud de Servicio", style = MaterialTheme.typography.headlineMedium)
-        Spacer(Modifier.height(8.dp))
-        Text("Cuéntanos qué necesita tu mascota", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Spacer(Modifier.height(18.dp))
 
-        Spacer(Modifier.height(24.dp))
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(22.dp)),
+                shape = RoundedCornerShape(22.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
 
         Text(
             "¿Para cuáles de tus mascotas deseas este servicio?",
             style = MaterialTheme.typography.titleSmall,
             fontWeight = FontWeight.SemiBold
         )
-        Spacer(Modifier.height(8.dp))
 
         if (dogs.isEmpty()) {
             Text("No tienes mascotas registradas.", color = MaterialTheme.colorScheme.error)
         } else {
             dogs.forEach { dog ->
-                Row(
+                val checked = selectedPetIds.contains(dog.petId)
+                Card(
+                    onClick = { selectedPetIds = if (checked) selectedPetIds - dog.petId else selectedPetIds + dog.petId },
                     modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, if (checked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant)
                 ) {
-                    Checkbox(
-                        checked = selectedPetIds.contains(dog.petId),
-                        onCheckedChange = { checked ->
-                            selectedPetIds = if (checked) selectedPetIds + dog.petId else selectedPetIds - dog.petId
-                        }
-                    )
-                    Text(dog.name)
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Spacer(Modifier.width(4.dp))
+                        Text(dog.name, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Normal)
+                        Checkbox(
+                            checked = checked,
+                            onCheckedChange = { value -> selectedPetIds = if (value) selectedPetIds + dog.petId else selectedPetIds - dog.petId },
+                            colors = CheckboxDefaults.colors(checkedColor = MaterialTheme.colorScheme.primary)
+                        )
+                    }
                 }
             }
         }
@@ -185,14 +214,16 @@ fun CreateServiceScreen(
                 onValueChange = {},
                 readOnly = true,
                 label = { Text("Tipo de Servicio") },
+                leadingIcon = { Icon(serviceIconForCreate(tipoServicio), null) },
                 modifier = Modifier.fillMaxWidth().menuAnchor(),
+                shape = RoundedCornerShape(14.dp),
                 trailingIcon = { IconButton(onClick = { expandedService = !expandedService }) { Icon(Icons.Default.ArrowDropDown, null) } },
                 isError = showError && tipoServicio.isBlank()
             )
             ExposedDropdownMenu(
                 expanded = expandedService,
                 onDismissRequest = { expandedService = false },
-                containerColor = Color.White
+                containerColor = MaterialTheme.colorScheme.surface
             ) {
                 serviceOptions.forEach { service ->
                     DropdownMenuItem(text = { Text(service) }, onClick = { tipoServicio = service; expandedService = false })
@@ -206,7 +237,9 @@ fun CreateServiceScreen(
             value = descripcion,
             onValueChange = { descripcion = it },
             label = { Text("Descripción (opcional)") },
+            leadingIcon = { Icon(Icons.Default.Edit, null) },
             modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(14.dp),
             minLines = 3,
             maxLines = 5
         )
@@ -217,6 +250,8 @@ fun CreateServiceScreen(
             value = precio,
             onValueChange = { if (it.all { char -> char.isDigit() }) precio = it },
             label = { Text("Precio (C$)") },
+            leadingIcon = { Icon(Icons.Default.Payments, null) },
+            shape = RoundedCornerShape(14.dp),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             modifier = Modifier.fillMaxWidth(),
             isError = showError && (precio.isBlank() || isInvalidPrice),
@@ -239,7 +274,7 @@ fun CreateServiceScreen(
 
         when (tipoServicio) {
             "Alojamiento" -> {
-                Text("Detalles de Alojamiento", style = MaterialTheme.typography.titleMedium)
+                SectionHeaderCreate(Icons.Default.Home, "Detalles de Alojamiento")
                 Spacer(Modifier.height(8.dp))
                 ServiceDateField(
                     value = fecha,
@@ -271,7 +306,7 @@ fun CreateServiceScreen(
                 }
             }
             "Guardería" -> {
-                Text("Detalles de Guardería", style = MaterialTheme.typography.titleMedium)
+                SectionHeaderCreate(Icons.Default.WbSunny, "Detalles de Guardería")
                 Spacer(Modifier.height(8.dp))
                 ServiceDateField(fecha, "Fecha del servicio", showError && fecha.isBlank()) { showDatePicker = true }
                 Spacer(Modifier.height(12.dp))
@@ -290,7 +325,7 @@ fun CreateServiceScreen(
                 }
             }
             "Paseo" -> {
-                Text("Detalles de Paseo", style = MaterialTheme.typography.titleMedium)
+                SectionHeaderCreate(Icons.Default.DirectionsWalk, "Detalles de Paseo")
                 Spacer(Modifier.height(8.dp))
                 LocationAutocompleteField(
                     query = ubicacion,
@@ -305,7 +340,7 @@ fun CreateServiceScreen(
                 TimeRangeFields(horaInicio, horaFin, showError, { showStartTimePicker = true }, { showEndTimePicker = true }, "Hora de inicio", "Hora de fin")
             }
             "Taxi" -> {
-                Text("Detalles de Taxi", style = MaterialTheme.typography.titleMedium)
+                SectionHeaderCreate(Icons.Default.LocalTaxi, "Detalles de Taxi")
                 Spacer(Modifier.height(8.dp))
                 ServiceDateField(fecha, "Fecha", showError && fecha.isBlank()) { showDatePicker = true }
                 Spacer(Modifier.height(12.dp))
@@ -333,7 +368,7 @@ fun CreateServiceScreen(
                 }
             }
             "Peluquería" -> {
-                Text("Detalles de Peluquería", style = MaterialTheme.typography.titleMedium)
+                SectionHeaderCreate(Icons.Default.ContentCut, "Detalles de Peluquería")
                 Spacer(Modifier.height(8.dp))
                 LocationAutocompleteField(
                     query = ubicacion,
@@ -357,7 +392,7 @@ fun CreateServiceScreen(
                         trailingIcon = { Icon(Icons.Default.ArrowDropDown, null) },
                         isError = showError && tipoPeluqueria.isBlank()
                     )
-                    ExposedDropdownMenu(expanded = expandedGrooming, onDismissRequest = { expandedGrooming = false }, containerColor = Color.White) {
+                    ExposedDropdownMenu(expanded = expandedGrooming, onDismissRequest = { expandedGrooming = false }, containerColor = MaterialTheme.colorScheme.surface) {
                         listOf("Baño", "Corte", "Ambos").forEach { option ->
                             DropdownMenuItem(text = { Text(option) }, onClick = { tipoPeluqueria = option; expandedGrooming = false })
                         }
@@ -365,7 +400,7 @@ fun CreateServiceScreen(
                 }
             }
             "Visitante" -> {
-                Text("Detalles de Visita", style = MaterialTheme.typography.titleMedium)
+                SectionHeaderCreate(Icons.Default.HomeRepairService, "Detalles de Visita")
                 Spacer(Modifier.height(8.dp))
                 LocationAutocompleteField(
                     query = ubicacion,
@@ -402,6 +437,7 @@ fun CreateServiceScreen(
                     !isServiceFormValid(tipoServicio, ubicacion, ubicacionDestino, fecha, fechaSalida, horaInicio, horaFin, necesitaTransporte, tipoPeluqueria) -> errorMessage = "Completa los campos requeridos para $tipoServicio"
                     isPastDate -> errorMessage = "La fecha no puede ser pasada"
                     isBeyondSixMonths -> errorMessage = "La fecha no puede ser mayor a 6 meses"
+                    timeValidationError != null -> errorMessage = timeValidationError.orEmpty()
                     else -> {
                         showError = false
                         val selectedNames = dogs.filter { selectedPetIds.contains(it.petId) }.map { it.name }
@@ -419,15 +455,28 @@ fun CreateServiceScreen(
                     }
                 }
             },
-            modifier = Modifier.fillMaxWidth(),
-            enabled = !isPastDate && !isBeyondSixMonths && !isInvalidPrice
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(54.dp),
+            shape = RoundedCornerShape(18.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
+            enabled = !isPastDate && !isBeyondSixMonths && !isInvalidPrice && timeValidationError == null
         ) {
-            Text("Publicar Solicitud")
+            Text("Publicar Solicitud", fontWeight = FontWeight.Bold)
         }
 
-        Spacer(Modifier.height(12.dp))
-        OutlinedButton(onClick = onBack, modifier = Modifier.fillMaxWidth()) {
-            Text("Cancelar")
+        OutlinedButton(
+            onClick = onBack,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(54.dp),
+            shape = RoundedCornerShape(18.dp)
+        ) {
+            Text("Cancelar", fontWeight = FontWeight.Bold)
+        }
+                }
+            }
+            Spacer(Modifier.height(20.dp))
         }
     }
 
@@ -453,7 +502,7 @@ fun CreateServiceScreen(
             },
             dismissButton = { TextButton(onClick = { showDatePicker = false }) { Text("Cancelar") } },
             colors = DatePickerDefaults.colors(
-                containerColor = Color.White,
+                containerColor = MaterialTheme.colorScheme.surface,
                 titleContentColor = Color.Black,
                 headlineContentColor = Color.Black,
                 weekdayContentColor = Color.Black,
@@ -474,7 +523,7 @@ fun CreateServiceScreen(
                 state = datePickerState,
                 showModeToggle = false,
                 colors = DatePickerDefaults.colors(
-                    containerColor = Color.White,
+                    containerColor = MaterialTheme.colorScheme.surface,
                     dayContentColor = Color.Black,
                     selectedDayContentColor = Color.White,
                     selectedDayContainerColor = MaterialTheme.colorScheme.primary,
@@ -531,6 +580,44 @@ fun CreateServiceScreen(
     }
 }
 
+
+@Composable
+private fun SectionHeaderCreate(icon: androidx.compose.ui.graphics.vector.ImageVector, title: String) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Icon(icon, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(22.dp))
+        Spacer(Modifier.width(8.dp))
+        Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+    }
+}
+
+private fun serviceIconForCreate(service: String): androidx.compose.ui.graphics.vector.ImageVector = when (service) {
+    "Alojamiento" -> Icons.Default.Home
+    "Guardería" -> Icons.Default.WbSunny
+    "Paseo" -> Icons.Default.DirectionsWalk
+    "Taxi" -> Icons.Default.LocalTaxi
+    "Peluquería" -> Icons.Default.ContentCut
+    "Visitante" -> Icons.Default.HomeRepairService
+    else -> Icons.Default.Pets
+}
+
+
+private fun validateServiceTimes(date: String, startTime: String, endTime: String?, usesTime: Boolean): String? {
+    if (!usesTime || date.isBlank() || startTime.isBlank()) return null
+    val start = parseServiceDateTime(date, startTime) ?: return null
+    if (start <= System.currentTimeMillis()) return "La hora seleccionada ya pasó."
+    if (!endTime.isNullOrBlank()) {
+        val end = parseServiceDateTime(date, endTime) ?: return null
+        if (start >= end) return "La hora de inicio debe ser menor que la hora de salida."
+    }
+    return null
+}
+
+private fun parseServiceDateTime(date: String, time: String): Long? = runCatching {
+    SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).apply { isLenient = false }
+        .parse("$date $time")
+        ?.time
+}.getOrNull()
+
 private fun Calendar.startOfDayMillis(): Long {
     set(Calendar.HOUR_OF_DAY, 0)
     set(Calendar.MINUTE, 0)
@@ -551,6 +638,7 @@ private fun ServiceDateField(
         onValueChange = {},
         label = { Text(label) },
         modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(14.dp),
         readOnly = true,
         isError = showError,
         trailingIcon = {
@@ -573,6 +661,7 @@ private fun TimeField(
         onValueChange = {},
         label = { Text(label) },
         modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(14.dp),
         readOnly = true,
         isError = showError,
         trailingIcon = {
@@ -679,7 +768,7 @@ private fun TimePickerDialog(
         onDismissRequest = onDismiss,
         confirmButton = { TextButton(onClick = { onConfirm(timeState) }) { Text("Aceptar") } },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } },
-        containerColor = Color.White,
+        containerColor = MaterialTheme.colorScheme.surface,
         text = {
             TimePicker(
                 state = timeState,

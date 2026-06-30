@@ -205,6 +205,12 @@ class ServiceApplicationRepository(
     suspend fun getOwnerRequestsToCaregivers(ownerId: Int) =
         dao.getDetailsByOwner(ownerId, ApplicationInitiator.OWNER)
 
+    suspend fun getAcceptedApplicationsForOwner(ownerId: Int) =
+        dao.getAcceptedDetailsByOwner(ownerId)
+
+    suspend fun getAcceptedApplicationsForCaregiver(caregiverId: Int) =
+        dao.getAcceptedDetailsByCaregiver(caregiverId)
+
     suspend fun getApplicationById(id: Int) = dao.getById(id)
 
     suspend fun updateStatus(id: Int, status: ApplicationStatus) {

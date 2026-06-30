@@ -53,6 +53,14 @@ class AppNotifier(
         message: String,
         type: NotificationType
     ) {
+        val key = "$recipientUserId|$type|$title|$message"
+        val now = System.currentTimeMillis()
+        synchronized(recentNotificationKeys) {
+            val lastSentAt = recentNotificationKeys[key]
+            if (lastSentAt != null && now - lastSentAt < DEDUPE_WINDOW_MS) return
+            recentNotificationKeys[key] = now
+        }
+
         notificationDao.insertNotification(
             NotificationEntity(
                 userId = recipientUserId,
@@ -94,5 +102,7 @@ class AppNotifier(
 
     companion object {
         const val CHANNEL_ID = "petcare_general"
+        private const val DEDUPE_WINDOW_MS = 60_000L
+        private val recentNotificationKeys = LinkedHashMap<String, Long>()
     }
 }

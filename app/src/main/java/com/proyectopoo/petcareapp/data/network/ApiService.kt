@@ -40,14 +40,28 @@ interface ApiService {
     ): Response<PetDto>
 
     @DELETE("api/pets/{id}")
-    suspend fun deletePet(
-        @Path("id") petId: Int
-    ): Response<Unit>
+    suspend fun deletePet(@Path("id") id: Int): Response<Unit>
+
+    @GET("api/offered-services/caregiver/{caregiverId}")
+    suspend fun getOfferedServicesByCaregiver(@Path("caregiverId") caregiverId: Int): Response<List<OfferedServiceDto>>
+
+    @GET("api/offered-services/available")
+    suspend fun getAvailableOfferedServices(): Response<List<OfferedServiceDto>>
+
+    @POST("api/offered-services")
+    suspend fun createOfferedService(@Body request: OfferedServiceDto): Response<OfferedServiceDto>
+
+    @PUT("api/offered-services/{id}")
+    suspend fun updateOfferedService(
+        @Path("id") id: Int,
+        @Body request: OfferedServiceDto
+    ): Response<OfferedServiceDto>
+
+    @DELETE("api/offered-services/{id}")
+    suspend fun deleteOfferedService(@Path("id") id: Int): Response<Unit>
 
     @GET("api/service-requests/owner/{ownerId}")
-    suspend fun getServiceRequestsByOwner(
-        @Path("ownerId") ownerId: Int
-    ): Response<List<ServiceRequestDto>>
+    suspend fun getServiceRequestsByOwner(@Path("ownerId") ownerId: Int): Response<List<ServiceRequestDto>>
 
     @GET("api/service-requests/available")
     suspend fun getAvailableServiceRequests(): Response<List<ServiceRequestDto>>

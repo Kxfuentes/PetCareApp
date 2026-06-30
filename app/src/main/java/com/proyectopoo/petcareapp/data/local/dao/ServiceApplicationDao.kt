@@ -12,6 +12,12 @@ interface ServiceApplicationDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insert(application: ServiceApplicationEntity): Long
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsert(application: ServiceApplicationEntity)
+
+    @Update
+    suspend fun update(application: ServiceApplicationEntity)
+
     @Query("SELECT * FROM service_applications WHERE caregiverId = :caregiverId")
     suspend fun getByCaregiver(caregiverId: Int): List<ServiceApplicationEntity>
 
@@ -106,6 +112,7 @@ interface ServiceApplicationDao {
         LEFT JOIN users caregiverUser ON caregiverUser.userId = c.userId
         WHERE sr.ownerId = :ownerId
         AND sa.initiatedBy = :initiatedBy
+        AND sa.status = 'PENDING'
         ORDER BY sa.applicationId DESC
         """
     )
@@ -156,6 +163,7 @@ interface ServiceApplicationDao {
         LEFT JOIN users caregiverUser ON caregiverUser.userId = c.userId
         WHERE sa.caregiverId = :caregiverId
         AND sa.initiatedBy = :initiatedBy
+        AND sa.status = 'PENDING'
         ORDER BY sa.applicationId DESC
         """
     )
@@ -213,4 +221,98 @@ interface ServiceApplicationDao {
         caregiverId: Int,
         offeredServiceId: Int
     ): List<ServiceApplicationDetails>
+
+    @Query(
+        """
+        SELECT
+            sa.applicationId AS applicationId,
+            sa.serviceRequestId AS serviceRequestId,
+            sa.caregiverId AS caregiverId,
+            sr.ownerId AS ownerId,
+            sa.offeredServiceId AS offeredServiceId,
+            sa.initiatedBy AS initiatedBy,
+            sa.status AS applicationStatus,
+            sr.title AS requestTitle,
+            sr.description AS requestDescription,
+            sr.requestedDate AS requestedDate,
+            sr.startTime AS startTime,
+            sr.endTime AS endTime,
+            sr.status AS requestStatus,
+            p.name AS petName,
+            (
+                SELECT GROUP_CONCAT(p2.name, ', ')
+                FROM service_request_pets srp
+                INNER JOIN pets p2 ON p2.petId = srp.petId
+                WHERE srp.serviceRequestId = sr.serviceRequestId
+            ) AS petNames,
+            p.breed AS petBreed,
+            p.size AS petSize,
+            st.name AS serviceTypeName,
+            ownerUser.fullName AS ownerName,
+            ownerUser.phone AS ownerPhone,
+            ownerUser.email AS ownerEmail,
+            caregiverUser.fullName AS caregiverName,
+            caregiverUser.phone AS caregiverPhone,
+            caregiverUser.email AS caregiverEmail
+        FROM service_applications sa
+        INNER JOIN service_requests sr ON sr.serviceRequestId = sa.serviceRequestId
+        LEFT JOIN pets p ON p.petId = sr.petId
+        LEFT JOIN service_types st ON st.serviceTypeId = sr.serviceTypeId
+        LEFT JOIN owners o ON o.ownerId = sr.ownerId
+        LEFT JOIN users ownerUser ON ownerUser.userId = o.userId
+        LEFT JOIN caregivers c ON c.caregiverId = sa.caregiverId
+        LEFT JOIN users caregiverUser ON caregiverUser.userId = c.userId
+        WHERE sr.ownerId = :ownerId
+        AND sa.status = 'ACCEPTED'
+        ORDER BY sr.requestedDate ASC, sa.applicationId DESC
+        """
+    )
+    suspend fun getAcceptedDetailsByOwner(ownerId: Int): List<ServiceApplicationDetails>
+
+    @Query(
+        """
+        SELECT
+            sa.applicationId AS applicationId,
+            sa.serviceRequestId AS serviceRequestId,
+            sa.caregiverId AS caregiverId,
+            sr.ownerId AS ownerId,
+            sa.offeredServiceId AS offeredServiceId,
+            sa.initiatedBy AS initiatedBy,
+            sa.status AS applicationStatus,
+            sr.title AS requestTitle,
+            sr.description AS requestDescription,
+            sr.requestedDate AS requestedDate,
+            sr.startTime AS startTime,
+            sr.endTime AS endTime,
+            sr.status AS requestStatus,
+            p.name AS petName,
+            (
+                SELECT GROUP_CONCAT(p2.name, ', ')
+                FROM service_request_pets srp
+                INNER JOIN pets p2 ON p2.petId = srp.petId
+                WHERE srp.serviceRequestId = sr.serviceRequestId
+            ) AS petNames,
+            p.breed AS petBreed,
+            p.size AS petSize,
+            st.name AS serviceTypeName,
+            ownerUser.fullName AS ownerName,
+            ownerUser.phone AS ownerPhone,
+            ownerUser.email AS ownerEmail,
+            caregiverUser.fullName AS caregiverName,
+            caregiverUser.phone AS caregiverPhone,
+            caregiverUser.email AS caregiverEmail
+        FROM service_applications sa
+        INNER JOIN service_requests sr ON sr.serviceRequestId = sa.serviceRequestId
+        LEFT JOIN pets p ON p.petId = sr.petId
+        LEFT JOIN service_types st ON st.serviceTypeId = sr.serviceTypeId
+        LEFT JOIN owners o ON o.ownerId = sr.ownerId
+        LEFT JOIN users ownerUser ON ownerUser.userId = o.userId
+        LEFT JOIN caregivers c ON c.caregiverId = sa.caregiverId
+        LEFT JOIN users caregiverUser ON caregiverUser.userId = c.userId
+        WHERE sa.caregiverId = :caregiverId
+        AND sa.status = 'ACCEPTED'
+        ORDER BY sr.requestedDate ASC, sa.applicationId DESC
+        """
+    )
+    suspend fun getAcceptedDetailsByCaregiver(caregiverId: Int): List<ServiceApplicationDetails>
 }

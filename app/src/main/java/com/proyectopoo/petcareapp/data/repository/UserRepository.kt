@@ -75,7 +75,11 @@ class UserRepository(
                 role = mappedRole
             )
 
-            val token = body.token ?: body.session?.tokenSesion ?: body.session?.token
+            val token = body.token
+                ?: body.session?.tokenSesion
+                ?: body.session?.tokenSesionCamel
+                ?: body.session?.token
+                ?: body.session?.sessionToken
             sessionManager.saveSession(
                 userId = user.userId,
                 email = user.email,

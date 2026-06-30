@@ -31,6 +31,10 @@ import com.proyectopoo.petcareapp.data.local.relation.ServiceRequestDetails
 import com.proyectopoo.petcareapp.data.local.relation.RequestWithApplications
 import com.proyectopoo.petcareapp.data.local.entity.ServiceBookingEntity
 import com.proyectopoo.petcareapp.data.network.ApiService
+import com.proyectopoo.petcareapp.data.network.ServiceApplicationDto
+import com.proyectopoo.petcareapp.data.network.RatingDto
+import com.proyectopoo.petcareapp.data.network.ServiceRequestDto
+import com.proyectopoo.petcareapp.data.network.StatusUpdateRequest
 import com.proyectopoo.petcareapp.data.network.RatingRequest
 import com.proyectopoo.petcareapp.data.network.RetrofitClient
 import com.proyectopoo.petcareapp.data.repository.ServiceApplicationRepository
@@ -39,6 +43,7 @@ import com.proyectopoo.petcareapp.notifications.AppNotifier
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import org.json.JSONObject
 
 class ServiceRequestViewModel(
     private val requestRepo: ServiceRequestRepository,
@@ -70,8 +75,14 @@ class ServiceRequestViewModel(
     private val _ownerApplicationDetails = MutableStateFlow<List<ServiceApplicationDetails>>(emptyList())
     val ownerApplicationDetails = _ownerApplicationDetails.asStateFlow()
 
+    private val _ownerScheduledServices = MutableStateFlow<List<ServiceApplicationDetails>>(emptyList())
+    val ownerScheduledServices = _ownerScheduledServices.asStateFlow()
+
     private val _caregiverApplicationDetails = MutableStateFlow<List<ServiceApplicationDetails>>(emptyList())
     val caregiverApplicationDetails = _caregiverApplicationDetails.asStateFlow()
+
+    private val _caregiverScheduledServices = MutableStateFlow<List<ServiceApplicationDetails>>(emptyList())
+    val caregiverScheduledServices = _caregiverScheduledServices.asStateFlow()
 
     private val _caregiverOffers = MutableStateFlow<List<com.proyectopoo.petcareapp.data.local.entity.OfferedServiceEntity>>(emptyList())
     val caregiverOffers = _caregiverOffers.asStateFlow()
@@ -93,20 +104,25 @@ class ServiceRequestViewModel(
     fun loadOwnerData(ownerId: Int) {
         if (ownerId <= 0) return
         viewModelScope.launch {
+            syncOwnerRequests(ownerId)
+            syncOwnerApplications(ownerId)
             _ownerRequests.value = requestRepo.getWithApplications(ownerId)
-            _recentOwnerRequests.value = requestRepo.getRecentDetailsByOwnerFromApi(ownerId)
-            _ownerApplicationDetails.value =
-                applicationRepo.getIncomingCaregiverOffersForOwnerFromApi(ownerId, requestRepo)
+            _recentOwnerRequests.value = requestRepo.getRecentDetailsByOwner(ownerId)
+            _ownerApplicationDetails.value = applicationRepo.getIncomingCaregiverOffersForOwner(ownerId)
+            _ownerScheduledServices.value = applicationRepo.getAcceptedApplicationsForOwner(ownerId)
             _ownerBookings.value = bookingDao.getBookingsByOwner(ownerId)
+            syncCaregiverRatingsFromRemote()
         }
     }
 
     fun loadCaregiverData(caregiverId: Int) {
         if (caregiverId <= 0) return
         viewModelScope.launch {
+            syncAvailableRequests()
+            syncCaregiverApplications(caregiverId)
             _caregiverApplications.value = applicationRepo.getByCaregiver(caregiverId)
-            _caregiverApplicationDetails.value =
-                applicationRepo.getCaregiverApplicationDetailsFromApi(caregiverId, requestRepo)
+            _caregiverApplicationDetails.value = applicationRepo.getIncomingOwnerRequestsForCaregiver(caregiverId)
+            _caregiverScheduledServices.value = applicationRepo.getAcceptedApplicationsForCaregiver(caregiverId)
             _caregiverOffers.value = offeredServiceDao.getServicesByCaregiver(caregiverId)
             _caregiverBookings.value = bookingDao.getBookingsByCaregiver(caregiverId)
         }
@@ -114,15 +130,8 @@ class ServiceRequestViewModel(
 
     fun loadAvailableRequests(caregiverId: Int = 0) {
         viewModelScope.launch {
-            val appliedRequestIds = if (caregiverId > 0) {
-                applicationRepo.getAppliedRequestIdsForCaregiverFromApi(caregiverId)
-            } else {
-                emptySet()
-            }
-
-            _availableRequests.value = requestRepo.getAvailableDetailsFromApi()
-                .filter { it.ownerId != caregiverId }
-                .filterNot { it.serviceRequestId in appliedRequestIds }
+            syncAvailableRequests()
+            _availableRequests.value = requestRepo.getAvailableDetails()
         }
     }
 
@@ -148,7 +157,8 @@ class ServiceRequestViewModel(
         startTime: String,
         endTime: String,
         latitude: Double? = null,
-        longitude: Double? = null
+        longitude: Double? = null,
+        onSuccess: (() -> Unit)? = null
     ) {
         viewModelScope.launch {
             val numericPrice = price.toDoubleOrNull()
@@ -164,30 +174,32 @@ class ServiceRequestViewModel(
             val primaryPetId = petIds.first()
             val requestId = generateRequestId()
 
-            requestRepo.insert(
-                ServiceRequestEntity(
-                    serviceRequestId = requestId,
-                    ownerId = ownerId,
-                    petId = primaryPetId,
-                    serviceTypeId = serviceTypeId,
-                    title = cleanServiceTypeName,
-                    description = buildString {
-                        append(description.trim())
-                        if (location.isNotBlank()) append("\nUbicaciÃ³n: ${location.trim()}")
-                        if (price.isNotBlank()) append("\nPrecio: C$${price.trim()}")
-                    },
-                    requestedDate = requestedDate,
-                    startTime = startTime.ifBlank { null },
-                    endTime = endTime.ifBlank { null },
-                    sourceType = RequestSource.OPEN,
-                    latitude = latitude,
-                    longitude = longitude
-                ),
-                petIds = petIds
+            val request = ServiceRequestEntity(
+                serviceRequestId = requestId,
+                ownerId = ownerId,
+                petId = primaryPetId,
+                serviceTypeId = serviceTypeId,
+                title = cleanServiceTypeName,
+                description = buildString {
+                    append(description.trim())
+                    if (location.isNotBlank()) append("\nUbicación: ${location.trim()}")
+                    if (price.isNotBlank()) append("\nPrecio: C$${price.trim()}")
+                },
+                requestedDate = requestedDate,
+                startTime = startTime.ifBlank { null },
+                endTime = endTime.ifBlank { null },
+                sourceType = RequestSource.OPEN,
+                latitude = latitude,
+                longitude = longitude
             )
+
+            val persistedRequest = createRemoteRequest(request, petIds) ?: return@launch
+            requestRepo.insert(persistedRequest, petIds = petIds)
 
             refreshOwnerData(ownerId)
             _availableRequests.value = requestRepo.getAvailableDetails()
+            _userMessage.value = "Solicitud publicada para cuidadores."
+            onSuccess?.invoke()
         }
     }
 
@@ -198,6 +210,7 @@ class ServiceRequestViewModel(
         petIds: List<Int>,
         requestedDate: String,
         startTime: String,
+        endTime: String? = null,
         notes: String,
         suggestedPrice: String?
     ) {
@@ -217,31 +230,33 @@ class ServiceRequestViewModel(
                 suggestedPrice?.toDoubleOrNull()?.let { append("\nPrecio sugerido: C$${"%.2f".format(it)}") }
             }.ifBlank { null }
 
-            requestRepo.insert(
-                ServiceRequestEntity(
-                    serviceRequestId = requestId,
-                    ownerId = ownerId,
-                    petId = petIds.first(),
-                    serviceTypeId = offer.serviceTypeId,
-                    title = serviceTypeName,
-                    description = description,
-                    requestedDate = requestedDate,
-                    startTime = startTime.ifBlank { null },
-                    sourceType = RequestSource.OFFER,
-                    offeredServiceId = offeredServiceId
-                ),
-                petIds = petIds
+            val request = ServiceRequestEntity(
+                serviceRequestId = requestId,
+                ownerId = ownerId,
+                petId = petIds.first(),
+                serviceTypeId = offer.serviceTypeId,
+                title = serviceTypeName,
+                description = description,
+                requestedDate = requestedDate,
+                startTime = startTime.ifBlank { null },
+                endTime = endTime?.ifBlank { null },
+                sourceType = RequestSource.OFFER,
+                offeredServiceId = offeredServiceId
             )
 
-            applicationRepo.insert(
-                ServiceApplicationEntity(
-                    serviceRequestId = requestId,
-                    caregiverId = caregiverId,
-                    offeredServiceId = offeredServiceId,
-                    initiatedBy = ApplicationInitiator.OWNER,
-                    status = ApplicationStatus.PENDING
-                )
+            val persistedRequest = createRemoteRequest(request, petIds) ?: return@launch
+            requestRepo.insert(persistedRequest, petIds = petIds)
+
+            val application = ServiceApplicationEntity(
+                serviceRequestId = persistedRequest.serviceRequestId,
+                caregiverId = caregiverId,
+                offeredServiceId = offeredServiceId,
+                initiatedBy = ApplicationInitiator.OWNER,
+                status = ApplicationStatus.PENDING
             )
+            val remoteApplication = createRemoteApplication(application)
+            if (remoteApplication == null && apiService != null) return@launch
+            applicationRepo.insert(remoteApplication ?: application)
 
             refreshOwnerData(ownerId)
             loadCaregiverData(caregiverId)
@@ -252,23 +267,31 @@ class ServiceRequestViewModel(
                 message = "Un dueÃ±o solicitÃ³ tu servicio de $serviceTypeName.",
                 type = NotificationType.SERVICE_REQUEST
             )
+            _userMessage.value = "Solicitud enviada al cuidador."
         }
     }
 
     fun applyToRequest(serviceRequestId: Int, caregiverId: Int) {
         viewModelScope.launch {
             ensureCaregiver(caregiverId)
-
-            applicationRepo.insert(
-                ServiceApplicationEntity(
-                    serviceRequestId = serviceRequestId,
-                    caregiverId = caregiverId,
-                    initiatedBy = ApplicationInitiator.CAREGIVER
-                )
+            val application = ServiceApplicationEntity(
+                serviceRequestId = serviceRequestId,
+                caregiverId = caregiverId,
+                initiatedBy = ApplicationInitiator.CAREGIVER
             )
+            val remoteApplication = createRemoteApplication(application)
+            if (remoteApplication == null && apiService != null) return@launch
+            applicationRepo.insert(remoteApplication ?: application)
+            _caregiverApplicationDetails.value = applicationRepo.getIncomingOwnerRequestsForCaregiver(caregiverId)
 
-            _availableRequests.value = _availableRequests.value.filterNot {
-                it.serviceRequestId == serviceRequestId
+            val request = requestRepo.getRequestById(serviceRequestId)
+            if (request != null) {
+                notifier.push(
+                    recipientUserId = request.ownerId,
+                    title = "Nueva postulación a tu solicitud",
+                    message = "Un cuidador se postuló a tu solicitud de \"${request.title}\".",
+                    type = NotificationType.SERVICE_REQUEST
+                )
             }
             loadCaregiverData(caregiverId)
 
@@ -285,21 +308,15 @@ class ServiceRequestViewModel(
         modifiedEndTime: String? = null
     ) {
         viewModelScope.launch {
-            val localApplication = applicationRepo.getApplicationById(applicationId)
+            val application = applicationRepo.getApplicationById(applicationId) ?: return@launch
+            val request = requestRepo.getRequestById(application.serviceRequestId)
 
-            if (localApplication == null) {
-                val remoteApplication = applicationRepo.updateStatusFromApi(applicationId, ApplicationStatus.ACCEPTED)
-                ownerId?.let { refreshOwnerData(it) }
-                caregiverId?.let { loadCaregiverData(it) }
-
-                remoteApplication?.let { application ->
-                    notifier.push(
-                        recipientUserId = application.caregiverId,
-                        title = "Solicitud aceptada",
-                        message = "Tu solicitud fue aceptada. Preparate para el servicio.",
-                        type = NotificationType.REQUEST_ACCEPTED
-                    )
-                }
+            if (application.initiatedBy == ApplicationInitiator.CAREGIVER && ownerId == null) {
+                _userMessage.value = "Solo el dueño puede aceptar esta postulación."
+                return@launch
+            }
+            if (application.initiatedBy == ApplicationInitiator.OWNER && caregiverId == null) {
+                _userMessage.value = "Solo el cuidador puede aceptar esta solicitud directa."
                 return@launch
             }
 
@@ -312,63 +329,71 @@ class ServiceRequestViewModel(
                 )
             }
 
-            val newRequest = requestRepo.getRequestById(localApplication.serviceRequestId)
-            if (newRequest != null && caregiverHasConflict(localApplication.caregiverId, newRequest)) {
+            val updatedRequest = requestRepo.getRequestById(application.serviceRequestId)
+            if (updatedRequest != null && caregiverHasConflict(application.caregiverId, updatedRequest)) {
                 _userMessage.value =
                     "Este cuidador ya tiene un servicio aceptado en ese horario. No puede aceptar dos servicios a la vez."
                 return@launch
             }
 
-            applicationRepo.acceptAndCreateBooking(applicationId)
+            val remoteApplication = updateRemoteApplicationStatus(applicationId, ApplicationStatus.ACCEPTED)
+            if (remoteApplication == null && apiService != null) return@launch
+
+            applicationRepo.acceptAndCreateBooking(remoteApplication?.applicationId ?: applicationId)
             _availableRequests.value = requestRepo.getAvailableDetails()
-            ownerId?.let { refreshOwnerData(it) }
+            ownerId?.let { loadOwnerData(it) }
             caregiverId?.let { loadCaregiverData(it) }
 
+            val recipientUserId = if (application.initiatedBy == ApplicationInitiator.CAREGIVER) {
+                application.caregiverId
+            } else {
+                request?.ownerId ?: application.caregiverId
+            }
+            val message = if (application.initiatedBy == ApplicationInitiator.CAREGIVER) {
+                "Tu postulación fue aceptada. ¡Prepárate para el servicio!"
+            } else {
+                "Tu solicitud directa fue aceptada por el cuidador."
+            }
+
             notifier.push(
-                recipientUserId = localApplication.caregiverId,
+                recipientUserId = recipientUserId,
                 title = "Solicitud aceptada",
-                message = "Tu solicitud fue aceptada. Preparate para el servicio.",
+                message = message,
                 type = NotificationType.REQUEST_ACCEPTED
             )
+            _userMessage.value = "Servicio confirmado."
         }
     }
 
     fun rejectApplication(applicationId: Int, ownerId: Int? = null, caregiverId: Int? = null) {
         viewModelScope.launch {
-            val localApplication = applicationRepo.getApplicationById(applicationId)
+            val application = applicationRepo.getApplicationById(applicationId) ?: return@launch
+            val request = requestRepo.getRequestById(application.serviceRequestId)
 
-            if (localApplication == null) {
-                val remoteApplication = applicationRepo.updateStatusFromApi(applicationId, ApplicationStatus.REJECTED)
-                ownerId?.let { refreshOwnerData(it) }
-                caregiverId?.let { loadCaregiverData(it) }
+            if (application.initiatedBy == ApplicationInitiator.CAREGIVER && ownerId == null) return@launch
+            if (application.initiatedBy == ApplicationInitiator.OWNER && caregiverId == null) return@launch
 
-                remoteApplication?.let {
-                    notifier.push(
-                        recipientUserId = it.caregiverId,
-                        title = "Solicitud rechazada",
-                        message = "Una de tus solicitudes fue rechazada.",
-                        type = NotificationType.REQUEST_REJECTED
-                    )
-                }
+            if (updateRemoteApplicationStatus(applicationId, ApplicationStatus.REJECTED) == null && apiService != null) {
                 return@launch
             }
-
             applicationRepo.updateStatus(applicationId, ApplicationStatus.REJECTED)
-            ownerId?.let {
-                _ownerApplicationDetails.value =
-                    applicationRepo.getIncomingCaregiverOffersForOwnerFromApi(it, requestRepo)
+            ownerId?.let { loadOwnerData(it) }
+            caregiverId?.let { loadCaregiverData(it) }
+            loadAvailableRequests()
+
+            val recipientUserId = if (application.initiatedBy == ApplicationInitiator.CAREGIVER) {
+                application.caregiverId
+            } else {
+                request?.ownerId ?: application.caregiverId
             }
-            caregiverId?.let {
-                _caregiverApplicationDetails.value = applicationRepo.getIncomingOwnerRequestsForCaregiver(it)
-            }
-            loadAvailableRequests(caregiverId ?: 0)
 
             notifier.push(
-                recipientUserId = localApplication.caregiverId,
+                recipientUserId = recipientUserId,
                 title = "Solicitud rechazada",
-                message = "Una de tus solicitudes fue rechazada.",
+                message = "Una solicitud fue rechazada.",
                 type = NotificationType.REQUEST_REJECTED
             )
+            _userMessage.value = "Solicitud rechazada."
         }
     }
 
@@ -384,58 +409,34 @@ class ServiceRequestViewModel(
         reloadCaregiverId: Int? = null
     ) {
         viewModelScope.launch {
-            val completed = applicationRepo.completeAndCloseRequest(applicationId)
-            if (!completed) {
-                _userMessage.value = "No se pudo finalizar el servicio. Vuelve a abrir la pantalla e intentalo de nuevo."
-                reloadOwnerId?.let { refreshOwnerData(it) }
-                reloadCaregiverId?.let { loadCaregiverData(it) }
+            if (updateRemoteApplicationStatus(applicationId, ApplicationStatus.COMPLETED) == null && apiService != null) {
                 return@launch
             }
-
-            val ratingSaved = saveRatingIfNeeded(serviceRequestId, caregiverId, ownerId, ratedByRole, score, comment)
-
-            reloadOwnerId?.let { refreshOwnerData(it) }
-            reloadCaregiverId?.let { loadCaregiverData(it) }
-            _availableRequests.value = requestRepo.getAvailableDetailsFromApi()
-            _userMessage.value = if (ratingSaved) {
-                "Servicio finalizado y calificacion guardada."
-            } else {
-                "Servicio finalizado, pero no se pudo guardar la calificacion."
-            }
-        }
-    }
-
-    fun markDoneByCaregiverAndRateOwner(
-        applicationId: Int,
-        serviceRequestId: Int,
-        caregiverId: Int,
-        ownerId: Int,
-        score: Double,
-        comment: String,
-        reloadCaregiverId: Int? = null
-    ) {
-        viewModelScope.launch {
-            val updated = applicationRepo.updateStatusFromApi(applicationId, ApplicationStatus.DONE_BY_CAREGIVER)
-            if (updated == null) {
-                reloadCaregiverId?.let { loadCaregiverData(it) }
-                _userMessage.value = "No se pudo marcar el servicio como realizado. Vuelve a abrir la pantalla e intentalo de nuevo."
-                return@launch
-            }
-
-            val ratingSaved = saveRatingIfNeeded(
+            applicationRepo.completeAndCloseRequest(applicationId)
+            val existingRating = ratingDao.getRatingForServiceByRole(serviceRequestId, ratedByRole)
+            val rating = RatingEntity(
                 serviceRequestId = serviceRequestId,
                 caregiverId = caregiverId,
                 ownerId = ownerId,
-                ratedByRole = UserRoleType.CAREGIVER,
-                score = score,
-                comment = comment
+                ratedByRole = ratedByRole,
+                score = score.coerceIn(1.0, 5.0),
+                comment = comment.ifBlank { null }
             )
-            reloadCaregiverId?.let { loadCaregiverData(it) }
-            _userMessage.value = if (ratingSaved) {
-                "Servicio marcado como realizado y calificacion guardada."
-            } else {
-                "Servicio marcado como realizado, pero no se pudo guardar la calificacion."
+            if (existingRating == null) {
+                ratingDao.insertRating(rating)
+                val ratingSaved = createRemoteRating(rating)
+                if (ratedByRole == UserRoleType.OWNER) {
+                    updateCaregiverRatingFromRemote(caregiverId)
+                }
+                if (!ratingSaved) {
+                    _userMessage.value = "Calificación guardada localmente; revisa la conexión con el servidor."
+                }
             }
+
+            reloadOwnerId?.let { loadOwnerData(it) }
+            reloadCaregiverId?.let { loadCaregiverData(it) }
+            _availableRequests.value = requestRepo.getAvailableDetails()
+            _userMessage.value = "Calificación registrada."
         }
     }
 
@@ -504,24 +505,30 @@ class ServiceRequestViewModel(
             val request = requestRepo.getRequestById(application.serviceRequestId)
             val startMillis = request?.let { parseDateTime(it.requestedDate, it.startTime) }
 
-            if (startMillis != null && System.currentTimeMillis() > startMillis - TWO_HOURS_MS) {
+            if (startMillis != null && System.currentTimeMillis() > startMillis - CANCELLATION_WINDOW_MS) {
                 _userMessage.value =
-                    "Solo puedes cancelar un servicio hasta 2 horas antes de que empiece."
+                    "Solo puedes cancelar un servicio hasta 3 horas antes de que empiece."
                 return@launch
             }
 
+            if (updateRemoteApplicationStatus(applicationId, ApplicationStatus.CANCELLED) == null && apiService != null) {
+                return@launch
+            }
             applicationRepo.cancelService(applicationId)
-            reloadOwnerId?.let { refreshOwnerData(it) }
+            reloadOwnerId?.let { loadOwnerData(it) }
             reloadCaregiverId?.let { loadCaregiverData(it) }
             _availableRequests.value = requestRepo.getAvailableDetailsFromApi()
             _userMessage.value = "Servicio cancelado."
 
-            notifier.push(
-                recipientUserId = application.caregiverId,
-                title = "Servicio cancelado",
-                message = "Un servicio fue cancelado.",
-                type = NotificationType.REQUEST_CANCELLED
-            )
+            val otherPartyId = if (reloadOwnerId != null) application.caregiverId else request?.ownerId
+            otherPartyId?.let { recipientId ->
+                notifier.push(
+                    recipientUserId = recipientId,
+                    title = "Servicio cancelado",
+                    message = "Un servicio confirmado fue cancelado.",
+                    type = NotificationType.REQUEST_CANCELLED
+                )
+            }
         }
     }
 
@@ -573,8 +580,9 @@ class ServiceRequestViewModel(
     }
 
     private suspend fun refreshOwnerData(ownerId: Int) {
-        _recentOwnerRequests.value = requestRepo.getRecentDetailsByOwnerFromApi(ownerId)
-        _ownerApplicationDetails.value = applicationRepo.getIncomingCaregiverOffersForOwnerFromApi(ownerId, requestRepo)
+        _recentOwnerRequests.value = requestRepo.getRecentDetailsByOwner(ownerId)
+        _ownerApplicationDetails.value = applicationRepo.getIncomingCaregiverOffersForOwner(ownerId)
+        _ownerScheduledServices.value = applicationRepo.getAcceptedApplicationsForOwner(ownerId)
         _ownerBookings.value = bookingDao.getBookingsByOwner(ownerId)
     }
 
@@ -657,13 +665,219 @@ class ServiceRequestViewModel(
         }
     }
 
+
+    private suspend fun syncOwnerRequests(ownerId: Int) {
+        val remote = runCatching {
+            apiService?.getServiceRequestsByOwner(ownerId)
+                ?.takeIf { it.isSuccessful }
+                ?.body()
+        }.getOrNull() ?: return
+
+        cacheRequests(remote)
+    }
+
+    private suspend fun syncAvailableRequests() {
+        val remote = runCatching {
+            apiService?.getAvailableServiceRequests()
+                ?.takeIf { it.isSuccessful }
+                ?.body()
+        }.getOrNull() ?: return
+
+        cacheRequests(remote)
+    }
+
+    private suspend fun syncOwnerApplications(ownerId: Int) {
+        val remote = runCatching {
+            apiService?.getServiceApplicationsByOwner(ownerId)
+                ?.takeIf { it.isSuccessful }
+                ?.body()
+        }.getOrNull() ?: return
+
+        cacheApplications(remote, notifyUserId = ownerId)
+    }
+
+    private suspend fun syncCaregiverApplications(caregiverId: Int) {
+        val remote = runCatching {
+            apiService?.getServiceApplicationsByCaregiver(caregiverId)
+                ?.takeIf { it.isSuccessful }
+                ?.body()
+        }.getOrNull() ?: return
+
+        cacheApplications(remote, notifyUserId = caregiverId)
+    }
+
+    private suspend fun cacheRequests(remote: List<ServiceRequestDto>) {
+        remote.forEach { dto -> cacheRequest(dto) }
+    }
+
+    private suspend fun cacheRequest(dto: ServiceRequestDto) {
+        ensureOwner(dto.ownerId)
+        ensureServiceType(dto.serviceTypeId, dto.title)
+        ensurePetPlaceholder(dto.ownerId, dto.petId)
+        dto.petIds.forEach { petId -> ensurePetPlaceholder(dto.ownerId, petId) }
+        requestRepo.insert(dto.toEntity(), dto.petIds.ifEmpty { listOf(dto.petId) })
+    }
+
+    private suspend fun cacheApplications(
+        remote: List<ServiceApplicationDto>,
+        notifyUserId: Int? = null
+    ) {
+        remote.forEach { dto ->
+            syncRequestById(dto.serviceRequestId)
+            val request = requestRepo.getRequestById(dto.serviceRequestId) ?: return@forEach
+            val isNewApplication = dto.id?.let { applicationRepo.getApplicationById(it) == null } ?: false
+            ensureCaregiver(dto.caregiverId)
+            applicationRepo.insert(dto.toEntity())
+            notifyNewApplicationIfNeeded(dto, request, notifyUserId, isNewApplication)
+        }
+    }
+
+    private suspend fun syncRequestById(requestId: Int) {
+        val remote = runCatching {
+            apiService?.getServiceRequestById(requestId)
+                ?.takeIf { it.isSuccessful }
+                ?.body()
+        }.getOrNull() ?: return
+
+        cacheRequest(remote)
+    }
+
+    private suspend fun notifyNewApplicationIfNeeded(
+        dto: ServiceApplicationDto,
+        request: ServiceRequestEntity,
+        notifyUserId: Int?,
+        isNewApplication: Boolean
+    ) {
+        if (!isNewApplication || notifyUserId == null || dto.status != ApplicationStatus.PENDING.name) return
+
+        if (dto.initiatedBy == ApplicationInitiator.OWNER.name && dto.caregiverId == notifyUserId) {
+            notifier.push(
+                recipientUserId = notifyUserId,
+                title = "Nueva solicitud de un dueño",
+                message = "Un dueño solicitó tu servicio de ${request.title}.",
+                type = NotificationType.SERVICE_REQUEST
+            )
+        }
+
+        if (dto.initiatedBy == ApplicationInitiator.CAREGIVER.name && request.ownerId == notifyUserId) {
+            notifier.push(
+                recipientUserId = notifyUserId,
+                title = "Nueva postulación a tu solicitud",
+                message = "Un cuidador se postuló a tu solicitud de \"${request.title}\".",
+                type = NotificationType.SERVICE_REQUEST
+            )
+        }
+    }
+
+
+    private suspend fun updateRemoteApplicationStatus(
+        applicationId: Int,
+        status: ApplicationStatus
+    ): ServiceApplicationEntity? {
+        val response = runCatching {
+            apiService?.updateServiceApplicationStatus(applicationId, StatusUpdateRequest(status.name))
+        }.getOrNull() ?: return null
+
+        if (response.isSuccessful) {
+            return response.body()?.toEntity()
+        }
+
+        _userMessage.value = parseApiError(response.errorBody()?.string())
+            ?: "No se pudo actualizar el estado del servicio."
+        return null
+    }
+
+    private suspend fun createRemoteRequest(
+        request: ServiceRequestEntity,
+        petIds: List<Int>
+    ): ServiceRequestEntity? {
+        val response = runCatching {
+            apiService?.createServiceRequest(request.toDto(petIds))
+        }.getOrNull() ?: return request
+
+        if (response.isSuccessful) return response.body()?.toEntity() ?: request
+        _userMessage.value = parseApiError(response.errorBody()?.string())
+            ?: "Error al guardar la solicitud en el servidor."
+        return null
+    }
+
+    private suspend fun createRemoteApplication(application: ServiceApplicationEntity): ServiceApplicationEntity? {
+        val response = runCatching {
+            apiService?.createServiceApplication(application.toDto())
+        }.getOrNull() ?: return null
+
+        if (response.isSuccessful) {
+            return response.body()?.toEntity()
+        }
+
+        _userMessage.value = parseApiError(response.errorBody()?.string())
+            ?: "Error al registrar la postulación en el servidor."
+        return null
+    }
+
+    private suspend fun createRemoteRating(rating: RatingEntity): Boolean {
+        val response = runCatching {
+            apiService?.createRating(rating.toDto())
+        }.getOrNull() ?: return false
+
+        return response.isSuccessful
+    }
+
+    private suspend fun syncCaregiverRatingsFromRemote() {
+        val caregiverIds = offeredServiceDao.getAvailableServices()
+            .map { it.caregiverId }
+            .distinct()
+        caregiverIds.forEach { caregiverId ->
+            updateCaregiverRatingFromRemote(caregiverId)
+        }
+    }
+
+    private suspend fun updateCaregiverRatingFromRemote(caregiverId: Int) {
+        val summary = runCatching {
+            apiService?.getCaregiverRatingSummary(caregiverId)
+                ?.takeIf { it.isSuccessful }
+                ?.body()
+        }.getOrNull() ?: return
+
+        val caregiver = caregiverDao.getCaregiverById(caregiverId) ?: return
+        caregiverDao.updateCaregiver(caregiver.copy(rating = summary.average))
+    }
+
+    private fun parseApiError(raw: String?): String? {
+        val body = raw?.trim().takeUnless { it.isNullOrBlank() } ?: return null
+        return runCatching {
+            val json = JSONObject(body)
+            json.optString("error")
+                .ifBlank { json.optString("message") }
+                .ifBlank { json.optString("detail") }
+                .ifBlank { body }
+        }.getOrDefault(body)
+    }
+
+    private suspend fun ensurePetPlaceholder(ownerId: Int, petId: Int) {
+        if (petId <= 0 || petDao.getPetById(petId) != null) return
+        ensureOwner(ownerId)
+        petDao.insertPet(
+            PetEntity(
+                petId = petId,
+                ownerId = ownerId,
+                name = "Mascota",
+                species = "Dog",
+                breed = "Sin raza",
+                size = "Mediano"
+            )
+        )
+    }
+
     fun clear() {
         _ownerRequests.value = emptyList()
         _caregiverApplications.value = emptyList()
         _availableRequests.value = emptyList()
         _recentOwnerRequests.value = emptyList()
         _ownerApplicationDetails.value = emptyList()
+        _ownerScheduledServices.value = emptyList()
         _caregiverApplicationDetails.value = emptyList()
+        _caregiverScheduledServices.value = emptyList()
         _caregiverOffers.value = emptyList()
         _ownerBookings.value = emptyList()
         _caregiverBookings.value = emptyList()
@@ -671,7 +885,81 @@ class ServiceRequestViewModel(
 
     companion object {
         private const val ONE_HOUR_MS = 60 * 60 * 1000L
-        private const val TWO_HOURS_MS = 2 * ONE_HOUR_MS
+        private const val CANCELLATION_WINDOW_MS = 3L * ONE_HOUR_MS
     }
 }
 
+
+private fun ServiceRequestEntity.toDto(petIds: List<Int> = emptyList()): ServiceRequestDto {
+    return ServiceRequestDto(
+        id = serviceRequestId,
+        ownerId = ownerId,
+        petId = petId,
+        petIds = petIds.ifEmpty { listOf(petId) },
+        serviceTypeId = serviceTypeId,
+        title = title,
+        description = description,
+        requestedDate = requestedDate,
+        startTime = startTime,
+        endTime = endTime,
+        status = status.name,
+        offeredServiceId = offeredServiceId,
+        sourceType = sourceType.name,
+        latitude = latitude,
+        longitude = longitude
+    )
+}
+
+private fun ServiceRequestDto.toEntity(): ServiceRequestEntity {
+    return ServiceRequestEntity(
+        serviceRequestId = id,
+        ownerId = ownerId,
+        petId = petId,
+        serviceTypeId = serviceTypeId,
+        title = title,
+        description = description,
+        requestedDate = requestedDate,
+        startTime = startTime,
+        endTime = endTime,
+        status = runCatching { ServiceRequestStatus.valueOf(status) }.getOrDefault(ServiceRequestStatus.PENDING),
+        offeredServiceId = offeredServiceId,
+        sourceType = runCatching { RequestSource.valueOf(sourceType) }.getOrDefault(RequestSource.OPEN),
+        latitude = latitude,
+        longitude = longitude
+    )
+}
+
+private fun ServiceApplicationEntity.toDto(): ServiceApplicationDto {
+    return ServiceApplicationDto(
+        id = applicationId.takeIf { it > 0 },
+        serviceRequestId = serviceRequestId,
+        caregiverId = caregiverId,
+        offeredServiceId = offeredServiceId,
+        initiatedBy = initiatedBy.name,
+        status = status.name
+    )
+}
+
+private fun ServiceApplicationDto.toEntity(): ServiceApplicationEntity {
+    return ServiceApplicationEntity(
+        applicationId = id ?: 0,
+        serviceRequestId = serviceRequestId,
+        caregiverId = caregiverId,
+        offeredServiceId = offeredServiceId,
+        initiatedBy = runCatching { ApplicationInitiator.valueOf(initiatedBy) }.getOrDefault(ApplicationInitiator.CAREGIVER),
+        status = runCatching { ApplicationStatus.valueOf(status) }.getOrDefault(ApplicationStatus.PENDING)
+    )
+}
+
+
+private fun RatingEntity.toDto(): RatingDto {
+    return RatingDto(
+        id = ratingId.takeIf { it > 0 },
+        serviceRequestId = serviceRequestId,
+        caregiverId = caregiverId,
+        ownerId = ownerId,
+        ratedByRole = ratedByRole.name,
+        score = score,
+        comment = comment
+    )
+}

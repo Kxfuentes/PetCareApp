@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.proyectopoo.petcareapp.data.local.database.PetCareDatabase
 import com.proyectopoo.petcareapp.data.local.entity.ApplicationStatus
 import com.proyectopoo.petcareapp.data.network.ApiService
+import com.proyectopoo.petcareapp.data.network.RatingDto
 import com.proyectopoo.petcareapp.data.network.RetrofitClient
 import com.proyectopoo.petcareapp.model.User
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -26,6 +27,9 @@ class CaregiverProfileViewModel(
 
     private val _rating = MutableStateFlow(5.0)
     val rating: StateFlow<Double> = _rating.asStateFlow()
+
+    private val _reviews = MutableStateFlow<List<RatingDto>>(emptyList())
+    val reviews: StateFlow<List<RatingDto>> = _reviews.asStateFlow()
 
     private val _isLoading = MutableStateFlow(true)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
@@ -58,6 +62,27 @@ class CaregiverProfileViewModel(
                     _rating.value = remoteSummary?.body()?.average?.takeIf { it > 0.0 }
                         ?: caregiverEntity?.rating?.takeIf { it > 0.0 }
                         ?: 5.0
+
+                    val remoteSummary = runCatching {
+                        apiService?.getCaregiverRatingSummary(caregiverId)
+                            ?.takeIf { it.isSuccessful }
+                            ?.body()
+                    }.getOrNull()
+
+                    if (remoteSummary != null) {
+                        _rating.value = remoteSummary.average
+                        caregiverEntity?.let {
+                            database.caregiverDao().updateCaregiver(
+                                it.copy(rating = remoteSummary.average)
+                            )
+                        }
+                    }
+
+                    _reviews.value = runCatching {
+                        apiService?.getCaregiverReviews(caregiverId)
+                            ?.takeIf { it.isSuccessful }
+                            ?.body()
+                    }.getOrNull().orEmpty()
 
                     val applications = database.serviceApplicationDao().getByCaregiver(caregiverId)
                     _completedServicesCount.value = applications.count { it.status == ApplicationStatus.COMPLETED }

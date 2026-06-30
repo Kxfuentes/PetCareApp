@@ -164,7 +164,6 @@ abstract class PetCareDatabase : RoomDatabase() {
                     "petcare_database"
                 )
                     .addMigrations(MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10)
-                    .fallbackToDestructiveMigration()
                     .build()
 
                 INSTANCE = instance

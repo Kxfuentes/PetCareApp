@@ -42,66 +42,54 @@ class PetRepository(
 
     suspend fun getPetsByOwner(ownerId: Int): List<PetEntity> {
         val remotePets = runCatching {
-            apiService.getPetsByOwner(ownerId)
+            apiService?.getPetsByOwner(ownerId)
+                ?.takeIf { it.isSuccessful }
+                ?.body()
+                ?.map { it.toEntity() }
         }.getOrNull()
 
-        if (remotePets?.isSuccessful == true) {
-            val pets = remotePets.body()
-                .orEmpty()
-                .map { it.toEntity() }
-
-            if (pets.isNotEmpty()) {
-                petDao.insertPets(pets)
-            }
-
-            return pets
+        if (remotePets != null) {
+            remotePets.forEach { petDao.insertPet(it) }
+            return remotePets
         }
 
         return petDao.getPetsByOwner(ownerId)
     }
 
     suspend fun updatePet(pet: PetEntity) {
-        val remotePet = runCatching {
-            apiService.updatePet(pet.petId, pet.toRequest())
-        }.getOrNull()
+        val saved = runCatching {
+            apiService?.updatePet(pet.petId, pet.toRequest())
+                ?.takeIf { it.isSuccessful }
+                ?.body()
+                ?.toEntity(fallbackId = pet.petId)
+        }.getOrNull() ?: pet
 
-        if (remotePet?.isSuccessful == true) {
-            val savedPet = remotePet.body()?.toEntity()
-            if (savedPet != null) {
-                petDao.updatePet(savedPet)
-                return
-            }
-        }
-
-        petDao.updatePet(pet)
+        petDao.updatePet(saved)
     }
 
     suspend fun deletePet(pet: PetEntity) {
-        runCatching {
-            apiService.deletePet(pet.petId)
-        }
-
+        runCatching { apiService?.deletePet(pet.petId) }
         petDao.deletePet(pet)
     }
+}
 
-    private fun PetEntity.toRequest(): PetRequest {
-        return PetRequest(
-            ownerId = ownerId,
-            name = name,
-            species = species.ifBlank { "Dog" },
-            breed = breed.orEmpty().ifBlank { "Sin raza" },
-            size = size.orEmpty().ifBlank { "Mediano" }
-        )
-    }
+private fun PetEntity.toRequest(): PetRequest {
+    return PetRequest(
+        ownerId = ownerId,
+        name = name,
+        species = species,
+        breed = breed.orEmpty().ifBlank { "Sin raza" },
+        size = size.orEmpty().ifBlank { "Mediano" }
+    )
+}
 
-    private fun PetDto.toEntity(): PetEntity {
-        return PetEntity(
-            petId = id,
-            ownerId = ownerId,
-            name = name,
-            species = species ?: "Dog",
-            breed = breed,
-            size = size
-        )
-    }
+private fun PetDto.toEntity(fallbackId: Int? = null): PetEntity {
+    return PetEntity(
+        petId = id ?: fallbackId ?: 0,
+        ownerId = ownerId,
+        name = name,
+        species = species ?: "Dog",
+        breed = breed,
+        size = size
+    )
 }
