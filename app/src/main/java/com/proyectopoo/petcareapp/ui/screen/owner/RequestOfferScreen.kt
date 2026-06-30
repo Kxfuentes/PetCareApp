@@ -69,7 +69,7 @@ fun RequestOfferScreen(
                         Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
             )
         },
         containerColor = MaterialTheme.colorScheme.background
@@ -85,7 +85,7 @@ fun RequestOfferScreen(
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F5F5))
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
             ) {
                 Column(Modifier.padding(16.dp)) {
                     Text(
@@ -273,7 +273,7 @@ fun RequestOfferScreen(
             },
             dismissButton = { TextButton(onClick = { showDatePicker = false }) { Text("Cancelar", color = Color.Black) } },
             colors = DatePickerDefaults.colors(
-                containerColor = Color.White,
+                containerColor = MaterialTheme.colorScheme.surface,
                 titleContentColor = Color.Black,
                 headlineContentColor = Color.Black,
                 weekdayContentColor = Color.Black,
@@ -294,7 +294,7 @@ fun RequestOfferScreen(
                 state = datePickerState,
                 showModeToggle = false,
                 colors = DatePickerDefaults.colors(
-                    containerColor = Color.White,
+                    containerColor = MaterialTheme.colorScheme.surface,
                     dayContentColor = Color.Black,
                     selectedDayContentColor = Color.White,
                     selectedDayContainerColor = Color(0xFF5D4037),
@@ -363,7 +363,7 @@ private fun TimePickerDialog(
         onDismissRequest = onDismiss,
         confirmButton = { TextButton(onClick = { onConfirm(timeState) }) { Text("Aceptar", color = Color.Black) } },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar", color = Color.Black) } },
-        containerColor = Color.White,
+        containerColor = MaterialTheme.colorScheme.surface,
         text = {
             TimePicker(
                 state = timeState,

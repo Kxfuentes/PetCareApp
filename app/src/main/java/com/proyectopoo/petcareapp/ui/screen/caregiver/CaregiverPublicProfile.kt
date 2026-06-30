@@ -1,6 +1,7 @@
 package com.proyectopoo.petcareapp.ui.screen.caregiver
 
 import android.annotation.SuppressLint
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -19,6 +20,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.proyectopoo.petcareapp.ui.theme.*
 import com.proyectopoo.petcareapp.viewmodel.CaregiverProfileViewModel
 
 @SuppressLint("DefaultLocale")
@@ -30,7 +32,6 @@ fun CaregiverPublicProfileScreen(
     onBack: () -> Unit,
     onRequestServices: () -> Unit
 ) {
-    // Obtenemos los estados
     val user by viewModel.user.collectAsStateWithLifecycle()
     val completedServicesCount by viewModel.completedServicesCount.collectAsStateWithLifecycle()
     val rating by viewModel.rating.collectAsStateWithLifecycle()
@@ -38,14 +39,16 @@ fun CaregiverPublicProfileScreen(
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
 
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
-                title = { Text("Perfil de Gestor") },
+                title = { Text("Perfil de Cuidador") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
             )
         }
     ) { padding ->
@@ -59,9 +62,7 @@ fun CaregiverPublicProfileScreen(
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(24.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                ),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                 elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
             ) {
                 Row(
@@ -71,21 +72,20 @@ fun CaregiverPublicProfileScreen(
                     Box(
                         modifier = Modifier
                             .size(72.dp)
-                            .clip(CircleShape)
-                            .padding(4.dp),
+                            .clip(CircleShape),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             Icons.Default.Person,
                             contentDescription = null,
                             modifier = Modifier.size(60.dp),
-                            tint = MaterialTheme.colorScheme.primary
+                            tint = CafeMedio
                         )
                     }
                     Spacer(Modifier.width(16.dp))
                     Column(Modifier.weight(1f)) {
                         Text(
-                            user?.username ?: "Gestor",
+                            user?.username ?: "Cuidador",
                             style = MaterialTheme.typography.headlineSmall,
                             fontWeight = FontWeight.SemiBold
                         )
@@ -93,14 +93,13 @@ fun CaregiverPublicProfileScreen(
                         Text(
                             user?.email ?: "correo@ejemplo.com",
                             style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = TextoSuave
                         )
                         Spacer(Modifier.height(4.dp))
                         Text(
-                            "Gestor de mascotas",
+                            "Cuidador",
                             style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.primary,
-                            fontWeight = FontWeight.Medium
+                            color = TextoSuave
                         )
                     }
                 }
@@ -111,9 +110,7 @@ fun CaregiverPublicProfileScreen(
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant
-                )
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
             ) {
                 Row(
                     modifier = Modifier
@@ -125,7 +122,7 @@ fun CaregiverPublicProfileScreen(
                         Icon(
                             Icons.Default.Work,
                             contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
+                            tint = CafeMedio,
                             modifier = Modifier.size(28.dp)
                         )
                         Spacer(Modifier.height(8.dp))
@@ -137,14 +134,14 @@ fun CaregiverPublicProfileScreen(
                         Text(
                             text = "Servicios",
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = TextoSuave
                         )
                     }
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Icon(
                             Icons.Default.Star,
                             contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
+                            tint = CafeMedio,
                             modifier = Modifier.size(28.dp)
                         )
                         Spacer(Modifier.height(8.dp))
@@ -156,7 +153,7 @@ fun CaregiverPublicProfileScreen(
                         Text(
                             text = "Calificación",
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = TextoSuave
                         )
                     }
                 }
@@ -166,24 +163,24 @@ fun CaregiverPublicProfileScreen(
                 Spacer(Modifier.height(16.dp))
                 LinearProgressIndicator(
                     modifier = Modifier.fillMaxWidth(),
-                    color = MaterialTheme.colorScheme.primary
+                    color = CafeMedio
                 )
             }
-
 
             Spacer(Modifier.height(16.dp))
 
             Text(
                 text = "Reseñas",
                 style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold
+                fontWeight = FontWeight.SemiBold,
+                color = CafeOscuro
             )
             Spacer(Modifier.height(8.dp))
             if (reviews.isEmpty()) {
                 Text(
                     text = "Aún no hay reseñas públicas.",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = TextoSuave
                 )
             } else {
                 reviews.take(5).forEach { review ->
@@ -214,7 +211,8 @@ fun CaregiverPublicProfileScreen(
             Button(
                 onClick = onRequestServices,
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp)
+                shape = RoundedCornerShape(16.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF8D5524))
             ) {
                 Text("Solicitar este servicio")
             }
