@@ -1,5 +1,10 @@
 package com.proyectopoo.petcareapp.data.websocket
 
+/*
+ * Comentario de modulo PetCare:
+ * Comunicacion en tiempo real. Mantiene la conexion WebSocket y traduce los eventos recibidos.
+ */
+
 import android.util.Log
 import com.proyectopoo.petcareapp.BuildConfig
 import kotlinx.serialization.json.Json
@@ -30,6 +35,7 @@ class PetCareWebSocketClient(
         if (userId <= 0) return
         if (webSocket != null) return
 
+        // La app usa la misma BASE_URL de Retrofit y la convierte al protocolo WebSocket.
         val wsUrl = BuildConfig.BASE_URL
             .replace("http://", "ws://")
             .replace("https://", "wss://")
@@ -51,6 +57,7 @@ class PetCareWebSocketClient(
                     Log.d(TAG, "WebSocket mensaje: $text")
                     onMessage(text)
 
+                    // El backend envia JSON; si llega algo distinto, solo se registra el error.
                     runCatching {
                         json.decodeFromString<WsEvent>(text)
                     }.onSuccess { event ->
@@ -85,6 +92,7 @@ class PetCareWebSocketClient(
     }
 
     fun disconnect() {
+        // Codigo 1000 indica cierre normal del cliente.
         webSocket?.close(1000, "Cliente desconectado")
         webSocket = null
         onStatusChanged(false)

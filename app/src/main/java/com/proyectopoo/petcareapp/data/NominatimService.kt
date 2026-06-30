@@ -1,5 +1,10 @@
 package com.proyectopoo.petcareapp.data
 
+/*
+ * Comentario de modulo PetCare:
+ * Servicio de negocio. Contiene reglas de PetCare que no deben vivir directamente en los controladores.
+ */
+
 import com.proyectopoo.petcareapp.model.NominatimResponse
 import retrofit2.http.GET
 import retrofit2.http.Query

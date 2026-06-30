@@ -1,5 +1,10 @@
 package com.proyectopoo.petcareapp.data.websocket
 
+/*
+ * Comentario de modulo PetCare:
+ * Comunicacion en tiempo real. Mantiene la conexion WebSocket y traduce los eventos recibidos.
+ */
+
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 

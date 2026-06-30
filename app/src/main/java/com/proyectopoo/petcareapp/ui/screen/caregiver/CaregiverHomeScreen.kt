@@ -1,5 +1,10 @@
 package com.proyectopoo.petcareapp.ui.screen.caregiver
 
+/*
+ * Comentario de modulo PetCare:
+ * Pantalla de la app. Contiene la estructura visual y conecta acciones del usuario con el ViewModel.
+ */
+
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -32,6 +37,7 @@ fun CaregiverHomeScreen(
     onCancelService: (ServiceApplicationDetails) -> Unit = {},
     caregiverId: Int
 ) {
+    // Estados propios de UI: disponibilidad, dialogos y valoracion temporal.
     var available by remember { mutableStateOf(true) }
     var showHeader by remember { mutableStateOf(true) }
     var requestToRate by remember { mutableStateOf<ServiceApplicationDetails?>(null) }
@@ -45,6 +51,7 @@ fun CaregiverHomeScreen(
     val waitingOwnerConfirmation = ownerRequests.filter { it.applicationStatus == ApplicationStatus.DONE_BY_CAREGIVER }
     val nextCommitment = acceptedRequests.minByOrNull { it.requestedDate ?: "" }
 
+    // La pantalla separa solicitudes pendientes, servicios activos y cierres por confirmar.
     Column(
         modifier = Modifier
             .fillMaxSize()

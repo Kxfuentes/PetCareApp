@@ -1,5 +1,10 @@
 package com.proyectopoo.petcareapp.ui.screen.auth
 
+/*
+ * Comentario de modulo PetCare:
+ * Pantalla de la app. Contiene la estructura visual y conecta acciones del usuario con el ViewModel.
+ */
+
 import android.util.Patterns
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState

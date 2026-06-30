@@ -1,6 +1,11 @@
 // Routes.kt
 package com.proyectopoo.petcareapp.navigation
 
+/*
+ * Comentario de modulo PetCare:
+ * Navegacion principal. Define rutas tipadas para movernos entre pantallas sin usar textos sueltos.
+ */
+
 import kotlinx.serialization.Serializable
 
 @Serializable

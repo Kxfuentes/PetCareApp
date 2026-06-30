@@ -1,5 +1,10 @@
 package com.proyectopoo.petcareapp.data.repository
 
+/*
+ * Comentario de modulo PetCare:
+ * Repositorio de datos. Centraliza llamadas a Room y API para que la pantalla no maneje detalles tecnicos.
+ */
+
 import com.proyectopoo.petcareapp.data.local.dao.ServiceRequestDao
 import com.proyectopoo.petcareapp.data.local.dao.ServiceRequestPetDao
 import com.proyectopoo.petcareapp.data.local.entity.RequestSource
@@ -19,6 +24,7 @@ class ServiceRequestRepository(
     private val apiService: ApiService = RetrofitClient.apiService
 ) {
     suspend fun insert(request: ServiceRequestEntity, petIds: List<Int> = emptyList()) {
+        // La API es la fuente principal. Si falla, se conserva la solicitud en Room.
         val localPetIds = petIds.ifEmpty { listOf(request.petId) }
 
         val remoteResponse = runCatching {
@@ -50,6 +56,7 @@ class ServiceRequestRepository(
         dao.getRequestDetailsByStatus(ServiceRequestStatus.PENDING)
 
     suspend fun getAvailableDetailsFromApi(): List<ServiceRequestDetails> {
+        // Las solicitudes disponibles se leen remoto para que todos los usuarios vean lo mismo.
         val remoteResponse = runCatching {
             apiService.getAvailableServiceRequests()
         }.getOrNull()
@@ -72,6 +79,7 @@ class ServiceRequestRepository(
     }
 
     suspend fun getRecentDetailsByOwnerFromApi(ownerId: Int): List<ServiceRequestDetails> {
+        // El dueno debe ver su historial reciente aunque haya cambiado de dispositivo.
         val remoteResponse = runCatching {
             apiService.getServiceRequestsByOwner(ownerId)
         }.getOrNull()
@@ -103,6 +111,7 @@ class ServiceRequestRepository(
     }
 
     suspend fun updateStatus(id: Int, status: ServiceRequestStatus) {
+        // El estado se manda a la API y tambien se actualiza localmente si existe en Room.
         runCatching {
             apiService.updateServiceRequestStatus(
                 id = id,
@@ -114,6 +123,7 @@ class ServiceRequestRepository(
     }
 
     suspend fun getRequestById(id: Int): ServiceRequestEntity? {
+        // Primero buscamos local; si no esta, se consulta API para reconstruir el dato minimo.
         val local = dao.getRequestById(id)
         if (local != null) return local
 
@@ -136,6 +146,7 @@ class ServiceRequestRepository(
     }
 
     private suspend fun saveLocal(request: ServiceRequestEntity, petIds: List<Int>) {
+        // Room guarda la solicitud y una tabla puente para soportar varias mascotas.
         dao.insertRequest(request)
 
         petDao.insertAll(
@@ -188,6 +199,7 @@ class ServiceRequestRepository(
     }
 
     private suspend fun List<ServiceRequestDto>.toDetailsList(): List<ServiceRequestDetails> {
+        // Cache simple para no pedir las mascotas del mismo dueno muchas veces.
         val petNamesCache = mutableMapOf<Int, Map<Int, String>>()
 
         return map { request ->
@@ -210,6 +222,7 @@ class ServiceRequestRepository(
     }
 
     private fun ServiceRequestDto.toDetails(petNamesById: Map<Int, String> = emptyMap()): ServiceRequestDetails {
+        // La UI trabaja con nombres listos; aqui se traducen ids de mascotas a texto visible.
         val requestPetIds = petIds.ifEmpty { listOf(petId) }
         val primaryPetName = petNamesById[petId] ?: "Mascota #$petId"
         val allPetNames = requestPetIds.joinToString(", ") { id ->

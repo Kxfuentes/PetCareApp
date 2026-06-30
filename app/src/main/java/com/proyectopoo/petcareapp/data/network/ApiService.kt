@@ -1,5 +1,10 @@
 package com.proyectopoo.petcareapp.data.network
 
+/*
+ * Comentario de modulo PetCare:
+ * Contrato de red. Define datos y endpoints usados para comunicarse con la API de PetCare.
+ */
+
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.DELETE

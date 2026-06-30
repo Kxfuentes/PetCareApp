@@ -1,5 +1,10 @@
 package com.proyectopoo.petcareapp.ui.components
 
+/*
+ * Comentario de modulo PetCare:
+ * Componente reutilizable de interfaz. Se mantiene aislado para repetirlo sin duplicar codigo.
+ */
+
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon

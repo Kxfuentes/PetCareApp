@@ -1,5 +1,10 @@
 package com.proyectopoo.petcareapp
 
+/*
+ * Comentario de modulo PetCare:
+ * Archivo del proyecto PetCare. Mantiene una parte especifica de la app y debe conservarse simple de seguir.
+ */
+
 import org.junit.Test
 
 import org.junit.Assert.*

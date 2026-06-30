@@ -1,5 +1,10 @@
 package com.proyectopoo.petcareapp.ui.theme
 
+/*
+ * Comentario de modulo PetCare:
+ * Archivo del proyecto PetCare. Mantiene una parte especifica de la app y debe conservarse simple de seguir.
+ */
+
 import androidx.compose.ui.graphics.Color
 
 //Paleta principal

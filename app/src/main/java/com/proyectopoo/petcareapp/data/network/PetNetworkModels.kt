@@ -1,5 +1,10 @@
 package com.proyectopoo.petcareapp.data.network
 
+/*
+ * Comentario de modulo PetCare:
+ * Contrato de red. Define datos y endpoints usados para comunicarse con la API de PetCare.
+ */
+
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 

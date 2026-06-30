@@ -1,5 +1,10 @@
 package com.proyectopoo.petcareapp.data.repository
 
+/*
+ * Comentario de modulo PetCare:
+ * Repositorio de datos. Centraliza llamadas a Room y API para que la pantalla no maneje detalles tecnicos.
+ */
+
 import android.util.Log
 import com.proyectopoo.petcareapp.data.local.dao.ServiceApplicationDao
 import com.proyectopoo.petcareapp.data.local.dao.ServiceBookingDao
@@ -22,6 +27,7 @@ class ServiceApplicationRepository(
     private val apiService: ApiService? = null
 ) {
     suspend fun insert(application: ServiceApplicationEntity) {
+        // Primero se intenta crear la postulacion en API; Room queda como respaldo local.
         val localRequestExists = requestDao.getRequestById(application.serviceRequestId) != null
 
         val existing = if (localRequestExists) {
@@ -81,6 +87,7 @@ class ServiceApplicationRepository(
         ownerId: Int,
         requestRepo: ServiceRequestRepository
     ): List<ServiceApplicationDetails> {
+        // Para el dueno se combinan postulaciones con el detalle de cada solicitud.
         val response = runCatching {
             apiService?.getServiceApplicationsByOwner(ownerId)
         }.getOrNull()
@@ -132,6 +139,7 @@ class ServiceApplicationRepository(
     }
 
     suspend fun getAppliedRequestIdsForCaregiverFromApi(caregiverId: Int): Set<Int> {
+        // Sirve para no mostrar de nuevo solicitudes donde el cuidador ya participo.
         val response = runCatching {
             apiService?.getServiceApplicationsByCaregiver(caregiverId)
         }.getOrNull()
@@ -208,6 +216,7 @@ class ServiceApplicationRepository(
     suspend fun getApplicationById(id: Int) = dao.getById(id)
 
     suspend fun updateStatus(id: Int, status: ApplicationStatus) {
+        // Se actualiza remoto y local para mantener compatibilidad si la API no responde.
         updateStatusFromApi(id, status)
         dao.updateStatus(id, status)
     }
@@ -238,6 +247,7 @@ class ServiceApplicationRepository(
         val application = dao.getById(applicationId) ?: return
         val request = requestDao.getRequestById(application.serviceRequestId) ?: return
 
+        // Al aceptar una postulacion, las demas de la misma solicitud quedan rechazadas.
         updateStatus(applicationId, ApplicationStatus.ACCEPTED)
         dao.rejectOtherApplications(
             requestId = application.serviceRequestId,
@@ -260,6 +270,7 @@ class ServiceApplicationRepository(
     }
 
     suspend fun completeAndCloseRequest(applicationId: Int): Boolean {
+        // El cierre definitivo se intenta primero en API y luego se refleja en Room.
         val remote = updateStatusFromApi(applicationId, ApplicationStatus.COMPLETED)
         val local = dao.getById(applicationId)
 
@@ -275,6 +286,7 @@ class ServiceApplicationRepository(
     suspend fun cancelService(applicationId: Int) {
         val application = dao.getById(applicationId)
         if (application == null) {
+            // Si la postulacion solo existe en API, igual intentamos cancelar alla.
             updateStatusFromApi(applicationId, ApplicationStatus.CANCELLED)
             return
         }

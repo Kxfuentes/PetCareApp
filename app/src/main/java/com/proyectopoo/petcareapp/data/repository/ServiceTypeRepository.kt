@@ -1,5 +1,10 @@
 package com.proyectopoo.petcareapp.data.repository
 
+/*
+ * Comentario de modulo PetCare:
+ * Repositorio de datos. Centraliza llamadas a Room y API para que la pantalla no maneje detalles tecnicos.
+ */
+
 import com.proyectopoo.petcareapp.data.local.dao.ServiceTypeDao
 import com.proyectopoo.petcareapp.data.local.entity.ServiceTypeEntity
 

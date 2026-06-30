@@ -1,5 +1,10 @@
 package com.proyectopoo.petcareapp.navigation
 
+/*
+ * Comentario de modulo PetCare:
+ * Navegacion principal. Define rutas y el paso de datos entre pantallas de la app.
+ */
+
 import com.proyectopoo.petcareapp.data.network.RoleUpdateRequest
 import android.widget.Toast
 import androidx.compose.runtime.Composable

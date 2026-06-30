@@ -1,5 +1,10 @@
 package com.proyectopoo.petcareapp.data.local.entity
 
+/*
+ * Comentario de modulo PetCare:
+ * Modelo local de Room. Representa como se guarda esta informacion dentro de la base local de la app.
+ */
+
 import androidx.room.*
 
 @Entity(

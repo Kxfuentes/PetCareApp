@@ -1,5 +1,10 @@
 package com.proyectopoo.petcareapp.data.local.dao
 
+/*
+ * Comentario de modulo PetCare:
+ * Acceso local a datos. Aqui se definen las consultas que Room usa para leer y guardar informacion.
+ */
+
 import androidx.room.*
 import com.proyectopoo.petcareapp.data.local.entity.ApplicationInitiator
 import com.proyectopoo.petcareapp.data.local.entity.ApplicationStatus

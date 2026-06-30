@@ -1,5 +1,10 @@
 package com.proyectopoo.petcareapp.ui.screen.owner
 
+/*
+ * Comentario de modulo PetCare:
+ * Pantalla de la app. Contiene la estructura visual y conecta acciones del usuario con el ViewModel.
+ */
+
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -42,6 +47,7 @@ fun OwnerHomeScreen(
     onCancelService: (ServiceApplicationDetails) -> Unit = {},
     ownerId: Int
 ) {
+    // Estados locales de la pantalla: dialogos, mascota seleccionada y datos de calificacion.
     val scrollState = rememberScrollState()
     var selectedDogIndex by remember { mutableStateOf(0) }
     var petToDelete by remember { mutableStateOf<PetEntity?>(null) }
@@ -60,6 +66,7 @@ fun OwnerHomeScreen(
     val acceptedApplications = caregiverApplications.filter { it.applicationStatus == ApplicationStatus.ACCEPTED }
     val doneByCaregiverApplications = caregiverApplications.filter { it.applicationStatus == ApplicationStatus.DONE_BY_CAREGIVER }
 
+    // Servicios que el dueno puede solicitar desde el inicio.
     val services = listOf(
         "Alojamiento" to Icons.Default.Home,
         "Guardería" to Icons.Default.WbSunny,
@@ -119,6 +126,7 @@ fun OwnerHomeScreen(
                 modifier = Modifier.padding(18.dp),
                 verticalArrangement = Arrangement.spacedBy(18.dp)
             ) {
+                // La pantalla prioriza mascotas, ultimos servicios y acciones pendientes.
                 PetCarouselCard(
                     currentDog = currentDog,
                     safeIndex = safeIndex,

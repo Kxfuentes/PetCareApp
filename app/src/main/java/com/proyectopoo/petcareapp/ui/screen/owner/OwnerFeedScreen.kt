@@ -1,5 +1,10 @@
 package com.proyectopoo.petcareapp.ui.screen.owner
 
+/*
+ * Comentario de modulo PetCare:
+ * Pantalla de la app. Contiene la estructura visual y conecta acciones del usuario con el ViewModel.
+ */
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*

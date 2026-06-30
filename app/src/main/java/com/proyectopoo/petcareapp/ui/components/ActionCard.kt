@@ -1,5 +1,10 @@
 package com.proyectopoo.petcareapp.ui.components
 
+/*
+ * Comentario de modulo PetCare:
+ * Componente reutilizable de interfaz. Se mantiene aislado para repetirlo sin duplicar codigo.
+ */
+
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column

@@ -1,5 +1,10 @@
 package com.proyectopoo.petcareapp.ui.util
 
+/*
+ * Comentario de modulo PetCare:
+ * Utilidad compartida. Evita repetir reglas pequenas en varias partes del proyecto.
+ */
+
 fun statusLabel(statusName: String): String {
     return when (statusName.uppercase()) {
         "PENDING" -> "Pendiente"

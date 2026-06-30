@@ -1,5 +1,10 @@
 package com.proyectopoo.petcareapp.ui.components
 
+/*
+ * Comentario de modulo PetCare:
+ * Componente reutilizable de interfaz. Se mantiene aislado para repetirlo sin duplicar codigo.
+ */
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -25,6 +30,7 @@ fun StarRatingInput(
     onValueChange: (Float) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    // Trabajamos con medios puntos para permitir calificaciones como 4.5.
     val roundedValue = value.roundToHalf()
 
     Column(
@@ -64,6 +70,7 @@ fun StarRatingInput(
 }
 
 private fun Float.roundToHalf(): Float {
+    // Se limita entre 1 y 5 para evitar valores invalidos al guardar.
     return ((this.coerceIn(1f, 5f) * 2f).roundToInt() / 2f)
 }
 

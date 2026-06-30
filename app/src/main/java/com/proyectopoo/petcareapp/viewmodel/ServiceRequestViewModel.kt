@@ -1,5 +1,10 @@
 package com.proyectopoo.petcareapp.viewmodel
 
+/*
+ * Comentario de modulo PetCare:
+ * Estado de pantalla. Expone acciones y datos listos para que Compose los pueda mostrar.
+ */
+
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.proyectopoo.petcareapp.data.local.dao.CaregiverDao
@@ -55,6 +60,12 @@ class ServiceRequestViewModel(
     private val apiService: ApiService = RetrofitClient.apiService
 ) : ViewModel() {
 
+    /*
+     * Este ViewModel concentra el flujo de servicios: crear solicitudes,
+     * postularse, aceptar, finalizar y calificar. La UI solo observa estados
+     * y llama acciones; las reglas del proceso se mantienen en este punto.
+     */
+
     private val _ownerRequests = MutableStateFlow<List<RequestWithApplications>>(emptyList())
     val ownerRequests = _ownerRequests.asStateFlow()
 
@@ -93,6 +104,7 @@ class ServiceRequestViewModel(
     fun loadOwnerData(ownerId: Int) {
         if (ownerId <= 0) return
         viewModelScope.launch {
+            // Se consulta API y Room para que la pantalla del dueno refleje lo mas reciente.
             _ownerRequests.value = requestRepo.getWithApplications(ownerId)
             _recentOwnerRequests.value = requestRepo.getRecentDetailsByOwnerFromApi(ownerId)
             _ownerApplicationDetails.value =
@@ -104,6 +116,7 @@ class ServiceRequestViewModel(
     fun loadCaregiverData(caregiverId: Int) {
         if (caregiverId <= 0) return
         viewModelScope.launch {
+            // El cuidador necesita sus postulaciones, ofertas y reservas en un solo estado.
             _caregiverApplications.value = applicationRepo.getByCaregiver(caregiverId)
             _caregiverApplicationDetails.value =
                 applicationRepo.getCaregiverApplicationDetailsFromApi(caregiverId, requestRepo)
@@ -114,6 +127,7 @@ class ServiceRequestViewModel(
 
     fun loadAvailableRequests(caregiverId: Int = 0) {
         viewModelScope.launch {
+            // Evita mostrar solicitudes propias o solicitudes donde el cuidador ya aplico.
             val appliedRequestIds = if (caregiverId > 0) {
                 applicationRepo.getAppliedRequestIdsForCaregiverFromApi(caregiverId)
             } else {
@@ -151,6 +165,7 @@ class ServiceRequestViewModel(
         longitude: Double? = null
     ) {
         viewModelScope.launch {
+            // Validamos antes de guardar para no crear solicitudes sin precio o sin mascota.
             val numericPrice = price.toDoubleOrNull()
             if (numericPrice == null || numericPrice !in 20.0..6000.0) return@launch
             if (petIds.isEmpty()) return@launch
@@ -164,6 +179,7 @@ class ServiceRequestViewModel(
             val primaryPetId = petIds.first()
             val requestId = generateRequestId()
 
+            // La solicitud conserva una mascota principal y tambien la lista completa.
             requestRepo.insert(
                 ServiceRequestEntity(
                     serviceRequestId = requestId,
@@ -204,6 +220,7 @@ class ServiceRequestViewModel(
         viewModelScope.launch {
             if (petIds.isEmpty()) return@launch
 
+            // Este flujo empieza cuando el dueno solicita un servicio publicado por un cuidador.
             ensureOwner(ownerId)
             ensureCaregiver(caregiverId)
 
@@ -243,6 +260,7 @@ class ServiceRequestViewModel(
                 )
             )
 
+            // La accion afecta ambos perfiles, por eso se refrescan los dos estados.
             refreshOwnerData(ownerId)
             loadCaregiverData(caregiverId)
 
@@ -257,6 +275,7 @@ class ServiceRequestViewModel(
 
     fun applyToRequest(serviceRequestId: Int, caregiverId: Int) {
         viewModelScope.launch {
+            // Postulacion normal: el cuidador aplica a una solicitud abierta del dueno.
             ensureCaregiver(caregiverId)
 
             applicationRepo.insert(
@@ -285,6 +304,7 @@ class ServiceRequestViewModel(
         modifiedEndTime: String? = null
     ) {
         viewModelScope.launch {
+            // Aceptar crea el compromiso y deja la solicitud fuera de la lista disponible.
             val localApplication = applicationRepo.getApplicationById(applicationId)
 
             if (localApplication == null) {
@@ -335,6 +355,7 @@ class ServiceRequestViewModel(
 
     fun rejectApplication(applicationId: Int, ownerId: Int? = null, caregiverId: Int? = null) {
         viewModelScope.launch {
+            // Rechazar solo afecta la postulacion; la solicitud puede seguir activa.
             val localApplication = applicationRepo.getApplicationById(applicationId)
 
             if (localApplication == null) {
@@ -384,6 +405,7 @@ class ServiceRequestViewModel(
         reloadCaregiverId: Int? = null
     ) {
         viewModelScope.launch {
+            // El dueno confirma el cierre del servicio y califica al cuidador.
             val completed = applicationRepo.completeAndCloseRequest(applicationId)
             if (!completed) {
                 _userMessage.value = "No se pudo finalizar el servicio. Vuelve a abrir la pantalla e intentalo de nuevo."
@@ -415,6 +437,7 @@ class ServiceRequestViewModel(
         reloadCaregiverId: Int? = null
     ) {
         viewModelScope.launch {
+            // El cuidador marca que termino; el dueno aun debe confirmar el cierre.
             val updated = applicationRepo.updateStatusFromApi(applicationId, ApplicationStatus.DONE_BY_CAREGIVER)
             if (updated == null) {
                 reloadCaregiverId?.let { loadCaregiverData(it) }
@@ -453,6 +476,7 @@ class ServiceRequestViewModel(
         val cleanScore = score.coerceIn(1.0, 5.0)
         val cleanComment = comment.ifBlank { null }
 
+        // Primero se intenta guardar en API y luego se deja copia local como respaldo.
         val remoteSaved = runCatching {
             apiService.createRating(
                 RatingRequest(
@@ -491,6 +515,7 @@ class ServiceRequestViewModel(
         reloadCaregiverId: Int? = null
     ) {
         viewModelScope.launch {
+            // La cancelacion toca postulacion, solicitud y reserva asociada.
             val application = applicationRepo.getApplicationById(applicationId)
             if (application == null) {
                 applicationRepo.cancelService(applicationId)
@@ -559,6 +584,7 @@ class ServiceRequestViewModel(
 
     private fun parseDateTime(date: String?, time: String?): Long? {
         if (date.isNullOrBlank()) return null
+        // Las fechas vienen como texto desde el formulario, por eso se parsean manualmente.
         return try {
             val hasTime = !time.isNullOrBlank()
             val pattern = if (hasTime) "dd/MM/yyyy HH:mm" else "dd/MM/yyyy"
@@ -579,6 +605,7 @@ class ServiceRequestViewModel(
     }
 
     private suspend fun ensureOwner(ownerId: Int) {
+        // Garantiza datos minimos locales aunque el usuario venga creado desde la API.
         if (ownerDao.getOwnerById(ownerId) != null) return
 
         if (userDao.getUserById(ownerId) == null) {
@@ -604,6 +631,7 @@ class ServiceRequestViewModel(
     }
 
     private suspend fun ensureCaregiver(caregiverId: Int) {
+        // Garantiza que Room tenga un cuidador base para relaciones locales.
         if (caregiverDao.getCaregiverById(caregiverId) != null) return
 
         if (userDao.getUserById(caregiverId) == null) {
@@ -640,6 +668,7 @@ class ServiceRequestViewModel(
     }
 
     private fun generateRequestId(): Int {
+        // Se usa tiempo como ID para empatar la solicitud local con la que viaja a API.
         return (System.currentTimeMillis() % Int.MAX_VALUE).toInt().let {
             if (it <= 0) 1 else it
         }

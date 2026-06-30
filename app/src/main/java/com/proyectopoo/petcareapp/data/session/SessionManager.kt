@@ -1,5 +1,10 @@
 package com.proyectopoo.petcareapp.data.session
 
+/*
+ * Comentario de modulo PetCare:
+ * Manejo de sesion local. Guarda los datos minimos para mantener o cerrar la sesion del usuario.
+ */
+
 import android.content.Context
 import com.proyectopoo.petcareapp.data.local.entity.UserRoleType
 

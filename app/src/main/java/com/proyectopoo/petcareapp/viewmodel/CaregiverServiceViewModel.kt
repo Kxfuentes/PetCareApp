@@ -1,5 +1,10 @@
 package com.proyectopoo.petcareapp.viewmodel
 
+/*
+ * Comentario de modulo PetCare:
+ * Estado de pantalla. Expone acciones y datos listos para que Compose los pueda mostrar.
+ */
+
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.proyectopoo.petcareapp.data.local.dao.ServiceTypeDao

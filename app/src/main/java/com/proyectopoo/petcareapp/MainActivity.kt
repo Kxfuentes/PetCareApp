@@ -1,5 +1,10 @@
 package com.proyectopoo.petcareapp
 
+/*
+ * Comentario de modulo PetCare:
+ * Archivo del proyecto PetCare. Mantiene una parte especifica de la app y debe conservarse simple de seguir.
+ */
+
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager

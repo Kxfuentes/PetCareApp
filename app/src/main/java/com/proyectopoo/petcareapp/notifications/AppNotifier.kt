@@ -1,5 +1,10 @@
 package com.proyectopoo.petcareapp.notifications
 
+/*
+ * Comentario de modulo PetCare:
+ * Notificaciones internas. Convierte eventos importantes en avisos visibles para el usuario.
+ */
+
 import android.Manifest
 import android.annotation.SuppressLint
 import android.app.NotificationChannel

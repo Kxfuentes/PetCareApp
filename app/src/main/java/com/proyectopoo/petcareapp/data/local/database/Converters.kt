@@ -1,5 +1,10 @@
 package com.proyectopoo.petcareapp.data.local.database
 
+/*
+ * Comentario de modulo PetCare:
+ * Configuracion de la base local. Reune entidades, conversiones y reglas principales de Room.
+ */
+
 import androidx.room.TypeConverter
 import com.proyectopoo.petcareapp.data.local.entity.*
 
