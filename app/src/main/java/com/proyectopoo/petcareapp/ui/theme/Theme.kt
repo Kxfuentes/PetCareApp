@@ -20,12 +20,12 @@ private val LightColorScheme = lightColorScheme(
     secondary = CafeClaro,
     onSecondary = CafeOscuro,
 
-    background = FondoClaro,
+    background = FondoCrema,
     onBackground = CafeOscuro,
 
     surface = FondoCampo,
     onSurface = CafeOscuro,
-    surfaceVariant = FondoCrema,
+    surfaceVariant = FondoClaro,
     onSurfaceVariant = TextoSuave,
 
     outline = BordeCampo,

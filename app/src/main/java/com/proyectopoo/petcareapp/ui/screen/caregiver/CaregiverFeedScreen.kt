@@ -1,25 +1,28 @@
 package com.proyectopoo.petcareapp.ui.screen.caregiver
 
-/*
- * Comentario de modulo PetCare:
- * Pantalla de la app. Contiene la estructura visual y conecta acciones del usuario con el ViewModel.
- */
-
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccessTime
+import androidx.compose.material.icons.filled.AttachMoney
+import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.MonetizationOn
+import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -34,8 +37,6 @@ fun CaregiverFeedScreen(
     onGoToOwnerProfile: (Int, Int) -> Unit,
     onApplyToRequest: (Int) -> Unit
 ) {
-    val colorScheme = MaterialTheme.colorScheme
-
     val tiposServicio = listOf(
         "Todos", "Alojamiento", "GuarderÃ­a", "Paseo", "Taxi", "PeluquerÃ­a", "Visitante"
     )
@@ -46,9 +47,7 @@ fun CaregiverFeedScreen(
     val serviciosFiltrados = if (selectedFilter == "Todos") {
         requests
     } else {
-        requests.filter {
-            it.serviceTypeName == selectedFilter
-        }
+        requests.filter { it.serviceTypeName == selectedFilter }
     }
 
     Column(
@@ -61,7 +60,7 @@ fun CaregiverFeedScreen(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
                         imageVector = Icons.Default.Search,
-                        contentDescription = "Buscar",
+                        contentDescription = null,
                         tint = CafeMedio
                     )
                     Spacer(modifier = Modifier.width(10.dp))
@@ -72,13 +71,13 @@ fun CaregiverFeedScreen(
                     )
                 }
             },
-            colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
+            colors = TopAppBarDefaults.topAppBarColors(containerColor = FondoClaro)
         )
 
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(20.dp)
+                .padding(horizontal = 20.dp, vertical = 8.dp)
         ) {
             ExposedDropdownMenuBox(
                 expanded = expanded,
@@ -88,23 +87,25 @@ fun CaregiverFeedScreen(
                     value = selectedFilter,
                     onValueChange = {},
                     readOnly = true,
-                    label = { Text("Tipo de servicio") },
+                    label = { Text("Filtrar por servicio") },
                     modifier = Modifier
                         .fillMaxWidth()
                         .menuAnchor(),
                     shape = RoundedCornerShape(16.dp),
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = FondoCampo,
-                        unfocusedContainerColor = FondoCampo,
+                        focusedContainerColor = MaterialTheme.colorScheme.surface,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surface,
                         focusedBorderColor = CafeMedio,
-                        unfocusedBorderColor = BordeCampo
+                        unfocusedBorderColor = CafeClaro,
+                        focusedLabelColor = CafeOscuro,
+                        unfocusedLabelColor = CafeOscuro
                     )
                 )
 
                 ExposedDropdownMenu(
                     expanded = expanded,
                     onDismissRequest = { expanded = false },
-                    modifier = Modifier.background(Color.White)
+                    modifier = Modifier.background(MaterialTheme.colorScheme.surface)
                 ) {
                     tiposServicio.forEach { tipo ->
                         DropdownMenuItem(
@@ -118,34 +119,34 @@ fun CaregiverFeedScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
             LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                verticalArrangement = Arrangement.spacedBy(18.dp)
             ) {
                 if (serviciosFiltrados.isEmpty()) {
                     item {
                         Card(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(20.dp),
-                            colors = CardDefaults.cardColors(containerColor = colorScheme.surfaceVariant)
+                            colors = CardDefaults.cardColors(containerColor = CafeClaro)
                         ) {
                             Column(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(28.dp),
+                                    .padding(32.dp),
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
                                 Text(
-                                    "No hay solicitudes disponibles",
-                                    color = colorScheme.onSurface,
+                                    text = "No hay solicitudes disponibles",
+                                    color = CafeOscuro,
                                     fontWeight = FontWeight.Bold,
                                     textAlign = TextAlign.Center
                                 )
                                 Spacer(Modifier.height(8.dp))
                                 Text(
-                                    "Cuando un dueno publique solicitudes pendientes, apareceran aqui.",
-                                    color = colorScheme.onSurfaceVariant,
+                                    text = "Cuando un dueño publique solicitudes pendientes, aparecerán aquí.",
+                                    color = TextoSuave,
                                     textAlign = TextAlign.Center
                                 )
                             }
@@ -154,86 +155,151 @@ fun CaregiverFeedScreen(
                 }
 
                 items(serviciosFiltrados) { servicio ->
+                    val ownerName = servicio.ownerName ?: "Dueño"
+                    val petName = servicio.petName ?: servicio.title ?: "Mascota"
+                    val serviceType = servicio.serviceTypeName ?: "Servicio"
+                    val rawDescription = servicio.description.orEmpty()
+                    val location = extractDetailLine(rawDescription, "Ubicación")
+                    val price = extractDetailLine(rawDescription, "Precio")
+                    val notes = rawDescription
+                        .lineSequence()
+                        .filterNot { line ->
+                            line.trim().startsWith("Ubicación:", ignoreCase = true) ||
+                                    line.trim().startsWith("Precio:", ignoreCase = true)
+                        }
+                        .joinToString("\n")
+                        .trim()
+                    val timeText = listOfNotNull(servicio.startTime, servicio.endTime)
+                        .joinToString(" - ")
+                        .ifBlank { null }
+
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .border(
-                                width = 2.dp,
-                                color = colorScheme.outline,
-                                shape = RoundedCornerShape(22.dp)
-                            ),
-                        shape = RoundedCornerShape(22.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = colorScheme.surfaceVariant
-                        )
+                            .shadow(6.dp, RoundedCornerShape(24.dp))
+                            .border(1.dp, CafeClaro.copy(alpha = 0.75f), RoundedCornerShape(24.dp)),
+                        shape = RoundedCornerShape(24.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
                     ) {
                         Column(modifier = Modifier.padding(18.dp)) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(
-                                    text = listOfNotNull(
-                                        servicio.petName,
-                                        servicio.petBreed,
-                                        servicio.petSize?.let { "TamaÃ±o $it" }
-                                    ).joinToString(" Â· ").ifBlank { servicio.title },
-                                    color = colorScheme.onSurface,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 17.sp
+
+                            // Avatar con letra del dueño (como en OwnerFeedScreen)
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Surface(
+                                    shape = CircleShape,
+                                    color = CafeOscuro,
+                                    modifier = Modifier.size(58.dp)
+                                ) {
+                                    Box(contentAlignment = Alignment.Center) {
+                                        Text(
+                                            text = ownerName.firstOrNull()?.toString() ?: "D",
+                                            color = Color.White,
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = 26.sp
+                                        )
+                                    }
+                                }
+
+                                Spacer(modifier = Modifier.width(16.dp))
+
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = petName,
+                                        color = CafeOscuro,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 19.sp
+                                    )
+                                    Text(
+                                        text = "Dueño: $ownerName",
+                                        color = CafeOscuro,
+                                        fontWeight = FontWeight.SemiBold,
+                                        fontSize = 14.sp
+                                    )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(20.dp))
+
+                            // Chip sin icono
+                            AssistChip(
+                                onClick = { },
+                                label = { Text(serviceType) },
+                                colors = AssistChipDefaults.assistChipColors(
+                                    containerColor = CafeClaro.copy(alpha = 0.28f),
+                                    labelColor = CafeOscuro
+                                ),
+                                border = null
+                            )
+
+                            Spacer(modifier = Modifier.height(16.dp))
+
+                            DetailRow(
+                                icon = Icons.Default.CalendarToday,
+                                title = servicio.requestedDate ?: "Fecha por coordinar"
+                            )
+
+                            timeText?.let {
+                                Spacer(modifier = Modifier.height(14.dp))
+                                DetailRow(
+                                    icon = Icons.Default.AccessTime,
+                                    title = it
                                 )
                             }
 
-                            Spacer(modifier = Modifier.height(10.dp))
-
-                            Text(
-                                text = "DueÃ±o: ${servicio.ownerName ?: "Sin nombre"}",
-                                color = colorScheme.onSurface,
-                                fontWeight = FontWeight.Medium
-                            )
-
-                            Spacer(modifier = Modifier.height(12.dp))
-
-                            IntentosChip(servicio)
-
-                            Spacer(modifier = Modifier.height(14.dp))
-
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(
-                                    imageVector = Icons.Default.AccessTime,
-                                    contentDescription = "Hora",
-                                    tint = colorScheme.primary,
-                                    modifier = Modifier.size(20.dp)
+                            location?.let {
+                                Spacer(modifier = Modifier.height(14.dp))
+                                DetailRow(
+                                    icon = Icons.Default.LocationOn,
+                                    title = "Ubicación",
+                                    detail = it
                                 )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(
-                                    text = servicio.requestedDate ?: "Fecha por coordinar",
-                                    color = colorScheme.onSurface
+                            }
+
+                            price?.let {
+                                Spacer(modifier = Modifier.height(14.dp))
+                                DetailRow(
+                                    icon = Icons.Default.Payments,
+                                    title = "Precio",
+                                    detail = it
                                 )
                             }
 
                             Spacer(modifier = Modifier.height(14.dp))
-
-                            Text(
-                                text = servicio.description ?: servicio.title,
-                                color = colorScheme.onSurfaceVariant,
-                                fontSize = 15.sp
+                            DetailRow(
+                                icon = Icons.Default.Email,
+                                title = "Email",
+                                detail = servicio.ownerEmail ?: "No disponible"
                             )
 
-                            Spacer(modifier = Modifier.height(14.dp))
+                            if (notes.isNotBlank()) {
+                                Spacer(modifier = Modifier.height(18.dp))
+                                HorizontalDivider(color = CafeClaro.copy(alpha = 0.45f))
+                                Spacer(modifier = Modifier.height(14.dp))
+                                Text(
+                                    text = "Notas del dueño",
+                                    color = CafeOscuro,
+                                    fontWeight = FontWeight.SemiBold,
+                                    fontSize = 15.sp
+                                )
+                                Spacer(modifier = Modifier.height(6.dp))
+                                Text(
+                                    text = notes,
+                                    color = TextoSuave,
+                                    fontStyle = FontStyle.Italic,
+                                    fontSize = 14.sp
+                                )
+                            }
 
-                            Text(
-                                text = "Email: ${servicio.ownerEmail ?: "No disponible"}",
-                                color = colorScheme.onSurface
-                            )
-
-                            Spacer(modifier = Modifier.height(18.dp))
+                            Spacer(modifier = Modifier.height(20.dp))
 
                             OutlinedButton(
                                 onClick = { onGoToOwnerProfile(servicio.ownerId, servicio.serviceRequestId) },
                                 modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(16.dp),
-                                border = BorderStroke(1.dp, colorScheme.outline),
-                                colors = ButtonDefaults.outlinedButtonColors(
-                                    contentColor = colorScheme.primary
-                                )
+                                shape = RoundedCornerShape(14.dp),
+                                colors = ButtonDefaults.outlinedButtonColors(contentColor = CafeMedio)
                             ) {
                                 Text("Ver perfil completo", fontWeight = FontWeight.Bold)
                             }
@@ -243,9 +309,10 @@ fun CaregiverFeedScreen(
                             Button(
                                 onClick = { onApplyToRequest(servicio.serviceRequestId) },
                                 modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(16.dp)
+                                shape = RoundedCornerShape(14.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF8D5524))
                             ) {
-                                Text("Postularme", fontWeight = FontWeight.Bold)
+                                Text("Ofrecer mis servicios", fontWeight = FontWeight.Bold)
                             }
                         }
                     }
@@ -260,14 +327,45 @@ fun CaregiverFeedScreen(
 }
 
 @Composable
-private fun IntentosChip(servicio: ServiceRequestDetails) {
-    AssistChip(
-        onClick = { },
-        label = { Text(servicio.serviceTypeName ?: "Servicio") },
-        colors = AssistChipDefaults.assistChipColors(
-            containerColor = MaterialTheme.colorScheme.secondary,
-            labelColor = MaterialTheme.colorScheme.onSecondary
+private fun DetailRow(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    title: String,
+    detail: String? = null
+) {
+    Row(verticalAlignment = Alignment.Top) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = CafeOscuro,
+            modifier = Modifier
+                .padding(top = 2.dp)
+                .size(20.dp)
         )
-    )
+        Spacer(modifier = Modifier.width(12.dp))
+        Column {
+            Text(
+                text = title,
+                color = CafeOscuro,
+                fontSize = 14.sp
+            )
+            detail?.takeIf { it.isNotBlank() }?.let {
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = it,
+                    color = TextoSuave,
+                    fontSize = 13.sp,
+                    lineHeight = 18.sp
+                )
+            }
+        }
+    }
 }
 
+private fun extractDetailLine(description: String, label: String): String? =
+    description
+        .lineSequence()
+        .map { it.trim() }
+        .firstOrNull { it.startsWith("$label:", ignoreCase = true) }
+        ?.substringAfter(":")
+        ?.trim()
+        ?.takeIf { it.isNotBlank() }

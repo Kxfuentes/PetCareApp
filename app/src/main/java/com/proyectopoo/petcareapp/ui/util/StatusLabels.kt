@@ -11,8 +11,8 @@ fun statusLabel(statusName: String): String {
         "ACCEPTED" -> "Aceptada"
         "DONE_BY_CAREGIVER" -> "Pendiente de confirmar"
         "REJECTED" -> "Rechazada"
-        "CANCELLED" -> "Cancelada"
-        "COMPLETED" -> "Finalizada"
+        "CANCELLED" -> "Cancelado"
+        "COMPLETED" -> "Completado"
         "ACTIVE" -> "Activa"
         else -> statusName.replace('_', ' ').lowercase()
             .replaceFirstChar { it.uppercase() }

@@ -78,6 +78,7 @@ fun CaregiverServiceScreen(
     var servicioEditando by remember { mutableStateOf<OfferedServiceEntity?>(null) }
     var precioEditado by remember { mutableStateOf("") }
     var descripcionEditada by remember { mutableStateOf("") }
+    var direccionEditada by remember { mutableStateOf("") }
     var activoEditado by remember { mutableStateOf(true) }
 
     fun obtenerIcono(nombre: String) = when (nombre) {
@@ -93,24 +94,13 @@ fun CaregiverServiceScreen(
         containerColor = colorScheme.background,
         topBar = {
             TopAppBar(
-                title = {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        IconButton(onClick = onBack) {
-                            Icon(
-                                imageVector = Icons.Default.ArrowBack,
-                                contentDescription = "Volver",
-                                tint = colorScheme.onPrimary
-                            )
-                        }
-                        Text(
-                            "Mis servicios ofrecidos",
-                            color = colorScheme.onPrimary,
-                            fontWeight = FontWeight.Bold
-                        )
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Volver", tint = colorScheme.onPrimary)
                     }
+                },
+                title = {
+                    Text("Mis servicios ofrecidos", color = colorScheme.onPrimary, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleLarge)
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = colorScheme.primary
@@ -145,7 +135,7 @@ fun CaregiverServiceScreen(
             servicioEditando?.let { servicio ->
                 AlertDialog(
                     onDismissRequest = { servicioEditando = null },
-                    containerColor = Color.White,
+                    containerColor = MaterialTheme.colorScheme.surface,
                     title = {
                         Text(
                             "Editar ${servicio.title}",
@@ -171,6 +161,23 @@ fun CaregiverServiceScreen(
                                 )
                             )
 
+                            if (servicio.title.equals("Alojamiento", ignoreCase = true)) {
+                                OutlinedTextField(
+                                    value = direccionEditada,
+                                    onValueChange = { direccionEditada = it },
+                                    label = { Text("Dirección") },
+                                    leadingIcon = { Icon(Icons.Default.LocationOn, null) },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(16.dp),
+                                    colors = OutlinedTextFieldDefaults.colors(
+                                        focusedContainerColor = colorScheme.background,
+                                        unfocusedContainerColor = colorScheme.background,
+                                        focusedTextColor = Color.Black,
+                                        unfocusedTextColor = Color.Black
+                                    )
+                                )
+                            }
+
                             OutlinedTextField(
                                 value = descripcionEditada,
                                 onValueChange = { descripcionEditada = it },
@@ -180,8 +187,8 @@ fun CaregiverServiceScreen(
                                     .height(120.dp),
                                 shape = RoundedCornerShape(16.dp),
                                 colors = OutlinedTextFieldDefaults.colors(
-                                    focusedContainerColor = colorScheme.background, // Fondo igual a la pantalla
-                                    unfocusedContainerColor = colorScheme.background, // Fondo igual a la pantalla
+                                    focusedContainerColor = colorScheme.background,
+                                    unfocusedContainerColor = colorScheme.background,
                                     focusedTextColor = Color.Black,
                                     unfocusedTextColor = Color.Black
                                 )
@@ -213,7 +220,11 @@ fun CaregiverServiceScreen(
                                 viewModel.updateService(
                                     id = servicio.offeredServiceId,
                                     price = doublePrecio,
-                                    description = descripcionEditada,
+                                    description = buildCaregiverServiceDescription(
+                                        description = descripcionEditada,
+                                        serviceType = servicio.title,
+                                        lodgingAddress = direccionEditada
+                                    ),
                                     isAvailable = activoEditado
                                 )
                                 servicioEditando = null
@@ -231,7 +242,6 @@ fun CaregiverServiceScreen(
                 )
             }
 
-            // ==================== FORMULARIO PARA AGREGAR NUEVO SERVICIO ====================
             if (mostrarFormulario) {
                 Column(
                     modifier = Modifier
@@ -242,7 +252,7 @@ fun CaregiverServiceScreen(
                 ) {
                     Text(
                         "Agregar servicio",
-                        fontSize = 24.sp,
+                        fontSize = 17.sp,
                         fontWeight = FontWeight.Bold,
                         color = colorScheme.onBackground
                     )
@@ -273,11 +283,10 @@ fun CaregiverServiceScreen(
                             )
                         )
 
-                        // Mantenemos este deslizable/menú con contenedor Color. White como indicaste
                         ExposedDropdownMenu(
                             expanded = expanded,
                             onDismissRequest = { expanded = false },
-                            containerColor = Color.White
+                            containerColor = MaterialTheme.colorScheme.surface
                         ) {
                             tiposServicio.forEach { tipo ->
                                 DropdownMenuItem(
@@ -510,93 +519,29 @@ fun CaregiverServiceScreen(
                             .fillMaxSize()
                             .padding(paddingValues)
                             .padding(horizontal = 20.dp),
+                        contentPadding = PaddingValues(top = 22.dp, bottom = 96.dp),
                         verticalArrangement = Arrangement.spacedBy(18.dp)
                     ) {
                         items(servicios) { servicio ->
-                            Card(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .border(1.dp, colorScheme.outline, RoundedCornerShape(22.dp)),
-                                shape = RoundedCornerShape(22.dp),
-                                colors = CardDefaults.cardColors(
-                                    containerColor = colorScheme.background
-                                )
-                            ) {
-                                Column(Modifier.padding(18.dp)) {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Icon(
-                                            obtenerIcono(servicio.title),
-                                            contentDescription = servicio.title,
-                                            tint = colorScheme.primary
-                                        )
-
-                                        Spacer(modifier = Modifier.width(12.dp))
-
-                                        Column(Modifier.weight(1f)) {
-                                            Text(
-                                                servicio.title,
-                                                color = colorScheme.onSurface,
-                                                fontWeight = FontWeight.Bold,
-                                                fontSize = 19.sp
-                                            )
-
-                                            Spacer(modifier = Modifier.height(4.dp))
-
-                                            Text(
-                                                "C$ ${servicio.price}",
-                                                color = colorScheme.primary,
-                                                fontWeight = FontWeight.Bold
-                                            )
-                                        }
-
-                                        Switch(
-                                            checked = servicio.isAvailable,
-                                            onCheckedChange = { nuevoEstado ->
-                                                viewModel.updateService(
-                                                    id = servicio.offeredServiceId,
-                                                    price = servicio.price,
-                                                    description = servicio.description ?: "",
-                                                    isAvailable = nuevoEstado
-                                                )
-                                            },
-                                            colors = SwitchDefaults.colors(
-                                                checkedThumbColor = colorScheme.onPrimary,
-                                                checkedTrackColor = colorScheme.primary,
-                                                uncheckedTrackColor = colorScheme.surfaceVariant
-                                            )
-                                        )
-                                    }
-
-                                    if (!servicio.description.isNullOrBlank()) {
-                                        Spacer(modifier = Modifier.height(14.dp))
-                                        Text(
-                                            servicio.description,
-                                            color = colorScheme.onSurfaceVariant,
-                                            fontSize = 15.sp
-                                        )
-                                    }
-
-                                    Spacer(modifier = Modifier.height(18.dp))
-
-                                    OutlinedButton(
-                                        onClick = {
-                                            servicioEditando = servicio
-                                            precioEditado = servicio.price.toString()
-                                            descripcionEditada = servicio.description ?: ""
-                                            activoEditado = servicio.isAvailable
-                                        },
-                                        shape = RoundedCornerShape(14.dp),
-                                        border = BorderStroke(1.dp, colorScheme.outline),
-                                        colors = ButtonDefaults.outlinedButtonColors(
-                                            contentColor = colorScheme.primary
-                                        )
-                                    ) {
-                                        Icon(Icons.Default.Edit, contentDescription = "Editar")
-                                        Spacer(modifier = Modifier.width(8.dp))
-                                        Text("Editar", fontWeight = FontWeight.Bold)
-                                    }
+                            ServiceOfferedCard(
+                                servicio = servicio,
+                                icon = obtenerIcono(servicio.title),
+                                onToggle = { nuevoEstado ->
+                                    viewModel.updateService(
+                                        id = servicio.offeredServiceId,
+                                        price = servicio.price,
+                                        description = servicio.description ?: "",
+                                        isAvailable = nuevoEstado
+                                    )
+                                },
+                                onEdit = {
+                                    servicioEditando = servicio
+                                    precioEditado = servicio.price.toString()
+                                    descripcionEditada = extractCaregiverDescription(servicio.description)
+                                    direccionEditada = extractCaregiverAddress(servicio.description)
+                                    activoEditado = servicio.isAvailable
                                 }
-                            }
+                            )
                         }
                     }
                 }
@@ -605,6 +550,77 @@ fun CaregiverServiceScreen(
     }
 }
 
+
+@Composable
+private fun ServiceOfferedCard(
+    servicio: OfferedServiceEntity,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    onToggle: (Boolean) -> Unit,
+    onEdit: () -> Unit
+) {
+    val colorScheme = MaterialTheme.colorScheme
+    val address = extractCaregiverAddress(servicio.description)
+    val description = extractCaregiverDescription(servicio.description)
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(1.dp, colorScheme.outlineVariant, RoundedCornerShape(24.dp)),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(containerColor = colorScheme.surface)
+    ) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(verticalAlignment = Alignment.Top) {
+                Surface(shape = RoundedCornerShape(18.dp), color = colorScheme.surfaceVariant, modifier = Modifier.size(58.dp)) {
+                    Box(contentAlignment = Alignment.Center) { Icon(icon, null, tint = colorScheme.primary, modifier = Modifier.size(30.dp)) }
+                }
+                Spacer(Modifier.width(18.dp))
+                Column(Modifier.weight(1f)) {
+                    Text(servicio.title, color = colorScheme.onSurface, fontWeight = FontWeight.Bold, fontSize = 19.sp)
+                    Text("C$ ${servicio.price}", color = colorScheme.primary, fontWeight = FontWeight.Bold, fontSize = 17.sp)
+                    if (description.isNotBlank()) {
+                        Spacer(Modifier.height(8.dp))
+                        Row(verticalAlignment = Alignment.Top) { Icon(Icons.Default.Label, null, tint = colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp)); Spacer(Modifier.width(8.dp)); Text(description, color = colorScheme.onSurfaceVariant) }
+                    }
+                    if (address.isNotBlank()) {
+                        Spacer(Modifier.height(8.dp))
+                        Row(verticalAlignment = Alignment.Top) { Icon(Icons.Default.LocationOn, null, tint = colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp)); Spacer(Modifier.width(8.dp)); Text("Dirección: $address", color = colorScheme.onSurfaceVariant) }
+                    }
+                }
+                Switch(
+                    checked = servicio.isAvailable,
+                    onCheckedChange = onToggle,
+                    colors = SwitchDefaults.colors(checkedThumbColor = colorScheme.onPrimary, checkedTrackColor = colorScheme.primary, uncheckedTrackColor = colorScheme.surfaceVariant)
+                )
+            }
+            OutlinedButton(onClick = onEdit, shape = RoundedCornerShape(14.dp), border = BorderStroke(1.dp, colorScheme.outline), colors = ButtonDefaults.outlinedButtonColors(contentColor = colorScheme.primary)) {
+                Icon(Icons.Default.Edit, contentDescription = "Editar")
+                Spacer(Modifier.width(8.dp))
+                Text("Editar", fontWeight = FontWeight.Bold)
+            }
+        }
+    }
+}
+
+private fun extractCaregiverAddress(description: String?): String =
+    description.orEmpty()
+        .lineSequence()
+        .map { it.trim() }
+        .firstOrNull { isCaregiverAddressLine(it) }
+        ?.substringAfter(":")
+        ?.trim()
+        .orEmpty()
+
+private fun extractCaregiverDescription(description: String?): String =
+    description.orEmpty()
+        .lineSequence()
+        .map { it.trim() }
+        .filter { it.isNotBlank() && !isCaregiverAddressLine(it) }
+        .joinToString("\n")
+
+private fun isCaregiverAddressLine(line: String): Boolean =
+    line.startsWith("Dirección del caregiver:", ignoreCase = true) ||
+        line.startsWith("Dirección:", ignoreCase = true)
+
 private fun buildCaregiverServiceDescription(
     description: String,
     serviceType: String,
@@ -612,7 +628,7 @@ private fun buildCaregiverServiceDescription(
 ): String {
     val parts = mutableListOf<String>()
     if (description.isNotBlank()) parts += description.trim()
-    if (serviceType == "Alojamiento" && lodgingAddress.isNotBlank()) {
+    if (serviceType.equals("Alojamiento", ignoreCase = true) && lodgingAddress.isNotBlank()) {
         parts += "Dirección del caregiver: ${lodgingAddress.trim()}"
     }
     return parts.joinToString("\n")

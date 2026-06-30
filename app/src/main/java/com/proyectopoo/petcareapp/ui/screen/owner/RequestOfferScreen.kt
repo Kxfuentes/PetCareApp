@@ -35,18 +35,24 @@ fun RequestOfferScreen(
         petIds: List<Int>,
         date: String,
         startTime: String,
+        endTime: String?,
         notes: String
     ) -> Unit
 ) {
     var selectedPetIds by remember { mutableStateOf(setOf<Int>()) }
     var fecha by remember { mutableStateOf("") }
     var hora by remember { mutableStateOf("") }
+    var horaFin by remember { mutableStateOf("") }
     var notas by remember { mutableStateOf("") }
     var showError by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
     var showDatePicker by remember { mutableStateOf(false) }
     var showTimePicker by remember { mutableStateOf(false) }
+    var showEndTimePicker by remember { mutableStateOf(false) }
 
+    val serviceName = offer.serviceTypeName ?: offer.title
+    val needsTimeRange = serviceName.lowercase().let { it.contains("guard") || it.contains("pase") || it.contains("visit") || it.contains("aloj") }
+    val timeValidationError = remember(fecha, hora, horaFin, needsTimeRange) { validateRequestTime(fecha, hora, horaFin.takeIf { needsTimeRange }) }
     val scrollState = rememberScrollState()
     val currentLocale = remember { Locale.getDefault() }
     val pickerDateFormatter = remember(currentLocale) {
@@ -68,10 +74,10 @@ fun RequestOfferScreen(
                         Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.surface)
             )
         },
-        containerColor = Color.White
+        containerColor = MaterialTheme.colorScheme.background
     ) { padding ->
         Column(
             modifier = Modifier
@@ -84,7 +90,7 @@ fun RequestOfferScreen(
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F5F5))
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
             ) {
                 Column(Modifier.padding(16.dp)) {
                     Text(
@@ -130,7 +136,7 @@ fun RequestOfferScreen(
             OutlinedTextField(
                 value = hora,
                 onValueChange = {},
-                label = { Text("Hora deseada") },
+                label = { Text(if (needsTimeRange) "Hora de inicio" else "Hora deseada") },
                 modifier = Modifier.fillMaxWidth(),
                 readOnly = true,
                 isError = showError && hora.isBlank(),
@@ -146,6 +152,35 @@ fun RequestOfferScreen(
                     }
                 }
             )
+
+            if (needsTimeRange) {
+                OutlinedTextField(
+                    value = horaFin,
+                    onValueChange = {},
+                    label = { Text("Hora de salida/fin") },
+                    modifier = Modifier.fillMaxWidth(),
+                    readOnly = true,
+                    isError = showError && (horaFin.isBlank() || timeValidationError != null),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedContainerColor = Color.White,
+                        unfocusedContainerColor = Color.White,
+                        focusedBorderColor = Color.Gray,
+                        unfocusedBorderColor = Color.LightGray
+                    ),
+                    trailingIcon = {
+                        IconButton(onClick = { showEndTimePicker = true }) {
+                            Icon(Icons.Default.AccessTime, contentDescription = null, tint = Color.DarkGray)
+                        }
+                    }
+                )
+            }
+
+            val notesLabel = when {
+                serviceName.contains("Taxi", ignoreCase = true) -> "Dirección destino y notas"
+                serviceName.contains("Peluquer", ignoreCase = true) -> "Tipo de corte/baño y notas"
+                serviceName.contains("Aloj", ignoreCase = true) -> "Cuidados, alimentación y notas"
+                else -> "Notas adicionales (opcional)"
+            }
 
             Text(
                 "¿Para cuáles de tus mascotas deseas este servicio?",
@@ -184,7 +219,7 @@ fun RequestOfferScreen(
             OutlinedTextField(
                 value = notas,
                 onValueChange = { notas = it },
-                label = { Text("Notas adicionales (opcional)") },
+                label = { Text(notesLabel) },
                 modifier = Modifier.fillMaxWidth(),
                 minLines = 2,
                 maxLines = 4,
@@ -204,15 +239,17 @@ fun RequestOfferScreen(
                     when {
                         fecha.isBlank() -> errorMessage = "Selecciona una fecha"
                         hora.isBlank() -> errorMessage = "Selecciona una hora"
+                        needsTimeRange && horaFin.isBlank() -> errorMessage = "Selecciona una hora de salida/fin"
+                        timeValidationError != null -> errorMessage = timeValidationError.orEmpty()
                         selectedPetIds.isEmpty() -> errorMessage = "Selecciona al menos una mascota"
                         else -> {
                             showError = false
-                            onSubmit(selectedPetIds.toList(), fecha, hora, notas)
+                            onSubmit(selectedPetIds.toList(), fecha, hora, horaFin.takeIf { needsTimeRange }, notas)
                         }
                     }
                 },
                 modifier = Modifier.fillMaxWidth(),
-                enabled = dogs.isNotEmpty(),
+                enabled = dogs.isNotEmpty() && timeValidationError == null,
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF5D4037))
             ) {
                 Text("Enviar solicitud de reserva", fontWeight = FontWeight.Bold, color = Color.White)
@@ -241,7 +278,7 @@ fun RequestOfferScreen(
             },
             dismissButton = { TextButton(onClick = { showDatePicker = false }) { Text("Cancelar", color = Color.Black) } },
             colors = DatePickerDefaults.colors(
-                containerColor = Color.White,
+                containerColor = MaterialTheme.colorScheme.surface,
                 titleContentColor = Color.Black,
                 headlineContentColor = Color.Black,
                 weekdayContentColor = Color.Black,
@@ -262,7 +299,7 @@ fun RequestOfferScreen(
                 state = datePickerState,
                 showModeToggle = false,
                 colors = DatePickerDefaults.colors(
-                    containerColor = Color.White,
+                    containerColor = MaterialTheme.colorScheme.surface,
                     dayContentColor = Color.Black,
                     selectedDayContentColor = Color.White,
                     selectedDayContainerColor = Color(0xFF5D4037),
@@ -282,7 +319,35 @@ fun RequestOfferScreen(
             }
         )
     }
+
+    if (showEndTimePicker) {
+        TimePickerDialog(
+            onDismiss = { showEndTimePicker = false },
+            onConfirm = { timeState ->
+                horaFin = String.format("%02d:%02d", timeState.hour, timeState.minute)
+                showEndTimePicker = false
+            }
+        )
+    }
 }
+
+
+private fun validateRequestTime(date: String, startTime: String, endTime: String?): String? {
+    if (date.isBlank() || startTime.isBlank()) return null
+    val start = parseDateTime(date, startTime) ?: return null
+    if (start <= System.currentTimeMillis()) return "La hora seleccionada ya pasó."
+    if (!endTime.isNullOrBlank()) {
+        val end = parseDateTime(date, endTime) ?: return null
+        if (start >= end) return "La hora de inicio debe ser menor que la hora de salida."
+    }
+    return null
+}
+
+private fun parseDateTime(date: String, time: String): Long? = runCatching {
+    SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).apply { isLenient = false }
+        .parse("$date $time")
+        ?.time
+}.getOrNull()
 
 private fun Calendar.startOfDayMillis(): Long {
     set(Calendar.HOUR_OF_DAY, 0)
@@ -303,7 +368,7 @@ private fun TimePickerDialog(
         onDismissRequest = onDismiss,
         confirmButton = { TextButton(onClick = { onConfirm(timeState) }) { Text("Aceptar", color = Color.Black) } },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar", color = Color.Black) } },
-        containerColor = Color.White,
+        containerColor = MaterialTheme.colorScheme.surface,
         text = {
             TimePicker(
                 state = timeState,

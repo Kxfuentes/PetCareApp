@@ -494,7 +494,7 @@ fun AppNavigation(
                     offer = offer,
                     dogs = dogs,
                     onBack = { navController.popBackStack() },
-                    onSubmit = { petIds, date, startTime, notes ->
+                    onSubmit = { petIds, date, startTime, _endTime, notes ->
                         serviceRequestViewModel.requestServiceFromOffer(
                             ownerId = ownerId,
                             caregiverId = args.caregiverId,
