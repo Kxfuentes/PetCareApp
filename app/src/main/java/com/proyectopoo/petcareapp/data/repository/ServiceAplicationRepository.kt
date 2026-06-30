@@ -1,5 +1,6 @@
 package com.proyectopoo.petcareapp.data.repository
 
+import android.util.Log
 import com.proyectopoo.petcareapp.data.local.dao.ServiceApplicationDao
 import com.proyectopoo.petcareapp.data.local.dao.ServiceBookingDao
 import com.proyectopoo.petcareapp.data.local.dao.ServiceRequestDao
@@ -9,20 +10,60 @@ import com.proyectopoo.petcareapp.data.local.entity.BookingStatus
 import com.proyectopoo.petcareapp.data.local.entity.ServiceApplicationEntity
 import com.proyectopoo.petcareapp.data.local.entity.ServiceBookingEntity
 import com.proyectopoo.petcareapp.data.local.entity.ServiceRequestStatus
+import com.proyectopoo.petcareapp.data.network.ApiService
+import com.proyectopoo.petcareapp.data.network.ServiceApplicationRequest
 
 class ServiceApplicationRepository(
     private val dao: ServiceApplicationDao,
     private val requestDao: ServiceRequestDao,
-    private val bookingDao: ServiceBookingDao
+    private val bookingDao: ServiceBookingDao,
+    private val apiService: ApiService? = null
 ) {
     suspend fun insert(application: ServiceApplicationEntity) {
-        val existing = dao.getByRequestAndCaregiver(
-            serviceRequestId = application.serviceRequestId,
-            caregiverId = application.caregiverId
-        )
+        val localRequestExists = requestDao.getRequestById(application.serviceRequestId) != null
 
-        if (existing == null) {
-            dao.insert(application)
+        val existing = if (localRequestExists) {
+            dao.getByRequestAndCaregiver(
+                serviceRequestId = application.serviceRequestId,
+                caregiverId = application.caregiverId
+            )
+        } else {
+            null
+        }
+
+        val applicationToSave = try {
+            val response = apiService?.applyToServiceRequest(
+                requestId = application.serviceRequestId,
+                request = ServiceApplicationRequest(
+                    caregiverId = application.caregiverId,
+                    initiatedBy = application.initiatedBy.name
+                )
+            )
+
+            Log.d("ServiceApplicationRepo", "Postulacion creada en API: $response")
+
+            if (response != null) {
+                application.copy(
+                    applicationId = response.id,
+                    serviceRequestId = response.serviceRequestId,
+                    caregiverId = response.caregiverId,
+                    initiatedBy = ApplicationInitiator.valueOf(response.initiatedBy),
+                    status = ApplicationStatus.valueOf(response.status)
+                )
+            } else {
+                application
+            }
+        } catch (e: Exception) {
+            Log.e(
+                "ServiceApplicationRepo",
+                "Error creando postulacion en API. requestId=${application.serviceRequestId}, caregiverId=${application.caregiverId}",
+                e
+            )
+            application
+        }
+
+        if (localRequestExists && existing == null) {
+            dao.insert(applicationToSave)
         }
     }
 
@@ -77,7 +118,7 @@ class ServiceApplicationRepository(
         dao.updateRequestStatusForApplication(applicationId, ServiceRequestStatus.COMPLETED)
     }
 
-    /** Cancela el servicio aceptado: marca la postulación, la solicitud y la reserva como canceladas. */
+    /** Cancela el servicio aceptado: marca la postulacion, la solicitud y la reserva como canceladas. */
     suspend fun cancelService(applicationId: Int) {
         val application = dao.getById(applicationId) ?: return
         dao.updateStatus(applicationId, ApplicationStatus.CANCELLED)

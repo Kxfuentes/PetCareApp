@@ -5,17 +5,24 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.core.content.ContextCompat
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
@@ -26,8 +33,17 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.proyectopoo.petcareapp.data.local.entity.UserRoleType
 import com.proyectopoo.petcareapp.data.session.SessionManager
+import com.proyectopoo.petcareapp.data.websocket.PetCareWebSocketClient
 import com.proyectopoo.petcareapp.model.UserRole
-import com.proyectopoo.petcareapp.navigation.*
+import com.proyectopoo.petcareapp.navigation.AppNavigation
+import com.proyectopoo.petcareapp.navigation.CaregiverHome
+import com.proyectopoo.petcareapp.navigation.DogInfo
+import com.proyectopoo.petcareapp.navigation.Login
+import com.proyectopoo.petcareapp.navigation.OwnerHome
+import com.proyectopoo.petcareapp.navigation.PasswordRecovery
+import com.proyectopoo.petcareapp.navigation.Register
+import com.proyectopoo.petcareapp.navigation.RequestOffer
+import com.proyectopoo.petcareapp.navigation.RoleSection
 import com.proyectopoo.petcareapp.ui.components.PetCareNavigationBar
 import com.proyectopoo.petcareapp.ui.theme.PetCareAppTheme
 import com.proyectopoo.petcareapp.viewmodel.UserRoleViewModel
@@ -47,7 +63,10 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
 
         val sessionManager = SessionManager(this)
-        sessionManager.clearSession()
+
+        if (!shouldKeepSessionOpen()) {
+            sessionManager.clearSession()
+        }
 
         askNotificationPermission()
 
@@ -71,15 +90,49 @@ class MainActivity : ComponentActivity() {
                 ) {
                     val navController = rememberNavController()
 
+                    val webSocketClient = remember {
+                        PetCareWebSocketClient(
+                            onEvent = { event ->
+                                runOnUiThread {
+                                    Toast.makeText(
+                                        this@MainActivity,
+                                        event.message ?: "Nuevo evento de PetCare",
+                                        Toast.LENGTH_LONG
+                                    ).show()
+                                }
+                            },
+                            onStatusChanged = { connected ->
+                                android.util.Log.d(
+                                    "PetCareWebSocket",
+                                    if (connected) "Conectado desde Android" else "Desconectado desde Android"
+                                )
+                            }
+                        )
+                    }
+
                     LaunchedEffect(Unit) {
                         handleAutoLogin(context, userRoleViewModel, navController)
+                    }
+
+                    LaunchedEffect(userRole) {
+                        val currentUserId = sessionManager.getUserId()
+
+                        if (currentUserId > 0 && userRole != null) {
+                            webSocketClient.connect(currentUserId)
+                        }
+                    }
+
+                    DisposableEffect(Unit) {
+                        onDispose {
+                            webSocketClient.disconnect()
+                        }
                     }
 
                     val navBackStackEntry by navController.currentBackStackEntryAsState()
                     val currentDestination = navBackStackEntry?.destination
 
                     val showBottomBar = currentDestination?.let { dest ->
-                                !dest.hasRoute<Login>() &&
+                        !dest.hasRoute<Login>() &&
                                 !dest.hasRoute<Register>() &&
                                 !dest.hasRoute<RoleSection>() &&
                                 !dest.hasRoute<RequestOffer>() &&
@@ -103,8 +156,10 @@ class MainActivity : ComponentActivity() {
                             navController = navController,
                             modifier = Modifier.padding(innerPadding),
                             sessionLogout = { nav, roleVM ->
-                                val sessionManager = SessionManager(nav.context)
-                                sessionManager.clearSession()
+                                webSocketClient.disconnect()
+
+                                val logoutSessionManager = SessionManager(nav.context)
+                                logoutSessionManager.clearSession()
                                 roleVM.clearRole()
 
                                 nav.navigate(Login) {
@@ -118,12 +173,17 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    private fun shouldKeepSessionOpen(): Boolean {
+        return SessionManager(this).shouldRememberSession()
+    }
+
     private fun askNotificationPermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             val granted = ContextCompat.checkSelfPermission(
                 this,
                 Manifest.permission.POST_NOTIFICATIONS
             ) == PackageManager.PERMISSION_GRANTED
+
             if (!granted) {
                 requestNotificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
             }
@@ -137,7 +197,7 @@ class MainActivity : ComponentActivity() {
     ) {
         val sessionManager = SessionManager(context)
 
-        if (sessionManager.isLoggedIn()) {
+        if (sessionManager.isLoggedIn() && shouldKeepSessionOpen()) {
             val savedRoleType = sessionManager.getRole()
             val savedRole = when (savedRoleType) {
                 UserRoleType.CAREGIVER -> UserRole.CAREGIVER
@@ -148,7 +208,11 @@ class MainActivity : ComponentActivity() {
             savedRole?.let { role ->
                 userRoleViewModel.setRole(role)
 
-                val destination = if (role == UserRole.CAREGIVER) CaregiverHome else OwnerHome
+                val destination = if (role == UserRole.CAREGIVER) {
+                    CaregiverHome
+                } else {
+                    OwnerHome
+                }
 
                 navController.navigate(destination) {
                     popUpTo(0) { inclusive = true }

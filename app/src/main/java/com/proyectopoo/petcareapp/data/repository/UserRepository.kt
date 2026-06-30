@@ -81,7 +81,8 @@ class UserRepository(
                 email = user.email,
                 role = user.role,
                 token = token,
-                apiUserId = userDto.id.toString()
+                apiUserId = userDto.id.toString(),
+                rememberSession = rememberSession
             )
 
             if (token != null) {

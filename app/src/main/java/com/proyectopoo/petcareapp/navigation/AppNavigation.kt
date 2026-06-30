@@ -27,6 +27,7 @@ import com.proyectopoo.petcareapp.data.local.entity.PetEntity
 import com.proyectopoo.petcareapp.data.local.entity.UserEntity
 import com.proyectopoo.petcareapp.data.local.entity.UserRoleType
 import com.proyectopoo.petcareapp.data.network.RetrofitClient
+import com.proyectopoo.petcareapp.data.network.RetrofitClient.apiService
 import com.proyectopoo.petcareapp.data.repository.PetRepository
 import com.proyectopoo.petcareapp.data.repository.ServiceApplicationRepository
 import com.proyectopoo.petcareapp.data.repository.ServiceRequestRepository
@@ -97,7 +98,8 @@ fun AppNavigation(
                     applicationRepo = ServiceApplicationRepository(
                         database.serviceApplicationDao(),
                         database.serviceRequestDao(),
-                        database.serviceBookingDao()
+                        database.serviceBookingDao(),
+                        apiService
                     ),
                     userDao = database.userDao(),
                     ownerDao = database.ownerDao(),

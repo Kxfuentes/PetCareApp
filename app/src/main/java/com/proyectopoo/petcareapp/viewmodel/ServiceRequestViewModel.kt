@@ -108,7 +108,7 @@ class ServiceRequestViewModel(
 
     fun loadAvailableRequests() {
         viewModelScope.launch {
-            _availableRequests.value = requestRepo.getAvailableDetails()
+            _availableRequests.value = requestRepo.getAvailableDetailsFromApi()
         }
     }
 
@@ -244,6 +244,7 @@ class ServiceRequestViewModel(
     fun applyToRequest(serviceRequestId: Int, caregiverId: Int) {
         viewModelScope.launch {
             ensureCaregiver(caregiverId)
+
             applicationRepo.insert(
                 ServiceApplicationEntity(
                     serviceRequestId = serviceRequestId,
@@ -251,18 +252,11 @@ class ServiceRequestViewModel(
                     initiatedBy = ApplicationInitiator.CAREGIVER
                 )
             )
-            _availableRequests.value = requestRepo.getAvailableDetails()
-            _caregiverApplicationDetails.value = applicationRepo.getIncomingOwnerRequestsForCaregiver(caregiverId)
 
-            val request = requestRepo.getRequestById(serviceRequestId)
-            if (request != null) {
-                notifier.push(
-                    recipientUserId = request.ownerId,
-                    title = "Nueva postulación a tu solicitud",
-                    message = "Un cuidador se postuló a tu solicitud de \"${request.title}\".",
-                    type = NotificationType.SERVICE_REQUEST
-                )
-            }
+            loadAvailableRequests()
+            loadCaregiverData(caregiverId)
+
+            _userMessage.value = "Postulación enviada."
         }
     }
 
