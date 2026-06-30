@@ -16,20 +16,28 @@ class SessionManager(
         email: String,
         role: UserRoleType,
         token: String? = null,
-        apiUserId: String? = null
+        apiUserId: String? = null,
+        rememberSession: Boolean? = null
     ) {
         val editor = prefs.edit()
             .putInt("user_id", userId)
             .putString("email", email.trim())
             .putString("role", role.name)
             .putBoolean("is_logged_in", true)
+
         token?.let { editor.putString("token", it) }
         apiUserId?.let { editor.putString("api_user_id", it) }
+        rememberSession?.let { editor.putBoolean("remember_session", it) }
+
         editor.apply()
     }
 
     fun isLoggedIn(): Boolean {
         return prefs.getBoolean("is_logged_in", false)
+    }
+
+    fun shouldRememberSession(): Boolean {
+        return prefs.getBoolean("remember_session", false)
     }
 
     fun getUserId(): Int {
@@ -58,13 +66,16 @@ class SessionManager(
     }
 
     fun saveToken(token: String, rememberSession: Boolean) {
-        if (rememberSession) {
-            prefs.edit().putString("auth_token", token).apply()
-        }
+        prefs.edit()
+            .putString("auth_token", token)
+            .putBoolean("remember_session", rememberSession)
+            .apply()
     }
 
     fun clearToken() {
-        prefs.edit().remove("auth_token").apply()
+        prefs.edit()
+            .remove("auth_token")
+            .apply()
     }
 
     fun clearSession() {

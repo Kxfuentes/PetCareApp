@@ -3,6 +3,7 @@ package com.proyectopoo.petcareapp.ui.screen.owner
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -16,9 +17,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -28,7 +29,7 @@ import com.proyectopoo.petcareapp.data.local.entity.ApplicationStatus
 import com.proyectopoo.petcareapp.data.local.entity.PetEntity
 import com.proyectopoo.petcareapp.data.local.relation.ServiceApplicationDetails
 import com.proyectopoo.petcareapp.data.local.relation.ServiceRequestDetails
-import kotlin.math.roundToInt
+import com.proyectopoo.petcareapp.ui.components.StarRatingInput
 
 @Composable
 fun OwnerHomeScreen(
@@ -48,12 +49,13 @@ fun OwnerHomeScreen(
     onCancelService: (ServiceApplicationDetails) -> Unit = {},
     ownerId: Int
 ) {
-
     val scrollState = rememberScrollState()
     var selectedDogIndex by remember { mutableStateOf(0) }
     var petToDelete by remember { mutableStateOf<PetEntity?>(null) }
     var showHeader by remember { mutableStateOf(true) }
     var applicationToRate by remember { mutableStateOf<ServiceApplicationDetails?>(null) }
+    var requestToDetail by remember { mutableStateOf<ServiceRequestDetails?>(null) }
+    var applicationToDetail by remember { mutableStateOf<ServiceApplicationDetails?>(null) }
     var ratingScore by remember { mutableStateOf(5f) }
     var ratingComment by remember { mutableStateOf("") }
     var showAllRequestedScreen by remember { mutableStateOf(false) }
@@ -134,11 +136,7 @@ fun OwnerHomeScreen(
                             )
                         }
                         IconButton(onClick = { showHeader = false }) {
-                            Icon(
-                                Icons.Default.Close,
-                                contentDescription = "Cerrar",
-                                tint = MaterialTheme.colorScheme.onPrimary
-                            )
+                            Icon(Icons.Default.Close, contentDescription = "Cerrar", tint = MaterialTheme.colorScheme.onPrimary)
                         }
                     }
                 }
@@ -252,7 +250,7 @@ fun OwnerHomeScreen(
                 }
 
                 OutlinedButton(onClick = onAddDog, modifier = Modifier.fillMaxWidth()) {
-                    Icon(Icons.Default.Add, null)
+                    Icon(Icons.Default.Add, contentDescription = null)
                     Spacer(Modifier.width(8.dp))
                     Text("Agregar mascota")
                 }
@@ -312,17 +310,7 @@ fun OwnerHomeScreen(
                 }
 
                 if (recentRequests.isEmpty()) {
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-                    ) {
-                        Text(
-                            "Aún no has solicitado servicios.",
-                            modifier = Modifier.padding(20.dp),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
+                    EmptyStateCard("Aún no has solicitado servicios.")
                 } else {
                     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
                         visibleRecentRequests.forEach { request ->
@@ -349,18 +337,9 @@ fun OwnerHomeScreen(
     }
 
                 if (pendingApplications.isEmpty()) {
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-                    ) {
-                        Text(
-                            "Aún no hay cuidadores interesados.",
-                            modifier = Modifier.padding(20.dp),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
+                    EmptyStateCard("Aún no hay cuidadores interesados.")
                 } else {
-                    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         pendingApplications.forEach { application ->
                             InterestedCaregiverCard(
                                 application = application,
@@ -393,12 +372,26 @@ fun OwnerHomeScreen(
                     }
                 }
 
-                Text(
-                    "Servicios disponibles",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.SemiBold
-                )
+                if (doneByCaregiverApplications.isNotEmpty()) {
+                    SectionTitle("Pendientes de calificación")
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        doneByCaregiverApplications.forEach { application ->
+                            ServiceApplicationCard(
+                                application = application,
+                                message = "El cuidador marcó este servicio como realizado.",
+                                actionText = "Confirmar y calificar",
+                                onAction = {
+                                    applicationToRate = application
+                                    ratingScore = 5f
+                                    ratingComment = ""
+                                },
+                                onDetails = { applicationToDetail = application }
+                            )
+                        }
+                    }
+                }
 
+                SectionTitle("Servicios disponibles")
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     services.chunked(2).forEach { row ->
                         Row(
@@ -406,7 +399,10 @@ fun OwnerHomeScreen(
                             horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
                             row.forEach { (name, icon) ->
-                                Card(
+                                ServiceTypeCard(
+                                    name = name,
+                                    description = serviceDescriptions[name].orEmpty(),
+                                    icon = icon,
                                     onClick = { onGoToCreate(name) },
                                     modifier = Modifier
                                         .weight(1f)
@@ -447,14 +443,13 @@ fun OwnerHomeScreen(
                             repeat(2 - row.size) {
                                 Spacer(Modifier.weight(1f))
                             }
+                            if (row.size == 1) Spacer(Modifier.weight(1f))
                         }
                     }
                 }
 
                 Card(
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.primary
-                    ),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary),
                     shape = RoundedCornerShape(20.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
@@ -464,22 +459,20 @@ fun OwnerHomeScreen(
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                "¿Buscas paseadores?",
+                                "¿Buscas cuidadores?",
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.onPrimary
                             )
                             Text(
-                                "Encuentra los mejores cerca de ti",
+                                "Encuentra servicios disponibles cerca de ti",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f)
                             )
                         }
                         Button(
                             onClick = onGoToFeed,
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.onPrimary
-                            )
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.onPrimary)
                         ) {
                             Text("Explorar", color = MaterialTheme.colorScheme.primary)
                         }
@@ -509,13 +502,7 @@ fun OwnerHomeScreen(
             title = { Text("Calificar cuidador") },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text("${ratingScore.roundToInt()} estrellas")
-                    Slider(
-                        value = ratingScore,
-                        onValueChange = { ratingScore = it },
-                        valueRange = 1f..5f,
-                        steps = 3
-                    )
+                    StarRatingInput(value = ratingScore, onValueChange = { ratingScore = it })
                     OutlinedTextField(
                         value = ratingComment,
                         onValueChange = { ratingComment = it },
@@ -525,10 +512,12 @@ fun OwnerHomeScreen(
                 }
             },
             confirmButton = {
-                TextButton(onClick = {
-                    onCompleteAndRate(application, ratingScore.toDouble(), ratingComment)
-                    applicationToRate = null
-                }) { Text("Guardar") }
+                TextButton(
+                    onClick = {
+                        onCompleteAndRate(application, ratingScore.toDouble(), ratingComment)
+                        applicationToRate = null
+                    }
+                ) { Text("Guardar") }
             },
             dismissButton = {
                 TextButton(onClick = { applicationToRate = null }) { Text("Cancelar") }
@@ -1083,6 +1072,8 @@ private fun StatusChip(status: Enum<*>, overrideText: String? = null) {
     val (statusText, color) = when (status.name.uppercase()) {
         "PENDING" -> "Pendiente" to Color(0xFFFF9800)
         "ACCEPTED" -> "Aceptado" to Color(0xFF4CAF50)
+        "DONE_BY_CAREGIVER" -> "Por confirmar" to Color(0xFF2196F3)
+        "COMPLETED" -> "Completado" to Color(0xFF607D8B)
         "REJECTED" -> "Rechazado" to Color(0xFFF44336)
         "CANCELLED" -> "Cancelado" to Color(0xFF795548)
         "COMPLETED" -> "Completado" to Color(0xFF607D8B)

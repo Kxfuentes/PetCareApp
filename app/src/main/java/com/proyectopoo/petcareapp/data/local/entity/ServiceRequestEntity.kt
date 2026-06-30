@@ -69,6 +69,7 @@ enum class RequestSource {
 enum class ServiceRequestStatus {
     PENDING,
     ACCEPTED,
+    DONE_BY_CAREGIVER,
     CANCELLED,
     COMPLETED
 }

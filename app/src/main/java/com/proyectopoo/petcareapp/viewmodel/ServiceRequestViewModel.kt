@@ -35,6 +35,8 @@ import com.proyectopoo.petcareapp.data.network.ServiceApplicationDto
 import com.proyectopoo.petcareapp.data.network.RatingDto
 import com.proyectopoo.petcareapp.data.network.ServiceRequestDto
 import com.proyectopoo.petcareapp.data.network.StatusUpdateRequest
+import com.proyectopoo.petcareapp.data.network.RatingRequest
+import com.proyectopoo.petcareapp.data.network.RetrofitClient
 import com.proyectopoo.petcareapp.data.repository.ServiceApplicationRepository
 import com.proyectopoo.petcareapp.data.repository.ServiceRequestRepository
 import com.proyectopoo.petcareapp.notifications.AppNotifier
@@ -55,7 +57,7 @@ class ServiceRequestViewModel(
     private val offeredServiceDao: OfferedServiceDao,
     private val bookingDao: ServiceBookingDao,
     private val notifier: AppNotifier,
-    private val apiService: ApiService? = null
+    private val apiService: ApiService = RetrofitClient.apiService
 ) : ViewModel() {
 
     private val _ownerRequests = MutableStateFlow<List<RequestWithApplications>>(emptyList())
@@ -91,7 +93,7 @@ class ServiceRequestViewModel(
     private val _caregiverBookings = MutableStateFlow<List<ServiceBookingEntity>>(emptyList())
     val caregiverBookings = _caregiverBookings.asStateFlow()
 
-    // Mensajes puntuales para mostrar al usuario (errores de validación, confirmaciones).
+    // Mensajes puntuales para mostrar al usuario (errores de validaciÃ³n, confirmaciones).
     private val _userMessage = MutableStateFlow<String?>(null)
     val userMessage = _userMessage.asStateFlow()
 
@@ -126,7 +128,7 @@ class ServiceRequestViewModel(
         }
     }
 
-    fun loadAvailableRequests() {
+    fun loadAvailableRequests(caregiverId: Int = 0) {
         viewModelScope.launch {
             syncAvailableRequests()
             _availableRequests.value = requestRepo.getAvailableDetails()
@@ -261,8 +263,8 @@ class ServiceRequestViewModel(
 
             notifier.push(
                 recipientUserId = caregiverId,
-                title = "Nueva solicitud de un dueño",
-                message = "Un dueño solicitó tu servicio de $serviceTypeName.",
+                title = "Nueva solicitud de un dueÃ±o",
+                message = "Un dueÃ±o solicitÃ³ tu servicio de $serviceTypeName.",
                 type = NotificationType.SERVICE_REQUEST
             )
             _userMessage.value = "Solicitud enviada al cuidador."
@@ -291,6 +293,9 @@ class ServiceRequestViewModel(
                     type = NotificationType.SERVICE_REQUEST
                 )
             }
+            loadCaregiverData(caregiverId)
+
+            _userMessage.value = "Postulacion enviada."
         }
     }
 
@@ -317,7 +322,7 @@ class ServiceRequestViewModel(
 
             if (modifiedDate != null || modifiedStartTime != null || modifiedEndTime != null) {
                 applicationRepo.updateRequestSchedule(
-                    requestId = application.serviceRequestId,
+                    requestId = localApplication.serviceRequestId,
                     date = modifiedDate,
                     startTime = modifiedStartTime,
                     endTime = modifiedEndTime
@@ -435,6 +440,49 @@ class ServiceRequestViewModel(
         }
     }
 
+    private suspend fun saveRatingIfNeeded(
+        serviceRequestId: Int,
+        caregiverId: Int,
+        ownerId: Int,
+        ratedByRole: UserRoleType,
+        score: Double,
+        comment: String
+    ): Boolean {
+        val existingRating = ratingDao.getRatingForServiceByRole(serviceRequestId, ratedByRole)
+        if (existingRating != null) return true
+
+        val cleanScore = score.coerceIn(1.0, 5.0)
+        val cleanComment = comment.ifBlank { null }
+
+        val remoteSaved = runCatching {
+            apiService.createRating(
+                RatingRequest(
+                    serviceRequestId = serviceRequestId,
+                    caregiverId = caregiverId,
+                    ownerId = ownerId,
+                    ratedByRole = ratedByRole.name,
+                    score = cleanScore,
+                    comment = cleanComment
+                )
+            ).isSuccessful
+        }.getOrDefault(false)
+
+        val localSaved = runCatching {
+            ratingDao.insertRating(
+                RatingEntity(
+                    serviceRequestId = serviceRequestId,
+                    caregiverId = caregiverId,
+                    ownerId = ownerId,
+                    ratedByRole = ratedByRole,
+                    score = cleanScore,
+                    comment = cleanComment
+                )
+            )
+        }.isSuccess
+
+        return remoteSaved || localSaved
+    }
+
     /**
      * Cancela un servicio aceptado. Solo se permite hasta 2 horas antes de su inicio.
      */
@@ -444,7 +492,16 @@ class ServiceRequestViewModel(
         reloadCaregiverId: Int? = null
     ) {
         viewModelScope.launch {
-            val application = applicationRepo.getApplicationById(applicationId) ?: return@launch
+            val application = applicationRepo.getApplicationById(applicationId)
+            if (application == null) {
+                applicationRepo.cancelService(applicationId)
+                reloadOwnerId?.let { refreshOwnerData(it) }
+                reloadCaregiverId?.let { loadCaregiverData(it) }
+                _availableRequests.value = requestRepo.getAvailableDetailsFromApi()
+                _userMessage.value = "Servicio cancelado."
+                return@launch
+            }
+
             val request = requestRepo.getRequestById(application.serviceRequestId)
             val startMillis = request?.let { parseDateTime(it.requestedDate, it.startTime) }
 
@@ -460,7 +517,7 @@ class ServiceRequestViewModel(
             applicationRepo.cancelService(applicationId)
             reloadOwnerId?.let { loadOwnerData(it) }
             reloadCaregiverId?.let { loadCaregiverData(it) }
-            _availableRequests.value = requestRepo.getAvailableDetails()
+            _availableRequests.value = requestRepo.getAvailableDetailsFromApi()
             _userMessage.value = "Servicio cancelado."
 
             val otherPartyId = if (reloadOwnerId != null) application.caregiverId else request?.ownerId
@@ -495,7 +552,7 @@ class ServiceRequestViewModel(
         if (wa != null && wb != null) {
             return wa.first < wb.second && wb.first < wa.second
         }
-        // Sin horas parseables: consideramos conflicto si es el mismo día.
+        // Sin horas parseables: consideramos conflicto si es el mismo dÃ­a.
         return !a.requestedDate.isNullOrBlank() && a.requestedDate == b.requestedDate
     }
 
@@ -536,7 +593,7 @@ class ServiceRequestViewModel(
             userDao.insertUser(
                 UserEntity(
                     userId = ownerId,
-                    fullName = "Dueño",
+                    fullName = "DueÃ±o",
                     email = "dueno@petcare.local",
                     phone = null,
                     password = null,
@@ -599,10 +656,10 @@ class ServiceRequestViewModel(
     private fun serviceTypeIdFor(serviceTypeName: String): Int {
         return when (serviceTypeName.lowercase()) {
             "alojamiento" -> 1
-            "guardería", "guarderia" -> 2
+            "guarderÃ­a", "guarderia" -> 2
             "paseo" -> 3
             "taxi" -> 4
-            "peluquería", "peluqueria" -> 5
+            "peluquerÃ­a", "peluqueria" -> 5
             "visitante" -> 6
             else -> (serviceTypeName.hashCode() and Int.MAX_VALUE)
         }

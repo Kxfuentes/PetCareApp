@@ -5,21 +5,27 @@ import com.proyectopoo.petcareapp.data.local.entity.PetEntity
 import com.proyectopoo.petcareapp.data.network.ApiService
 import com.proyectopoo.petcareapp.data.network.PetDto
 import com.proyectopoo.petcareapp.data.network.PetRequest
+import com.proyectopoo.petcareapp.data.network.RetrofitClient
 
 class PetRepository(
     private val petDao: PetDao,
-    private val apiService: ApiService? = null
+    private val apiService: ApiService = RetrofitClient.apiService
 ) {
 
     suspend fun insertPet(pet: PetEntity) {
-        val saved = runCatching {
-            apiService?.createPet(pet.toRequest())
-                ?.takeIf { it.isSuccessful }
-                ?.body()
-                ?.toEntity(fallbackId = pet.petId)
-        }.getOrNull() ?: pet
+        val remotePet = runCatching {
+            apiService.createPet(pet.toRequest())
+        }.getOrNull()
 
-        petDao.insertPet(saved)
+        if (remotePet?.isSuccessful == true) {
+            val savedPet = remotePet.body()?.toEntity()
+            if (savedPet != null) {
+                petDao.insertPet(savedPet)
+                return
+            }
+        }
+
+        petDao.insertPet(pet)
     }
 
     suspend fun insertPets(pets: List<PetEntity>) {

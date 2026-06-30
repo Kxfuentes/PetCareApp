@@ -50,6 +50,7 @@ enum class ApplicationInitiator {
 enum class ApplicationStatus {
     PENDING,
     ACCEPTED,
+    DONE_BY_CAREGIVER,
     REJECTED,
 
     COMPLETED,

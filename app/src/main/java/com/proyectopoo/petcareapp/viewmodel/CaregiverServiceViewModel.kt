@@ -2,18 +2,18 @@ package com.proyectopoo.petcareapp.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.proyectopoo.petcareapp.data.local.dao.OfferedServiceDao
 import com.proyectopoo.petcareapp.data.local.dao.ServiceTypeDao
 import com.proyectopoo.petcareapp.data.local.entity.OfferedServiceEntity
 import com.proyectopoo.petcareapp.data.local.entity.ServiceTypeEntity
 import com.proyectopoo.petcareapp.data.network.ApiService
 import com.proyectopoo.petcareapp.data.network.OfferedServiceDto
+import com.proyectopoo.petcareapp.data.repository.OfferedServiceRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class CaregiverServiceViewModel(
-    private val offeredServiceDao: OfferedServiceDao,
+    private val offeredServiceRepository: OfferedServiceRepository,
     private val serviceTypeDao: ServiceTypeDao,
     private val caregiverId: Int,
     private val apiService: ApiService? = null

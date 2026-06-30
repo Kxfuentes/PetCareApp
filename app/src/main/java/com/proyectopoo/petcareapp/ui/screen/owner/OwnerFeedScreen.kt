@@ -153,8 +153,7 @@ fun OwnerFeedScreen(
 
                 items(filteredServices) { service ->
                     val caregiverName = service.caregiverName ?: "Cuidador"
-                    val rating = service.caregiverRating ?: 0.0
-
+                    val rating = service.caregiverRating?.takeIf { it > 0.0 } ?: 5.0
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()

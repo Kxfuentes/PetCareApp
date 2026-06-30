@@ -38,7 +38,7 @@ fun CaregiverFeedScreen(
     onApplyToRequest: (Int) -> Unit
 ) {
     val tiposServicio = listOf(
-        "Todos", "Alojamiento", "Guardería", "Paseo", "Taxi", "Peluquería", "Visitante"
+        "Todos", "Alojamiento", "GuarderÃ­a", "Paseo", "Taxi", "PeluquerÃ­a", "Visitante"
     )
 
     var expanded by remember { mutableStateOf(false) }

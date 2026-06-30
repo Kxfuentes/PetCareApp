@@ -30,7 +30,9 @@ import com.proyectopoo.petcareapp.data.local.entity.UserEntity
 import com.proyectopoo.petcareapp.data.local.entity.ServiceTypeEntity
 import com.proyectopoo.petcareapp.data.local.entity.UserRoleType
 import com.proyectopoo.petcareapp.data.network.RetrofitClient
+import com.proyectopoo.petcareapp.data.network.RetrofitClient.apiService
 import com.proyectopoo.petcareapp.data.repository.PetRepository
+import com.proyectopoo.petcareapp.data.repository.OfferedServiceRepository
 import com.proyectopoo.petcareapp.data.repository.ServiceApplicationRepository
 import com.proyectopoo.petcareapp.data.repository.ServiceRequestRepository
 import com.proyectopoo.petcareapp.data.repository.UserRepository
@@ -74,13 +76,19 @@ import kotlinx.coroutines.launch
 fun AppNavigation(
     navController: NavHostController,
     modifier: Modifier = Modifier,
+    wsRefreshTick: Int = 0,
     sessionLogout: (NavHostController, UserRoleViewModel) -> Unit
 ) {
     val userRoleViewModel = LocalUserRoleViewModel.current
+    val activeRole by userRoleViewModel.userRole.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val sessionManager = remember { SessionManager(context) }
     val database = remember { PetCareDatabase.getDatabase(context) }
     val notifier = remember(context, database) { AppNotifier(context, database.notificationDao()) }
+    val appNotifier = remember { AppNotifier(context, database.notificationDao()) }
+    val offeredServiceRepository = remember {
+        OfferedServiceRepository(database.offeredServiceDao(), apiService)
+    }
     val scope = rememberCoroutineScope()
 
     val dogViewModel: DogViewModel = viewModel(
@@ -102,7 +110,8 @@ fun AppNavigation(
                     applicationRepo = ServiceApplicationRepository(
                         database.serviceApplicationDao(),
                         database.serviceRequestDao(),
-                        database.serviceBookingDao()
+                        database.serviceBookingDao(),
+                        apiService
                     ),
                     userDao = database.userDao(),
                     ownerDao = database.ownerDao(),
@@ -145,6 +154,22 @@ fun AppNavigation(
     LaunchedEffect(currentUserId) {
         if (currentUserId > 0) {
             dogViewModel.loadDogs(currentUserId)
+        }
+    }
+
+    LaunchedEffect(wsRefreshTick, currentUserId, activeRole) {
+        if (currentUserId <= 0 || activeRole == null) return@LaunchedEffect
+
+        when (activeRole) {
+            UserRole.OWNER -> {
+                dogViewModel.loadDogs(currentUserId)
+                serviceRequestViewModel.loadOwnerData(currentUserId)
+            }
+            UserRole.CAREGIVER -> {
+                serviceRequestViewModel.loadCaregiverData(currentUserId)
+                serviceRequestViewModel.loadAvailableRequests(currentUserId)
+            }
+            null -> Unit
         }
     }
 
@@ -210,7 +235,7 @@ fun AppNavigation(
                         }
                     } catch (e: Exception) {
                         navigationError = e.localizedMessage
-                            ?: "No se pudo preparar la sesión local."
+                            ?: "No se pudo preparar la sesiÃ³n local."
                     }
                 }
             }
@@ -531,7 +556,7 @@ fun AppNavigation(
 
             LaunchedEffect(args.offeredServiceId) {
                 dogViewModel.loadDogs(ownerId)
-                val allOffers = database.offeredServiceDao().getAvailableServiceDetails()
+                val allOffers = offeredServiceRepository.getAvailableServiceDetailsFromApi()
                 offerDetails = allOffers.find { it.offeredServiceId == args.offeredServiceId }
             }
 
@@ -622,12 +647,11 @@ fun AppNavigation(
                     serviceRequestViewModel.rejectApplication(applicationId, caregiverId = caregiverId)
                 },
                 onCompleteAndRate = { request, score, comment ->
-                    serviceRequestViewModel.completeAndRateService(
+                    serviceRequestViewModel.markDoneByCaregiverAndRateOwner(
                         applicationId = request.applicationId,
                         serviceRequestId = request.serviceRequestId,
                         caregiverId = request.caregiverId,
                         ownerId = request.ownerId,
-                        ratedByRole = UserRoleType.CAREGIVER,
                         score = score,
                         comment = comment,
                         reloadCaregiverId = caregiverId
@@ -649,6 +673,9 @@ fun AppNavigation(
             val caregiverId = sessionManager.getBackendUserId()
 
             LaunchedEffect(caregiverId) {
+                if (caregiverId > 0) {
+                    serviceRequestViewModel.loadAvailableRequests(caregiverId)
+                }
                 if (caregiverId > 0) {
                     while (true) {
                         serviceRequestViewModel.loadAvailableRequests()
@@ -691,7 +718,7 @@ fun AppNavigation(
                 factory = viewModelFactory {
                     initializer {
                         CaregiverServiceViewModel(
-                            offeredServiceDao = database.offeredServiceDao(),
+                            offeredServiceRepository = offeredServiceRepository,
                             serviceTypeDao = database.serviceTypeDao(),
                             caregiverId = caregiverId,
                             apiService = RetrofitClient.apiService
@@ -1072,7 +1099,7 @@ private suspend fun ensureOwnerExists(
         database.userDao().insertUser(
             UserEntity(
                 userId = ownerId,
-                fullName = email.substringBefore("@").ifBlank { "Dueño" },
+                fullName = email.substringBefore("@").ifBlank { "DueÃ±o" },
                 email = email.ifBlank { "dueno$ownerId@petcare.local" },
                 password = null,
                 role = UserRoleType.OWNER
