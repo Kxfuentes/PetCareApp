@@ -43,6 +43,12 @@ data class ServiceApplicationDto(
 
     val status: String,
 
+    @SerialName("owner_name")
+    val ownerName: String? = null,
+
+    @SerialName("caregiver_name")
+    val caregiverName: String? = null,
+
     @SerialName("created_at")
     val createdAt: String? = null
 )

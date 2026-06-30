@@ -121,10 +121,10 @@ class ServiceApplicationRepository(
                     petBreed = request?.petBreed,
                     petSize = request?.petSize,
                     serviceTypeName = request?.serviceTypeName,
-                    ownerName = request?.ownerName ?: "Dueno #$ownerId",
+                    ownerName = request?.ownerName ?: "Dueño #$ownerId",
                     ownerPhone = request?.ownerPhone,
                     ownerEmail = request?.ownerEmail,
-                    caregiverName = "Cuidador #${app.caregiverId}",
+                    caregiverName = app.caregiverName ?: "Cuidador #${app.caregiverId}",
                     caregiverPhone = null,
                     caregiverEmail = null
                 )
@@ -186,10 +186,10 @@ class ServiceApplicationRepository(
                     petBreed = request?.petBreed,
                     petSize = request?.petSize,
                     serviceTypeName = request?.title,
-                    ownerName = request?.ownerId?.let { "Dueño #$it" },
+                    ownerName = app.ownerName ?: request?.ownerName ?: request?.ownerId?.let { "Dueño #$it" },
                     ownerPhone = null,
                     ownerEmail = null,
-                    caregiverName = "Cuidador #${app.caregiverId}",
+                    caregiverName = app.caregiverName ?: "Cuidador #${app.caregiverId}",
                     caregiverPhone = null,
                     caregiverEmail = null
                 )
