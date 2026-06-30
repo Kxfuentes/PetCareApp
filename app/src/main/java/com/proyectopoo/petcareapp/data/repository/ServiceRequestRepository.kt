@@ -64,13 +64,35 @@ class ServiceRequestRepository(
             return emptyList()
         }
 
-        return remoteRequests.map { dto ->
-            dto.toDetails()
-        }
+        return remoteRequests.toDetailsList()
     }
 
     suspend fun getRecentDetailsByOwner(ownerId: Int): List<ServiceRequestDetails> {
         return dao.getRecentRequestDetailsByOwner(ownerId)
+    }
+
+    suspend fun getRecentDetailsByOwnerFromApi(ownerId: Int): List<ServiceRequestDetails> {
+        val remoteResponse = runCatching {
+            apiService.getServiceRequestsByOwner(ownerId)
+        }.getOrNull()
+
+        if (remoteResponse?.isSuccessful != true) {
+            return getRecentDetailsByOwner(ownerId)
+        }
+
+        return remoteResponse.body().orEmpty().toDetailsList()
+    }
+
+    suspend fun getRequestDetailsByIdFromApi(id: Int): ServiceRequestDetails? {
+        val remoteResponse = runCatching {
+            apiService.getServiceRequestById(id)
+        }.getOrNull()
+
+        if (remoteResponse?.isSuccessful != true) return null
+
+        val request = remoteResponse.body() ?: return null
+        val petNamesById = petNameMapForOwner(request.ownerId)
+        return request.toDetails(petNamesById)
     }
 
     suspend fun getDetailsByOwnerAndStatus(
@@ -101,17 +123,15 @@ class ServiceRequestRepository(
 
         if (remoteResponse?.isSuccessful == true) {
             val dto = remoteResponse.body() ?: return null
-            val entity = dto.toEntity()
-            saveLocal(entity, dto.petIds.ifEmpty { listOf(entity.petId) })
-            return entity
+            return dto.toEntity()
         }
 
         return null
     }
 
     suspend fun loadAvailableFromApi() {
-        // Ya no guardamos solicitudes remotas en Room aquí,
-        // porque pueden venir con mascotas/tipos/dueños que no existen localmente.
+        // Ya no guardamos solicitudes remotas en Room aquÃ­,
+        // porque pueden venir con mascotas/tipos/dueÃ±os que no existen localmente.
         getAvailableDetailsFromApi()
     }
 
@@ -167,7 +187,35 @@ class ServiceRequestRepository(
         )
     }
 
-    private fun ServiceRequestDto.toDetails(): ServiceRequestDetails {
+    private suspend fun List<ServiceRequestDto>.toDetailsList(): List<ServiceRequestDetails> {
+        val petNamesCache = mutableMapOf<Int, Map<Int, String>>()
+
+        return map { request ->
+            val petNamesById = petNamesCache[request.ownerId]
+                ?: petNameMapForOwner(request.ownerId).also { petNamesCache[request.ownerId] = it }
+
+            request.toDetails(petNamesById)
+        }
+    }
+
+    private suspend fun petNameMapForOwner(ownerId: Int): Map<Int, String> {
+        val response = runCatching {
+            apiService.getPetsByOwner(ownerId)
+        }.getOrNull()
+
+        if (response?.isSuccessful != true) return emptyMap()
+
+        return response.body().orEmpty()
+            .associate { pet -> pet.id to pet.name }
+    }
+
+    private fun ServiceRequestDto.toDetails(petNamesById: Map<Int, String> = emptyMap()): ServiceRequestDetails {
+        val requestPetIds = petIds.ifEmpty { listOf(petId) }
+        val primaryPetName = petNamesById[petId] ?: "Mascota #$petId"
+        val allPetNames = requestPetIds.joinToString(", ") { id ->
+            petNamesById[id] ?: "Mascota #$id"
+        }
+
         return ServiceRequestDetails(
             serviceRequestId = id,
             ownerId = ownerId,
@@ -179,12 +227,12 @@ class ServiceRequestRepository(
             startTime = startTime,
             endTime = endTime,
             status = status.toRequestStatus(),
-            petName = "Mascota #$petId",
-            petNames = petIds.ifEmpty { listOf(petId) }.joinToString(", ") { "Mascota #$it" },
+            petName = primaryPetName,
+            petNames = allPetNames,
             petBreed = null,
             petSize = null,
             serviceTypeName = title,
-            ownerName = "Dueño #$ownerId",
+            ownerName = "DueÃ±o #$ownerId",
             ownerPhone = null,
             ownerEmail = null
         )

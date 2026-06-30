@@ -20,7 +20,7 @@ import com.proyectopoo.petcareapp.data.local.entity.ApplicationStatus
 import com.proyectopoo.petcareapp.data.local.entity.PetEntity
 import com.proyectopoo.petcareapp.data.local.relation.ServiceApplicationDetails
 import com.proyectopoo.petcareapp.data.local.relation.ServiceRequestDetails
-import kotlin.math.roundToInt
+import com.proyectopoo.petcareapp.ui.components.StarRatingInput
 
 @Composable
 fun OwnerHomeScreen(
@@ -334,6 +334,12 @@ fun OwnerHomeScreen(
                 val acceptedApplications = caregiverApplications.filter {
                     it.applicationStatus == ApplicationStatus.ACCEPTED
                 }
+                val doneByCaregiverApplications = caregiverApplications.filter {
+                    it.applicationStatus == ApplicationStatus.DONE_BY_CAREGIVER
+                }
+                val completedApplications = caregiverApplications.filter {
+                    it.applicationStatus == ApplicationStatus.COMPLETED
+                }
 
                 if (pendingApplications.isEmpty()) {
                     Card(
@@ -430,7 +436,7 @@ fun OwnerHomeScreen(
 
                 if (acceptedApplications.isNotEmpty()) {
                     Text(
-                        "Servicios aceptados por calificar",
+                        "Servicios activos",
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.SemiBold
                     )
@@ -460,14 +466,76 @@ fun OwnerHomeScreen(
                                     ) {
                                         Text("Cancelar")
                                     }
-                                    Spacer(Modifier.width(8.dp))
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (doneByCaregiverApplications.isNotEmpty()) {
+                    Text(
+                        "Pendientes de confirmar",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.SemiBold
+                    )
+
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        doneByCaregiverApplications.forEach { application ->
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(16.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Column(Modifier.weight(1f)) {
+                                        Text(application.caregiverName ?: "Cuidador", fontWeight = FontWeight.SemiBold)
+                                        Text(
+                                            "El cuidador marcó este servicio como realizado.",
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
                                     Button(onClick = {
                                         applicationToRate = application
                                         ratingScore = 5f
                                         ratingComment = ""
                                     }) {
-                                        Text("Calificar")
+                                        Text("Confirmar y calificar")
                                     }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (completedApplications.isNotEmpty()) {
+                    Text(
+                        "Historial de servicios",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.SemiBold
+                    )
+
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        completedApplications.forEach { application ->
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                            ) {
+                                Column(
+                                    modifier = Modifier.padding(16.dp),
+                                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    Text(application.requestTitle, fontWeight = FontWeight.SemiBold)
+                                    Text(
+                                        "Cuidador: ${application.caregiverName ?: "Cuidador"}",
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    Text(
+                                        "Finalizado",
+                                        color = MaterialTheme.colorScheme.primary,
+                                        fontWeight = FontWeight.Medium
+                                    )
                                 }
                             }
                         }
@@ -572,12 +640,9 @@ fun OwnerHomeScreen(
             title = { Text("Calificar cuidador") },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text("${ratingScore.roundToInt()} estrellas")
-                    Slider(
+                    StarRatingInput(
                         value = ratingScore,
-                        onValueChange = { ratingScore = it },
-                        valueRange = 1f..5f,
-                        steps = 3
+                        onValueChange = { ratingScore = it }
                     )
                     OutlinedTextField(
                         value = ratingComment,

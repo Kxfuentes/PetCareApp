@@ -32,7 +32,7 @@ fun CaregiverFeedScreen(
     val colorScheme = MaterialTheme.colorScheme
 
     val tiposServicio = listOf(
-        "Todos", "Alojamiento", "Guardería", "Paseo", "Taxi", "Peluquería", "Visitante"
+        "Todos", "Alojamiento", "GuarderÃ­a", "Paseo", "Taxi", "PeluquerÃ­a", "Visitante"
     )
 
     var expanded by remember { mutableStateOf(false) }
@@ -139,7 +139,7 @@ fun CaregiverFeedScreen(
                                 )
                                 Spacer(Modifier.height(8.dp))
                                 Text(
-                                    "Cuando un owner publique solicitudes pendientes, aparecerán aquí.",
+                                    "Cuando un dueno publique solicitudes pendientes, apareceran aqui.",
                                     color = colorScheme.onSurfaceVariant,
                                     textAlign = TextAlign.Center
                                 )
@@ -168,8 +168,8 @@ fun CaregiverFeedScreen(
                                     text = listOfNotNull(
                                         servicio.petName,
                                         servicio.petBreed,
-                                        servicio.petSize?.let { "Tamaño $it" }
-                                    ).joinToString(" · ").ifBlank { servicio.title },
+                                        servicio.petSize?.let { "TamaÃ±o $it" }
+                                    ).joinToString(" Â· ").ifBlank { servicio.title },
                                     color = colorScheme.onSurface,
                                     fontWeight = FontWeight.Bold,
                                     fontSize = 17.sp
@@ -179,7 +179,7 @@ fun CaregiverFeedScreen(
                             Spacer(modifier = Modifier.height(10.dp))
 
                             Text(
-                                text = "Dueño: ${servicio.ownerName ?: "Sin nombre"}",
+                                text = "DueÃ±o: ${servicio.ownerName ?: "Sin nombre"}",
                                 color = colorScheme.onSurface,
                                 fontWeight = FontWeight.Medium
                             )
@@ -240,7 +240,7 @@ fun CaregiverFeedScreen(
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(16.dp)
                             ) {
-                                Text("Aceptar solicitud", fontWeight = FontWeight.Bold)
+                                Text("Postularme", fontWeight = FontWeight.Bold)
                             }
                         }
                     }
@@ -265,3 +265,4 @@ private fun IntentosChip(servicio: ServiceRequestDetails) {
         )
     )
 }
+

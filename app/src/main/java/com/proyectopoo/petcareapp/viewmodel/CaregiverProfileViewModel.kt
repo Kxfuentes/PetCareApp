@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.proyectopoo.petcareapp.data.local.database.PetCareDatabase
 import com.proyectopoo.petcareapp.data.local.entity.ApplicationStatus
+import com.proyectopoo.petcareapp.data.network.ApiService
+import com.proyectopoo.petcareapp.data.network.RetrofitClient
 import com.proyectopoo.petcareapp.model.User
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -12,7 +14,8 @@ import kotlinx.coroutines.launch
 
 class CaregiverProfileViewModel(
     private val database: PetCareDatabase,
-    private val caregiverId: Int
+    private val caregiverId: Int,
+    private val apiService: ApiService = RetrofitClient.apiService
 ) : ViewModel() {
 
     private val _user = MutableStateFlow<User?>(null)
@@ -21,7 +24,7 @@ class CaregiverProfileViewModel(
     private val _completedServicesCount = MutableStateFlow(0)
     val completedServicesCount: StateFlow<Int> = _completedServicesCount.asStateFlow()
 
-    private val _rating = MutableStateFlow(0.0)
+    private val _rating = MutableStateFlow(5.0)
     val rating: StateFlow<Double> = _rating.asStateFlow()
 
     private val _isLoading = MutableStateFlow(true)
@@ -49,7 +52,12 @@ class CaregiverProfileViewModel(
                     )
 
                     val caregiverEntity = database.caregiverDao().getCaregiverById(caregiverId)
-                    _rating.value = caregiverEntity?.rating ?: 0.0
+                    val remoteSummary = runCatching {
+                        apiService.getCaregiverRatingSummary(caregiverId)
+                    }.getOrNull()
+                    _rating.value = remoteSummary?.body()?.average?.takeIf { it > 0.0 }
+                        ?: caregiverEntity?.rating?.takeIf { it > 0.0 }
+                        ?: 5.0
 
                     val applications = database.serviceApplicationDao().getByCaregiver(caregiverId)
                     _completedServicesCount.value = applications.count { it.status == ApplicationStatus.COMPLETED }

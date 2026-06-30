@@ -18,8 +18,8 @@ import androidx.compose.ui.unit.sp
 import com.proyectopoo.petcareapp.data.local.entity.ApplicationStatus
 import com.proyectopoo.petcareapp.data.local.relation.ServiceApplicationDetails
 import com.proyectopoo.petcareapp.ui.components.ActionCard
+import com.proyectopoo.petcareapp.ui.components.StarRatingInput
 import com.proyectopoo.petcareapp.ui.util.statusLabel
-import kotlin.math.roundToInt
 
 @Composable
 fun CaregiverHomeScreen(
@@ -45,6 +45,12 @@ fun CaregiverHomeScreen(
     }
     val acceptedRequests = ownerRequests.filter {
         it.applicationStatus == ApplicationStatus.ACCEPTED
+    }
+    val waitingOwnerConfirmation = ownerRequests.filter {
+        it.applicationStatus == ApplicationStatus.DONE_BY_CAREGIVER
+    }
+    val completedRequests = ownerRequests.filter {
+        it.applicationStatus == ApplicationStatus.COMPLETED
     }
     var requestToRate by remember { mutableStateOf<ServiceApplicationDetails?>(null) }
     var ratingScore by remember { mutableStateOf(5f) }
@@ -231,7 +237,7 @@ fun CaregiverHomeScreen(
 
             if (acceptedRequests.isNotEmpty()) {
                 Text(
-                    text = "Servicios aceptados por calificar",
+                    text = "Servicios activos",
                     color = MaterialTheme.colorScheme.onBackground,
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold
@@ -274,8 +280,75 @@ fun CaregiverHomeScreen(
                                     ratingScore = 5f
                                     ratingComment = ""
                                 }) {
-                                    Text("Calificar")
+                                    Text("Finalizar y calificar")
                                 }
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (waitingOwnerConfirmation.isNotEmpty()) {
+                Text(
+                    text = "Pendientes de confirmación del dueño",
+                    color = MaterialTheme.colorScheme.onBackground,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold
+                )
+
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    waitingOwnerConfirmation.forEach { request ->
+                        Card(
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant
+                            ),
+                            shape = RoundedCornerShape(18.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(16.dp),
+                                verticalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Text(
+                                    text = request.requestTitle,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    text = "Esperando que el dueño confirme y califique.",
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (completedRequests.isNotEmpty()) {
+                Text(
+                    text = "Historial de servicios",
+                    color = MaterialTheme.colorScheme.onBackground,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold
+                )
+
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    completedRequests.forEach { request ->
+                        Card(
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant
+                            ),
+                            shape = RoundedCornerShape(18.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(16.dp),
+                                verticalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Text(request.requestTitle, fontWeight = FontWeight.Bold)
+                                Text(
+                                    text = "Finalizado con ${request.ownerName ?: "dueño"}",
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
                             }
                         }
                     }
@@ -290,12 +363,9 @@ fun CaregiverHomeScreen(
             title = { Text("Calificar dueño") },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text("${ratingScore.roundToInt()} estrellas")
-                    Slider(
+                    StarRatingInput(
                         value = ratingScore,
-                        onValueChange = { ratingScore = it },
-                        valueRange = 1f..5f,
-                        steps = 3
+                        onValueChange = { ratingScore = it }
                     )
                     OutlinedTextField(
                         value = ratingComment,
@@ -309,7 +379,7 @@ fun CaregiverHomeScreen(
                 TextButton(onClick = {
                     onCompleteAndRate(request, ratingScore.toDouble(), ratingComment)
                     requestToRate = null
-                }) { Text("Guardar") }
+                }) { Text("Guardar y finalizar") }
             },
             dismissButton = {
                 TextButton(onClick = { requestToRate = null }) { Text("Cancelar") }

@@ -2,16 +2,16 @@ package com.proyectopoo.petcareapp.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.proyectopoo.petcareapp.data.local.dao.OfferedServiceDao
 import com.proyectopoo.petcareapp.data.local.dao.ServiceTypeDao
 import com.proyectopoo.petcareapp.data.local.entity.OfferedServiceEntity
 import com.proyectopoo.petcareapp.data.local.entity.ServiceTypeEntity
+import com.proyectopoo.petcareapp.data.repository.OfferedServiceRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class CaregiverServiceViewModel(
-    private val offeredServiceDao: OfferedServiceDao,
+    private val offeredServiceRepository: OfferedServiceRepository,
     private val serviceTypeDao: ServiceTypeDao,
     private val caregiverId: Int
 ) : ViewModel() {
@@ -30,7 +30,7 @@ class CaregiverServiceViewModel(
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                _servicios.value = offeredServiceDao.getServicesByCaregiver(caregiverId)
+                _servicios.value = offeredServiceRepository.getServicesByCaregiver(caregiverId)
             } finally {
                 _isLoading.value = false
             }
@@ -60,7 +60,7 @@ class CaregiverServiceViewModel(
                 latitude = latitude,
                 longitude = longitude
             )
-            offeredServiceDao.insertOfferedService(newService)
+            offeredServiceRepository.insertOfferedService(newService)
             loadServices() // refrescar lista
         }
     }
@@ -73,8 +73,8 @@ class CaregiverServiceViewModel(
     ) {
         viewModelScope.launch {
             if (price !in 20.0..6000.0) return@launch
-            val service = offeredServiceDao.getServiceById(id) ?: return@launch
-            offeredServiceDao.updateService(
+            val service = offeredServiceRepository.getServiceById(id) ?: return@launch
+            offeredServiceRepository.updateService(
                 service.copy(
                     price = price,
                     description = description,
@@ -88,14 +88,14 @@ class CaregiverServiceViewModel(
     fun toggleAvailability(service: OfferedServiceEntity) {
         viewModelScope.launch {
             val updated = service.copy(isAvailable = !service.isAvailable)
-            offeredServiceDao.updateService(updated)
+            offeredServiceRepository.updateService(updated)
             loadServices()
         }
     }
 
     fun deleteService(service: OfferedServiceEntity) {
         viewModelScope.launch {
-            offeredServiceDao.deleteService(service)
+            offeredServiceRepository.deleteService(service)
             loadServices()
         }
     }

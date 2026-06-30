@@ -5,11 +5,19 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class ServiceApplicationRequest(
+    @SerialName("service_request_id")
+    val serviceRequestId: Int,
+
     @SerialName("caregiver_id")
     val caregiverId: Int,
 
+    @SerialName("offered_service_id")
+    val offeredServiceId: Int? = null,
+
     @SerialName("initiated_by")
-    val initiatedBy: String = "CAREGIVER"
+    val initiatedBy: String = "CAREGIVER",
+
+    val status: String = "PENDING"
 )
 
 @Serializable
@@ -27,8 +35,14 @@ data class ServiceApplicationDto(
     @SerialName("caregiver_id")
     val caregiverId: Int,
 
+    @SerialName("offered_service_id")
+    val offeredServiceId: Int? = null,
+
     @SerialName("initiated_by")
     val initiatedBy: String,
 
-    val status: String
+    val status: String,
+
+    @SerialName("created_at")
+    val createdAt: String? = null
 )

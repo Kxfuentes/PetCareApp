@@ -19,6 +19,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -89,11 +90,13 @@ class MainActivity : ComponentActivity() {
                     LocalUserRoleViewModel provides userRoleViewModel
                 ) {
                     val navController = rememberNavController()
+                    val wsRefreshTick = remember { mutableIntStateOf(0) }
 
                     val webSocketClient = remember {
                         PetCareWebSocketClient(
                             onEvent = { event ->
                                 runOnUiThread {
+                                    wsRefreshTick.intValue += 1
                                     Toast.makeText(
                                         this@MainActivity,
                                         event.message ?: "Nuevo evento de PetCare",
@@ -155,6 +158,7 @@ class MainActivity : ComponentActivity() {
                         AppNavigation(
                             navController = navController,
                             modifier = Modifier.padding(innerPadding),
+                            wsRefreshTick = wsRefreshTick.intValue,
                             sessionLogout = { nav, roleVM ->
                                 webSocketClient.disconnect()
 
