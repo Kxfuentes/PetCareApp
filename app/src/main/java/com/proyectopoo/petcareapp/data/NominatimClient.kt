@@ -10,6 +10,7 @@ import retrofit2.Retrofit
 import retrofit2.converter.kotlinx.serialization.asConverterFactory
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
+import java.util.concurrent.TimeUnit
 
 object NominatimClient {
     // La URL base de Nominatim
@@ -21,9 +22,13 @@ object NominatimClient {
 
     // Cliente OkHttp con el User-Agent
     private val client = OkHttpClient.Builder()
+        .connectTimeout(15, TimeUnit.SECONDS)
+        .readTimeout(20, TimeUnit.SECONDS)
+        .callTimeout(25, TimeUnit.SECONDS)
         .addInterceptor { chain ->
             val request = chain.request().newBuilder()
                 .header("User-Agent", "PetCareApp/1.0 (ariavila@uamv.edu.ni)")
+                .header("Accept-Language", "es")
                 .build()
             chain.proceed(request)
         }

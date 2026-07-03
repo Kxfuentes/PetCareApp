@@ -29,6 +29,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import android.util.Log
 import com.proyectopoo.petcareapp.data.NominatimClient
 import com.proyectopoo.petcareapp.model.NominatimResponse
 import kotlinx.coroutines.delay
@@ -52,6 +53,7 @@ fun LocationAutocompleteField(
     var results by remember { mutableStateOf<List<NominatimResponse>>(emptyList()) }
     var showResults by remember { mutableStateOf(false) }
     var isSearching by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
     // Evita relanzar la búsqueda justo después de seleccionar una sugerencia.
     var suppressSearch by remember { mutableStateOf(false) }
 
@@ -64,17 +66,22 @@ fun LocationAutocompleteField(
         if (q.length < 3) {
             results = emptyList()
             showResults = false
+            errorMessage = null
             return@LaunchedEffect
         }
         delay(450) // debounce: se cancela si el texto cambia antes de cumplirse
         isSearching = true
+        errorMessage = null
         try {
             val response = NominatimClient.instance.searchLocation(query = q, limit = 5)
             results = response
             showResults = response.isNotEmpty()
+            errorMessage = if (response.isEmpty()) "No se encontraron ubicaciones" else null
         } catch (e: Exception) {
+            Log.e("LocationAutocomplete", "Error buscando ubicacion: $q", e)
             results = emptyList()
             showResults = false
+            errorMessage = "No se pudo buscar la ubicacion. Revisa internet o intenta escribir Managua, Nicaragua."
         } finally {
             isSearching = false
         }
@@ -129,6 +136,15 @@ fun LocationAutocompleteField(
                     }
                 }
             }
+        }
+
+        errorMessage?.let { message ->
+            Text(
+                text = message,
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(top = 6.dp)
+            )
         }
     }
 }
