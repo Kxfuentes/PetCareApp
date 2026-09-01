@@ -1,8 +1,11 @@
 package com.proyectopoo.petcareapp.ui.screen.caregiver
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -17,6 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -450,11 +454,14 @@ private fun ScheduledCaregiverRow(
     }
 }
 
+private enum class CaregiverDetailFieldAction { NONE, CALL, EMAIL }
+
 private data class CaregiverDetailField(
     val label: String,
     val value: String,
     val icon: ImageVector,
-    val isError: Boolean = false
+    val isError: Boolean = false,
+    val action: CaregiverDetailFieldAction = CaregiverDetailFieldAction.NONE
 )
 
 @Composable
@@ -667,7 +674,19 @@ private fun CompletedServiceCard(request: ServiceApplicationDetails, onClick: ()
 
 @Composable
 private fun CaregiverDetailFieldRow(field: CaregiverDetailField) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
+    val context = LocalContext.current
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = when (field.action) {
+            CaregiverDetailFieldAction.CALL -> Modifier.clickable {
+                context.startActivity(Intent(Intent.ACTION_DIAL, Uri.parse("tel:${field.value}")))
+            }
+            CaregiverDetailFieldAction.EMAIL -> Modifier.clickable {
+                context.startActivity(Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:${field.value}")))
+            }
+            CaregiverDetailFieldAction.NONE -> Modifier
+        }
+    ) {
         Surface(
             shape = CircleShape,
             color = if (field.isError) MaterialTheme.colorScheme.error.copy(alpha = .12f) else MaterialTheme.colorScheme.surfaceVariant,
@@ -709,8 +728,8 @@ private fun caregiverDetailFields(request: ServiceApplicationDetails): List<Care
         descriptionDetails["Dirección de recogida"]?.let { add(CaregiverDetailField("Recogida", it, Icons.Default.LocationOn)) }
         descriptionDetails["Dirección de destino"]?.let { add(CaregiverDetailField("Destino", it, Icons.Default.Place)) }
         descriptionDetails["Precio"]?.let { add(CaregiverDetailField("Precio", it, Icons.Default.Payments)) }
-        request.ownerEmail?.takeIf { it.isNotBlank() }?.let { add(CaregiverDetailField("Email", it, Icons.Default.Email)) }
-        request.ownerPhone?.takeIf { it.isNotBlank() }?.let { add(CaregiverDetailField("Teléfono", it, Icons.Default.Phone)) }
+        request.ownerEmail?.takeIf { it.isNotBlank() }?.let { add(CaregiverDetailField("Email", it, Icons.Default.Email, action = CaregiverDetailFieldAction.EMAIL)) }
+        request.ownerPhone?.takeIf { it.isNotBlank() }?.let { add(CaregiverDetailField("Teléfono", it, Icons.Default.Phone, action = CaregiverDetailFieldAction.CALL)) }
     }
 }
 

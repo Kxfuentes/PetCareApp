@@ -610,53 +610,74 @@ class ServiceRequestViewModel(
         _ownerBookings.value = bookingDao.getBookingsByOwner(ownerId)
     }
 
-    private suspend fun ensureOwner(ownerId: Int) {
-        if (ownerDao.getOwnerById(ownerId) != null) return
+    private suspend fun ensureOwner(
+        ownerId: Int,
+        name: String? = null,
+        phone: String? = null,
+        email: String? = null
+    ) {
+        upsertUserContact(ownerId, "DueÃ±o", "dueno@petcare.local", name, phone, email, UserRoleType.OWNER)
 
-        if (userDao.getUserById(ownerId) == null) {
-            userDao.insertUser(
-                UserEntity(
+        if (ownerDao.getOwnerById(ownerId) == null) {
+            ownerDao.insertOwner(
+                OwnerEntity(
+                    ownerId = ownerId,
                     userId = ownerId,
-                    fullName = "DueÃ±o",
-                    email = "dueno@petcare.local",
-                    phone = null,
-                    password = null,
-                    role = UserRoleType.OWNER
+                    address = null
                 )
             )
         }
-
-        ownerDao.insertOwner(
-            OwnerEntity(
-                ownerId = ownerId,
-                userId = ownerId,
-                address = null
-            )
-        )
     }
 
-    private suspend fun ensureCaregiver(caregiverId: Int) {
-        if (caregiverDao.getCaregiverById(caregiverId) != null) return
+    private suspend fun ensureCaregiver(
+        caregiverId: Int,
+        name: String? = null,
+        phone: String? = null,
+        email: String? = null
+    ) {
+        upsertUserContact(caregiverId, "Cuidador", "cuidador@petcare.local", name, phone, email, UserRoleType.CAREGIVER)
 
-        if (userDao.getUserById(caregiverId) == null) {
-            userDao.insertUser(
-                UserEntity(
-                    userId = caregiverId,
-                    fullName = "Cuidador",
-                    email = "cuidador@petcare.local",
-                    phone = null,
-                    password = null,
-                    role = UserRoleType.CAREGIVER
+        if (caregiverDao.getCaregiverById(caregiverId) == null) {
+            caregiverDao.insertCaregiver(
+                CaregiverEntity(
+                    caregiverId = caregiverId,
+                    userId = caregiverId
                 )
             )
         }
+    }
 
-        caregiverDao.insertCaregiver(
-            CaregiverEntity(
-                caregiverId = caregiverId,
-                userId = caregiverId
+    /** Crea el usuario local si no existe (con datos de contacto reales si ya se conocen),
+     *  o refresca nombre/telefono/correo cuando llegan datos reales desde el backend. */
+    private suspend fun upsertUserContact(
+        userId: Int,
+        fallbackName: String,
+        fallbackEmail: String,
+        name: String?,
+        phone: String?,
+        email: String?,
+        role: UserRoleType
+    ) {
+        val existing = userDao.getUserById(userId)
+        if (existing == null) {
+            userDao.insertUser(
+                UserEntity(
+                    userId = userId,
+                    fullName = name ?: fallbackName,
+                    email = email ?: fallbackEmail,
+                    phone = phone,
+                    password = null,
+                    role = role
+                )
             )
-        )
+        } else {
+            val updated = existing.copy(
+                fullName = name ?: existing.fullName,
+                email = email ?: existing.email,
+                phone = phone ?: existing.phone
+            )
+            if (updated != existing) userDao.updateUser(updated)
+        }
     }
 
     private suspend fun ensureServiceType(serviceTypeId: Int, name: String) {
@@ -750,7 +771,8 @@ class ServiceRequestViewModel(
             syncRequestById(dto.serviceRequestId)
             val request = requestRepo.getRequestById(dto.serviceRequestId) ?: return@forEach
             val isNewApplication = dto.id?.let { applicationRepo.getApplicationById(it) == null } ?: false
-            ensureCaregiver(dto.caregiverId)
+            ensureOwner(request.ownerId, dto.ownerName, dto.ownerPhone, dto.ownerEmail)
+            ensureCaregiver(dto.caregiverId, dto.caregiverName, dto.caregiverPhone, dto.caregiverEmail)
             applicationRepo.insert(dto.toEntity())
             notifyNewApplicationIfNeeded(dto, request, notifyUserId, isNewApplication)
         }

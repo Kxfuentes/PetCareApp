@@ -118,12 +118,12 @@ interface ApiService {
         @Body request: RatingRequest
     ): Response<RatingDto>
 
-    @GET("api/ratings/caregiver/{caregiverId}")
+    @GET("api/ratings/caregiver/{caregiverId}/reviews")
     suspend fun getCaregiverReviews(
         @Path("caregiverId") caregiverId: Int
     ): Response<List<RatingDto>>
 
-    @GET("api/ratings/owner/{ownerId}")
+    @GET("api/ratings/owner/{ownerId}/reviews")
     suspend fun getOwnerReviews(
         @Path("ownerId") ownerId: Int
     ): Response<List<RatingDto>>

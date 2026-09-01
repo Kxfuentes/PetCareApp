@@ -1,7 +1,10 @@
 package com.proyectopoo.petcareapp.ui.screen.owner
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -19,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -924,11 +928,14 @@ private fun ServiceApplicationDetailsDialog(
     )
 }
 
+private enum class DetailFieldAction { NONE, CALL, EMAIL }
+
 private data class DetailField(
     val icon: ImageVector,
     val label: String,
     val value: String,
-    val accentColor: Color? = null
+    val accentColor: Color? = null,
+    val action: DetailFieldAction = DetailFieldAction.NONE
 )
 
 @Composable
@@ -1061,9 +1068,21 @@ private fun DetailsCardDialog(
 
 @Composable
 private fun DetailFieldRow(field: DetailField) {
+    val context = LocalContext.current
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .then(
+                when (field.action) {
+                    DetailFieldAction.CALL -> Modifier.clickable {
+                        context.startActivity(Intent(Intent.ACTION_DIAL, Uri.parse("tel:${field.value}")))
+                    }
+                    DetailFieldAction.EMAIL -> Modifier.clickable {
+                        context.startActivity(Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:${field.value}")))
+                    }
+                    DetailFieldAction.NONE -> Modifier
+                }
+            )
             .padding(vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -1200,8 +1219,8 @@ private fun applicationDetailFields(application: ServiceApplicationDetails): Lis
         application.petSize?.let { DetailField(Icons.Default.Scale, "Tamaño", it) },
         DetailField(serviceIconFor(application.serviceTypeName ?: application.requestTitle), "Servicio", application.serviceTypeName ?: application.requestTitle),
         DetailField(Icons.Default.Person, "Cuidador", application.caregiverName ?: "Cuidador"),
-        application.caregiverEmail?.let { DetailField(Icons.Default.Email, "Email del cuidador", it) },
-        application.caregiverPhone?.let { DetailField(Icons.Default.Phone, "Teléfono del cuidador", it) },
+        application.caregiverEmail?.let { DetailField(Icons.Default.Email, "Email del cuidador", it, action = DetailFieldAction.EMAIL) },
+        application.caregiverPhone?.let { DetailField(Icons.Default.Phone, "Teléfono del cuidador", it, action = DetailFieldAction.CALL) },
         DetailField(Icons.Default.CalendarToday, "Fecha", application.requestedDate ?: "Sin fecha"),
         application.startTime?.let { DetailField(Icons.Default.AccessTime, "Hora inicio", it) },
         application.endTime?.let { DetailField(Icons.Default.Schedule, "Hora fin", it) },
