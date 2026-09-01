@@ -46,14 +46,15 @@ class ServiceApplicationRepository(
 
             Log.d("ServiceApplicationRepo", "Postulacion creada en API: $response")
 
-            if (response != null) {
+            val remoteBody = response?.body()
+            if (remoteBody != null) {
                 application.copy(
-                    applicationId = response.id,
-                    serviceRequestId = response.serviceRequestId,
-                    caregiverId = response.caregiverId,
-                    offeredServiceId = response.offeredServiceId,
-                    initiatedBy = response.initiatedBy.toInitiator(),
-                    status = response.status.toApplicationStatus()
+                    applicationId = remoteBody.id,
+                    serviceRequestId = remoteBody.serviceRequestId,
+                    caregiverId = remoteBody.caregiverId,
+                    offeredServiceId = remoteBody.offeredServiceId,
+                    initiatedBy = remoteBody.initiatedBy.toInitiator(),
+                    status = remoteBody.status.toApplicationStatus()
                 )
             } else {
                 application
@@ -228,7 +229,7 @@ class ServiceApplicationRepository(
             Log.e("ServiceApplicationRepo", "Error actualizando postulacion en API. applicationId=$id", error)
         }.getOrNull()
 
-        return response?.let { dto ->
+        return response?.body()?.let { dto ->
             ServiceApplicationEntity(
                 applicationId = dto.id,
                 serviceRequestId = dto.serviceRequestId,

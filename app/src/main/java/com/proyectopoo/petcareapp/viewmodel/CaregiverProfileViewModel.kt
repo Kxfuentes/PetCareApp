@@ -59,30 +59,25 @@ class CaregiverProfileViewModel(
                     val remoteSummary = runCatching {
                         apiService.getCaregiverRatingSummary(caregiverId)
                     }.getOrNull()
-                    _rating.value = remoteSummary?.body()?.average?.takeIf { it > 0.0 }
-                        ?: caregiverEntity?.rating?.takeIf { it > 0.0 }
-                        ?: 5.0
 
-                    val remoteSummary = runCatching {
-                        apiService?.getCaregiverRatingSummary(caregiverId)
-                            ?.takeIf { it.isSuccessful }
-                            ?.body()
-                    }.getOrNull()
-
-                    if (remoteSummary != null) {
-                        _rating.value = remoteSummary.average
+                    val summaryBody = remoteSummary?.takeIf { it.isSuccessful }?.body()
+                    if (summaryBody != null) {
+                        _rating.value = summaryBody.average.takeIf { it > 0.0 } ?: 5.0
                         caregiverEntity?.let {
                             database.caregiverDao().updateCaregiver(
-                                it.copy(rating = remoteSummary.average)
+                                it.copy(rating = summaryBody.average.takeIf { it > 0.0 } ?: 5.0)
                             )
                         }
+                    } else {
+                        _rating.value = caregiverEntity?.rating?.takeIf { it > 0.0 } ?: 5.0
                     }
 
                     _reviews.value = runCatching {
-                        apiService?.getCaregiverReviews(caregiverId)
-                            ?.takeIf { it.isSuccessful }
-                            ?.body()
-                    }.getOrNull().orEmpty()
+                        apiService.getCaregiverReviews(caregiverId)
+                    }.getOrNull()
+                        ?.takeIf { it.isSuccessful }
+                        ?.body()
+                        .orEmpty()
 
                     val applications = database.serviceApplicationDao().getByCaregiver(caregiverId)
                     _completedServicesCount.value = applications.count { it.status == ApplicationStatus.COMPLETED }

@@ -7,6 +7,7 @@ import com.proyectopoo.petcareapp.data.local.entity.OfferedServiceEntity
 import com.proyectopoo.petcareapp.data.local.entity.ServiceTypeEntity
 import com.proyectopoo.petcareapp.data.network.ApiService
 import com.proyectopoo.petcareapp.data.network.OfferedServiceDto
+import com.proyectopoo.petcareapp.data.network.OfferedServiceRequest
 import com.proyectopoo.petcareapp.data.repository.OfferedServiceRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -15,6 +16,7 @@ import kotlinx.coroutines.launch
 class CaregiverServiceViewModel(
     private val offeredServiceRepository: OfferedServiceRepository,
     private val serviceTypeDao: ServiceTypeDao,
+    private val offeredServiceDao: com.proyectopoo.petcareapp.data.local.dao.OfferedServiceDao,
     private val caregiverId: Int,
     private val apiService: ApiService? = null
 ) : ViewModel() {
@@ -152,9 +154,8 @@ class CaregiverServiceViewModel(
 }
 
 
-private fun OfferedServiceEntity.toDto(): OfferedServiceDto {
-    return OfferedServiceDto(
-        id = offeredServiceId.takeIf { it > 0 },
+private fun OfferedServiceEntity.toDto(): OfferedServiceRequest {
+    return OfferedServiceRequest(
         caregiverId = caregiverId,
         serviceTypeId = serviceTypeId,
         title = title,

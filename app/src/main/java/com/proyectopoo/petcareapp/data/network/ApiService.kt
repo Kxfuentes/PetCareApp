@@ -49,16 +49,21 @@ interface ApiService {
     suspend fun getAvailableOfferedServices(): Response<List<OfferedServiceDto>>
 
     @POST("api/offered-services")
-    suspend fun createOfferedService(@Body request: OfferedServiceDto): Response<OfferedServiceDto>
+    suspend fun createOfferedService(@Body request: OfferedServiceRequest): Response<OfferedServiceDto>
 
     @PUT("api/offered-services/{id}")
     suspend fun updateOfferedService(
         @Path("id") id: Int,
-        @Body request: OfferedServiceDto
+        @Body request: OfferedServiceRequest
     ): Response<OfferedServiceDto>
 
     @DELETE("api/offered-services/{id}")
     suspend fun deleteOfferedService(@Path("id") id: Int): Response<Unit>
+
+    @GET("api/offered-services/{id}")
+    suspend fun getOfferedServiceById(
+        @Path("id") id: Int
+    ): Response<OfferedServiceDto>
 
     @GET("api/service-requests/owner/{ownerId}")
     suspend fun getServiceRequestsByOwner(@Path("ownerId") ownerId: Int): Response<List<ServiceRequestDto>>
@@ -85,7 +90,12 @@ interface ApiService {
     @POST("api/service-applications")
     suspend fun applyToServiceRequest(
         @Body request: ServiceApplicationRequest
-    ): ServiceApplicationDto
+    ): Response<ServiceApplicationDto>
+
+    @POST("api/service-applications")
+    suspend fun createServiceApplication(
+        @Body request: ServiceApplicationRequest
+    ): Response<ServiceApplicationDto>
 
     @GET("api/service-applications/owner/{ownerId}")
     suspend fun getServiceApplicationsByOwner(
@@ -101,41 +111,22 @@ interface ApiService {
     suspend fun updateServiceApplicationStatus(
         @Path("applicationId") applicationId: Int,
         @Body request: ServiceApplicationStatusRequest
-    ): ServiceApplicationDto
-
-    @GET("api/offered-services/caregiver/{caregiverId}")
-    suspend fun getOfferedServicesByCaregiver(
-        @Path("caregiverId") caregiverId: Int
-    ): Response<List<OfferedServiceDto>>
-
-    @GET("api/offered-services/available")
-    suspend fun getAvailableOfferedServices(): Response<List<OfferedServiceDto>>
-
-    @GET("api/offered-services/{id}")
-    suspend fun getOfferedServiceById(
-        @Path("id") id: Int
-    ): Response<OfferedServiceDto>
-
-    @POST("api/offered-services")
-    suspend fun createOfferedService(
-        @Body request: OfferedServiceRequest
-    ): Response<OfferedServiceDto>
-
-    @PUT("api/offered-services/{id}")
-    suspend fun updateOfferedService(
-        @Path("id") id: Int,
-        @Body request: OfferedServiceRequest
-    ): Response<OfferedServiceDto>
-
-    @DELETE("api/offered-services/{id}")
-    suspend fun deleteOfferedService(
-        @Path("id") id: Int
-    ): Response<Unit>
+    ): Response<ServiceApplicationDto>
 
     @POST("api/ratings")
     suspend fun createRating(
         @Body request: RatingRequest
     ): Response<RatingDto>
+
+    @GET("api/ratings/caregiver/{caregiverId}")
+    suspend fun getCaregiverReviews(
+        @Path("caregiverId") caregiverId: Int
+    ): Response<List<RatingDto>>
+
+    @GET("api/ratings/owner/{ownerId}")
+    suspend fun getOwnerReviews(
+        @Path("ownerId") ownerId: Int
+    ): Response<List<RatingDto>>
 
     @GET("api/ratings/caregiver/{caregiverId}/summary")
     suspend fun getCaregiverRatingSummary(

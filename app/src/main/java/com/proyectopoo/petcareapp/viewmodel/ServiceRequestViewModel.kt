@@ -31,12 +31,15 @@ import com.proyectopoo.petcareapp.data.local.relation.ServiceRequestDetails
 import com.proyectopoo.petcareapp.data.local.relation.RequestWithApplications
 import com.proyectopoo.petcareapp.data.local.entity.ServiceBookingEntity
 import com.proyectopoo.petcareapp.data.network.ApiService
-import com.proyectopoo.petcareapp.data.network.ServiceApplicationDto
 import com.proyectopoo.petcareapp.data.network.RatingDto
-import com.proyectopoo.petcareapp.data.network.ServiceRequestDto
-import com.proyectopoo.petcareapp.data.network.StatusUpdateRequest
 import com.proyectopoo.petcareapp.data.network.RatingRequest
 import com.proyectopoo.petcareapp.data.network.RetrofitClient
+import com.proyectopoo.petcareapp.data.network.ServiceApplicationDto
+import com.proyectopoo.petcareapp.data.network.ServiceApplicationRequest
+import com.proyectopoo.petcareapp.data.network.ServiceApplicationStatusRequest
+import com.proyectopoo.petcareapp.data.network.ServiceRequestDto
+import com.proyectopoo.petcareapp.data.network.ServiceRequestRequest
+import com.proyectopoo.petcareapp.data.network.StatusUpdateRequest
 import com.proyectopoo.petcareapp.data.repository.ServiceApplicationRepository
 import com.proyectopoo.petcareapp.data.repository.ServiceRequestRepository
 import com.proyectopoo.petcareapp.notifications.AppNotifier
@@ -322,7 +325,7 @@ class ServiceRequestViewModel(
 
             if (modifiedDate != null || modifiedStartTime != null || modifiedEndTime != null) {
                 applicationRepo.updateRequestSchedule(
-                    requestId = localApplication.serviceRequestId,
+                    requestId = application.serviceRequestId,
                     date = modifiedDate,
                     startTime = modifiedStartTime,
                     endTime = modifiedEndTime
@@ -438,6 +441,27 @@ class ServiceRequestViewModel(
             _availableRequests.value = requestRepo.getAvailableDetails()
             _userMessage.value = "Calificación registrada."
         }
+    }
+
+    fun markDoneByCaregiverAndRateOwner(
+        applicationId: Int,
+        serviceRequestId: Int,
+        caregiverId: Int,
+        ownerId: Int,
+        score: Double,
+        comment: String,
+        reloadCaregiverId: Int? = null
+    ) {
+        completeAndRateService(
+            applicationId = applicationId,
+            serviceRequestId = serviceRequestId,
+            caregiverId = caregiverId,
+            ownerId = ownerId,
+            ratedByRole = UserRoleType.CAREGIVER,
+            score = score,
+            comment = comment,
+            reloadCaregiverId = reloadCaregiverId
+        )
     }
 
     private suspend fun saveRatingIfNeeded(
@@ -775,14 +799,14 @@ class ServiceRequestViewModel(
         status: ApplicationStatus
     ): ServiceApplicationEntity? {
         val response = runCatching {
-            apiService?.updateServiceApplicationStatus(applicationId, StatusUpdateRequest(status.name))
+            apiService?.updateServiceApplicationStatus(applicationId, ServiceApplicationStatusRequest(status.name))
         }.getOrNull() ?: return null
 
-        if (response.isSuccessful) {
+        if (response?.isSuccessful == true) {
             return response.body()?.toEntity()
         }
 
-        _userMessage.value = parseApiError(response.errorBody()?.string())
+        _userMessage.value = parseApiError(response?.errorBody()?.string())
             ?: "No se pudo actualizar el estado del servicio."
         return null
     }
@@ -795,8 +819,8 @@ class ServiceRequestViewModel(
             apiService?.createServiceRequest(request.toDto(petIds))
         }.getOrNull() ?: return request
 
-        if (response.isSuccessful) return response.body()?.toEntity() ?: request
-        _userMessage.value = parseApiError(response.errorBody()?.string())
+        if (response?.isSuccessful == true) return response.body()?.toEntity() ?: request
+        _userMessage.value = parseApiError(response?.errorBody()?.string())
             ?: "Error al guardar la solicitud en el servidor."
         return null
     }
@@ -806,11 +830,11 @@ class ServiceRequestViewModel(
             apiService?.createServiceApplication(application.toDto())
         }.getOrNull() ?: return null
 
-        if (response.isSuccessful) {
+        if (response?.isSuccessful == true) {
             return response.body()?.toEntity()
         }
 
-        _userMessage.value = parseApiError(response.errorBody()?.string())
+        _userMessage.value = parseApiError(response?.errorBody()?.string())
             ?: "Error al registrar la postulación en el servidor."
         return null
     }
@@ -890,8 +914,8 @@ class ServiceRequestViewModel(
 }
 
 
-private fun ServiceRequestEntity.toDto(petIds: List<Int> = emptyList()): ServiceRequestDto {
-    return ServiceRequestDto(
+private fun ServiceRequestEntity.toDto(petIds: List<Int> = emptyList()): ServiceRequestRequest {
+    return ServiceRequestRequest(
         id = serviceRequestId,
         ownerId = ownerId,
         petId = petId,
@@ -929,9 +953,8 @@ private fun ServiceRequestDto.toEntity(): ServiceRequestEntity {
     )
 }
 
-private fun ServiceApplicationEntity.toDto(): ServiceApplicationDto {
-    return ServiceApplicationDto(
-        id = applicationId.takeIf { it > 0 },
+private fun ServiceApplicationEntity.toDto(): ServiceApplicationRequest {
+    return ServiceApplicationRequest(
         serviceRequestId = serviceRequestId,
         caregiverId = caregiverId,
         offeredServiceId = offeredServiceId,
@@ -952,9 +975,8 @@ private fun ServiceApplicationDto.toEntity(): ServiceApplicationEntity {
 }
 
 
-private fun RatingEntity.toDto(): RatingDto {
-    return RatingDto(
-        id = ratingId.takeIf { it > 0 },
+private fun RatingEntity.toDto(): RatingRequest {
+    return RatingRequest(
         serviceRequestId = serviceRequestId,
         caregiverId = caregiverId,
         ownerId = ownerId,

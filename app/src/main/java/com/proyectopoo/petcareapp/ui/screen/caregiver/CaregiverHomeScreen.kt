@@ -23,7 +23,6 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.proyectopoo.petcareapp.data.local.entity.ApplicationStatus
 import com.proyectopoo.petcareapp.data.local.relation.ServiceApplicationDetails
-import kotlin.math.roundToInt
 import com.proyectopoo.petcareapp.ui.components.StarRatingInput
 
 @Composable
@@ -41,19 +40,17 @@ fun CaregiverHomeScreen(
     var available by remember { mutableStateOf(true) }
     var showHeader by remember { mutableStateOf(true) }
     val scrollState = rememberScrollState()
-    val nextCommitment = scheduledServices.filter { it.applicationStatus == ApplicationStatus.ACCEPTED }.minByOrNull { it.requestedDate ?: "" }
-    val pendingRequests = ownerRequests.filter { it.applicationStatus == ApplicationStatus.PENDING && it.initiatedBy == com.proyectopoo.petcareapp.data.local.entity.ApplicationInitiator.OWNER }
+    val pendingRequests = ownerRequests.filter {
+        it.applicationStatus == ApplicationStatus.PENDING &&
+            it.initiatedBy == com.proyectopoo.petcareapp.data.local.entity.ApplicationInitiator.OWNER
+    }
     val acceptedRequests = scheduledServices.filter { it.applicationStatus == ApplicationStatus.ACCEPTED }
+    val waitingOwnerConfirmation = ownerRequests.filter { it.applicationStatus == ApplicationStatus.DONE_BY_CAREGIVER }
+    val nextCommitment = acceptedRequests.minByOrNull { it.requestedDate ?: "" }
     var requestToRate by remember { mutableStateOf<ServiceApplicationDetails?>(null) }
     var requestToDetails by remember { mutableStateOf<ServiceApplicationDetails?>(null) }
     var ratingScore by remember { mutableStateOf(5f) }
     var ratingComment by remember { mutableStateOf("") }
-
-    val scrollState = rememberScrollState()
-    val pendingRequests = ownerRequests.filter { it.applicationStatus == ApplicationStatus.PENDING }
-    val acceptedRequests = ownerRequests.filter { it.applicationStatus == ApplicationStatus.ACCEPTED }
-    val waitingOwnerConfirmation = ownerRequests.filter { it.applicationStatus == ApplicationStatus.DONE_BY_CAREGIVER }
-    val nextCommitment = acceptedRequests.minByOrNull { it.requestedDate ?: "" }
 
     Column(
         modifier = Modifier
@@ -74,49 +71,101 @@ fun CaregiverHomeScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("Sección de cuidador", color = MaterialTheme.colorScheme.onPrimary, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                        Text("Gestiona tus servicios y solicitudes", color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.9f), style = MaterialTheme.typography.bodyMedium)
+                        Text(
+                            "Sección de cuidador",
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            "Gestiona tus servicios y solicitudes",
+                            color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.9f),
+                            style = MaterialTheme.typography.bodyMedium
+                        )
                     }
                     IconButton(onClick = { showHeader = false }) {
                         Icon(Icons.Default.Close, contentDescription = "Cerrar", tint = MaterialTheme.colorScheme.onPrimary)
                     }
-                    IconButton(onClick = { showHeader = false }) { Icon(Icons.Default.Close, "Cerrar", tint = MaterialTheme.colorScheme.onPrimary) }
                 }
             }
         }
 
-        Column(Modifier.padding(horizontal = 14.dp), verticalArrangement = Arrangement.spacedBy(18.dp)) {
-            Card(shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), modifier = Modifier.fillMaxWidth().shadow(2.dp, RoundedCornerShape(20.dp))) {
+        Column(
+            Modifier.padding(horizontal = 14.dp),
+            verticalArrangement = Arrangement.spacedBy(18.dp)
+        ) {
+            Card(
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .shadow(2.dp, RoundedCornerShape(20.dp))
+            ) {
                 Row(Modifier.padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {
                         Text("Estado actual", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text(if (available) "Disponible para trabajar" else "En descanso", fontWeight = FontWeight.Bold, fontSize = 17.sp)
+                        Text(
+                            if (available) "Disponible para trabajar" else "En descanso",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 17.sp
+                        )
                     }
-                    Switch(checked = available, onCheckedChange = { available = it }, colors = SwitchDefaults.colors(checkedThumbColor = MaterialTheme.colorScheme.onPrimary, checkedTrackColor = MaterialTheme.colorScheme.primary))
+                    Switch(
+                        checked = available,
+                        onCheckedChange = { available = it },
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
+                            checkedTrackColor = MaterialTheme.colorScheme.primary
+                        )
+                    )
                 }
             }
 
             SectionLabel("Próximo compromiso")
             CommitmentCard(commitment = nextCommitment)
 
-            Card(onClick = onGoToServices, shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), modifier = Modifier.fillMaxWidth().border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(18.dp))) {
+            Card(
+                onClick = onGoToServices,
+                shape = RoundedCornerShape(18.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(18.dp))
+            ) {
                 Row(Modifier.padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Surface(shape = RoundedCornerShape(12.dp), color = MaterialTheme.colorScheme.surfaceVariant, modifier = Modifier.size(52.dp)) { Box(contentAlignment = Alignment.Center) { Icon(Icons.Default.List, null, tint = MaterialTheme.colorScheme.primary) } }
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = MaterialTheme.colorScheme.surfaceVariant,
+                        modifier = Modifier.size(52.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(Icons.Default.List, null, tint = MaterialTheme.colorScheme.primary)
+                        }
+                    }
                     Spacer(Modifier.width(16.dp))
-                    Text("Mis servicios", Modifier.weight(1f), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+                    Text(
+                        "Mis servicios",
+                        Modifier.weight(1f),
+                        fontWeight = FontWeight.Bold,
+                        style = MaterialTheme.typography.titleMedium
+                    )
                     Icon(Icons.Default.ChevronRight, null, tint = MaterialTheme.colorScheme.primary)
                 }
             }
 
             SectionLabel("Dueños que solicitaron tus servicios")
-            if (pendingRequests.isEmpty()) EmptyCaregiverCard("Aún no tienes solicitudes pendientes.") else Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                pendingRequests.forEach { request ->
-                    OwnerRequestCard(
-                        request = request,
-                        onDetails = { requestToDetails = request },
-                        onAccept = { onAcceptApplication(request.applicationId) },
-                        onReject = { onRejectApplication(request.applicationId) }
-                    )
+            if (pendingRequests.isEmpty()) {
+                EmptyCaregiverCard("Aún no tienes solicitudes pendientes.")
+            } else {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    pendingRequests.forEach { request ->
+                        OwnerRequestCard(
+                            request = request,
+                            onDetails = { requestToDetails = request },
+                            onAccept = { onAcceptApplication(request.applicationId) },
+                            onReject = { onRejectApplication(request.applicationId) }
+                        )
+                    }
                 }
             }
 
@@ -146,7 +195,6 @@ fun CaregiverHomeScreen(
                     }
                 }
             }
-
         }
     }
 
@@ -178,36 +226,75 @@ fun CaregiverHomeScreen(
                         onCompleteAndRate(request, ratingScore.toDouble(), ratingComment)
                         requestToRate = null
                     }
-                ) { Text("Guardar y finalizar") }
+                ) {
+                    Text("Guardar y finalizar")
+                }
             },
             dismissButton = {
-                TextButton(onClick = { requestToRate = null }) { Text("Cancelar") }
+                TextButton(onClick = { requestToRate = null }) {
+                    Text("Cancelar")
+                }
             }
         )
     }
 }
 
-@Composable private fun SectionLabel(text: String) { Text(text, fontWeight = FontWeight.Bold, fontSize = 17.sp, color = MaterialTheme.colorScheme.onBackground) }
-@Composable private fun EmptyCaregiverCard(text: String) { Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant), shape = RoundedCornerShape(16.dp)) { Text(text, modifier = Modifier.padding(18.dp), color = MaterialTheme.colorScheme.onSurfaceVariant) } }
+@Composable
+private fun SectionLabel(text: String) {
+    Text(text, fontWeight = FontWeight.Bold, fontSize = 17.sp, color = MaterialTheme.colorScheme.onBackground)
+}
+
+@Composable
+private fun EmptyCaregiverCard(text: String) {
+    Card(
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+        shape = RoundedCornerShape(16.dp)
+    ) {
+        Text(text, modifier = Modifier.padding(18.dp), color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
 
 @Composable
 private fun CommitmentCard(commitment: ServiceApplicationDetails?) {
-    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), shape = RoundedCornerShape(20.dp), modifier = Modifier.fillMaxWidth().border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(20.dp))) {
+    Card(
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        shape = RoundedCornerShape(20.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(20.dp))
+    ) {
         Row(Modifier.padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
-            Surface(shape = CircleShape, color = MaterialTheme.colorScheme.surfaceVariant, modifier = Modifier.size(82.dp)) { Box(contentAlignment = Alignment.Center) { Icon(Icons.Default.Pets, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(42.dp)) } }
+            Surface(
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.surfaceVariant,
+                modifier = Modifier.size(82.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(Icons.Default.Pets, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(42.dp))
+                }
+            }
             Spacer(Modifier.width(18.dp))
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(commitment?.let { "${it.serviceTypeName ?: it.requestTitle} con ${it.petName ?: "mascota"}" } ?: "Sin compromisos próximos", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
-                Row(verticalAlignment = Alignment.CenterVertically) { Icon(Icons.Default.CalendarToday, null, modifier = Modifier.size(18.dp)); Spacer(Modifier.width(10.dp)); Text(commitment?.requestedDate ?: "Cuando aceptes una solicitud aparecerá aquí") }
-                commitment?.startTime?.let { Row(verticalAlignment = Alignment.CenterVertically) { Icon(Icons.Default.AccessTime, null, modifier = Modifier.size(18.dp)); Spacer(Modifier.width(10.dp)); Text(it) } }
-private fun AvailabilityCard(available: Boolean, onAvailableChange: (Boolean) -> Unit) {
-    Card(shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), modifier = Modifier.fillMaxWidth()) {
-        Row(modifier = Modifier.padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text("Estado actual", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp)
-                Text(if (available) "Disponible para trabajar" else "En descanso", fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                Text(
+                    commitment?.let {
+                        "${it.serviceTypeName ?: it.requestTitle} con ${it.petNames ?: it.petName ?: "mascota"}"
+                    } ?: "Sin compromisos próximos",
+                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.titleMedium
+                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.CalendarToday, null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(10.dp))
+                    Text(commitment?.requestedDate ?: "Cuando aceptes una solicitud aparecerá aquí")
+                }
+                commitment?.startTime?.let {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.AccessTime, null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(10.dp))
+                        Text(it)
+                    }
+                }
             }
-            Switch(checked = available, onCheckedChange = onAvailableChange)
         }
     }
 }
@@ -219,35 +306,12 @@ private fun SectionTitle(text: String) {
 
 @Composable
 private fun EmptyStateCard(text: String) {
-    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant), shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth()) {
+    Card(
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+        shape = RoundedCornerShape(16.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
         Text(text, modifier = Modifier.padding(18.dp), color = MaterialTheme.colorScheme.onSurfaceVariant)
-    }
-}
-
-@Composable
-private fun CommitmentCard(commitment: ServiceApplicationDetails?, onClick: () -> Unit) {
-    Card(onClick = onClick, colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), shape = RoundedCornerShape(20.dp), modifier = Modifier.fillMaxWidth().border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(20.dp))) {
-        Row(modifier = Modifier.padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
-            Surface(shape = CircleShape, color = MaterialTheme.colorScheme.surfaceVariant, modifier = Modifier.size(64.dp)) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(Icons.Default.EventAvailable, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(34.dp))
-                }
-            }
-            Spacer(Modifier.width(16.dp))
-            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
-                Text(
-                    commitment?.let { "${it.serviceTypeName ?: it.requestTitle} con ${it.petNames ?: it.petName ?: "mascota"}" }
-                        ?: "Sin compromisos próximos",
-                    fontWeight = FontWeight.Bold,
-                    style = MaterialTheme.typography.titleMedium
-                )
-                Text(
-                    commitment?.requestedDate ?: "Cuando aceptes una solicitud aparecerá aquí",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    style = MaterialTheme.typography.bodySmall
-                )
-            }
-        }
     }
 }
 
@@ -258,14 +322,31 @@ private fun OwnerRequestCard(
     onAccept: () -> Unit,
     onReject: () -> Unit
 ) {
-    Card(shape = RoundedCornerShape(20.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), modifier = Modifier.fillMaxWidth().border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(20.dp))) {
+    Card(
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(20.dp))
+    ) {
         Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Surface(shape = CircleShape, color = MaterialTheme.colorScheme.surfaceVariant, modifier = Modifier.size(64.dp)) { Box(contentAlignment = Alignment.Center) { Icon(Icons.Default.Person, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(38.dp)) } }
+                Surface(
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.surfaceVariant,
+                    modifier = Modifier.size(64.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(Icons.Default.Person, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(38.dp))
+                    }
+                }
                 Spacer(Modifier.width(16.dp))
                 Column(Modifier.weight(1f)) {
                     Text(request.ownerName ?: "Dueño", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
-                    Text("${request.serviceTypeName ?: request.requestTitle} · ${request.petNames ?: request.petName ?: "Mascota"}", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(
+                        "${request.serviceTypeName ?: request.requestTitle} · ${request.petNames ?: request.petName ?: "Mascota"}",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                     Row(horizontalArrangement = Arrangement.spacedBy(18.dp)) {
                         Text("Fecha: ${request.requestedDate ?: "--"}", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
                         Text("Hora: ${request.startTime ?: "--"}", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
@@ -280,8 +361,20 @@ private fun OwnerRequestCard(
                 Text("Ver detalles", fontWeight = FontWeight.Bold)
             }
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Button(onClick = onAccept, modifier = Modifier.weight(1f), shape = RoundedCornerShape(14.dp)) { Text("Aceptar", fontWeight = FontWeight.Bold) }
-                OutlinedButton(onClick = onReject, modifier = Modifier.weight(1f), shape = RoundedCornerShape(14.dp)) { Text("Rechazar", fontWeight = FontWeight.Bold) }
+                Button(
+                    onClick = onAccept,
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(14.dp)
+                ) {
+                    Text("Aceptar", fontWeight = FontWeight.Bold)
+                }
+                OutlinedButton(
+                    onClick = onReject,
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(14.dp)
+                ) {
+                    Text("Rechazar", fontWeight = FontWeight.Bold)
+                }
             }
         }
     }
@@ -298,31 +391,64 @@ private fun ScheduledCaregiverRow(
         onClick = onClick,
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        modifier = Modifier.fillMaxWidth().border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(20.dp))
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(20.dp))
     ) {
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Surface(shape = CircleShape, color = MaterialTheme.colorScheme.surfaceVariant, modifier = Modifier.size(58.dp)) { Box(contentAlignment = Alignment.Center) { Icon(Icons.Default.Person, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(34.dp)) } }
+                Surface(
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.surfaceVariant,
+                    modifier = Modifier.size(58.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(Icons.Default.Person, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(34.dp))
+                    }
+                }
                 Spacer(Modifier.width(14.dp))
                 Column(Modifier.weight(1f)) {
                     Text(request.ownerName ?: "Dueño", fontWeight = FontWeight.Bold)
                     Text(request.petNames ?: request.petName ?: "Mascota", fontWeight = FontWeight.Medium)
-                    Text("${request.serviceTypeName ?: request.requestTitle} • ${request.requestedDate ?: "--"}", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(
+                        "${request.serviceTypeName ?: request.requestTitle} • ${request.requestedDate ?: "--"}",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
             }
             OutlinedButton(
                 onClick = onClick,
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(14.dp)
-            ) { Text("Ver detalles", fontWeight = FontWeight.Bold) }
+            ) {
+                Text("Ver detalles", fontWeight = FontWeight.Bold)
+            }
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                OutlinedButton(onClick = onCancel, enabled = canCancelService(request.requestedDate, request.startTime), modifier = Modifier.weight(1f), colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error), shape = RoundedCornerShape(14.dp)) { Icon(Icons.Default.Close, null); Spacer(Modifier.width(6.dp)); Text("Cancelar") }
-                OutlinedButton(onClick = onRate, enabled = canRateService(request.requestedDate, request.startTime, request.endTime), modifier = Modifier.weight(1f), shape = RoundedCornerShape(14.dp)) { Icon(Icons.Default.StarBorder, null); Spacer(Modifier.width(6.dp)); Text("Calificar") }
+                OutlinedButton(
+                    onClick = onCancel,
+                    enabled = canCancelService(request.requestedDate, request.startTime),
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                    shape = RoundedCornerShape(14.dp)
+                ) {
+                    Icon(Icons.Default.Close, null)
+                    Spacer(Modifier.width(6.dp))
+                    Text("Cancelar")
+                }
+                OutlinedButton(
+                    onClick = onRate,
+                    enabled = canRateService(request.requestedDate, request.startTime, request.endTime),
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(14.dp)
+                ) {
+                    Icon(Icons.Default.StarBorder, null)
+                    Spacer(Modifier.width(6.dp))
+                    Text("Calificar")
+                }
             }
         }
     }
 }
-
 
 private data class CaregiverDetailField(
     val label: String,
@@ -443,25 +569,49 @@ private fun CaregiverServiceDetailsDialog(
                     shape = RoundedCornerShape(14.dp)
                 ) {
                     Text("Cerrar", fontWeight = FontWeight.Bold)
+                }
+            }
+        }
+    }
+}
+
+@Composable
 private fun ActiveServiceCard(
     request: ServiceApplicationDetails,
     onDetails: () -> Unit,
     onCancel: () -> Unit,
     onFinish: () -> Unit
 ) {
-    Card(onClick = onDetails, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(18.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
+    Card(
+        onClick = onDetails,
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(18.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+    ) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconBubble(serviceIcon(request.serviceTypeName ?: request.requestTitle))
                 Spacer(Modifier.width(12.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(request.serviceTypeName ?: request.requestTitle, fontWeight = FontWeight.Bold)
-                    Text("Con ${request.ownerName ?: "dueño"} · ${request.petNames ?: request.petName ?: "Mascota"}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(
+                        "Con ${request.ownerName ?: "dueño"} · ${request.petNames ?: request.petName ?: "Mascota"}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
             }
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                OutlinedButton(onClick = onCancel, modifier = Modifier.weight(1f), colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)) { Text("Cancelar") }
-                Button(onClick = onFinish, modifier = Modifier.weight(1f)) { Text("Finalizar") }
+                OutlinedButton(
+                    onClick = onCancel,
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                ) {
+                    Text("Cancelar")
+                }
+                Button(onClick = onFinish, modifier = Modifier.weight(1f)) {
+                    Text("Finalizar")
+                }
             }
         }
     }
@@ -469,13 +619,22 @@ private fun ActiveServiceCard(
 
 @Composable
 private fun WaitingConfirmationCard(request: ServiceApplicationDetails, onClick: () -> Unit) {
-    Card(onClick = onClick, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
+    Card(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+    ) {
         Row(modifier = Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
             IconBubble(Icons.Default.HourglassTop)
             Spacer(Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(request.serviceTypeName ?: request.requestTitle, fontWeight = FontWeight.Bold)
-                Text("Esperando confirmación del dueño.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(
+                    "Esperando confirmación del dueño.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
             StatusChip(request.applicationStatus)
         }
@@ -484,35 +643,24 @@ private fun WaitingConfirmationCard(request: ServiceApplicationDetails, onClick:
 
 @Composable
 private fun CompletedServiceCard(request: ServiceApplicationDetails, onClick: () -> Unit) {
-    Card(onClick = onClick, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
+    Card(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+    ) {
         Row(modifier = Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
             IconBubble(Icons.Default.CheckCircle)
             Spacer(Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(request.serviceTypeName ?: request.requestTitle, fontWeight = FontWeight.Bold)
-                Text("Finalizado con ${request.ownerName ?: "dueño"}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(
+                    "Finalizado con ${request.ownerName ?: "dueño"}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
             StatusChip(request.applicationStatus)
-        }
-    }
-}
-
-@Composable
-private fun CaregiverServiceDetailsDialog(request: ServiceApplicationDetails, onDismiss: () -> Unit) {
-    Dialog(onDismissRequest = onDismiss) {
-        Card(shape = RoundedCornerShape(22.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), modifier = Modifier.fillMaxWidth()) {
-            Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(request.serviceTypeName ?: request.requestTitle, modifier = Modifier.weight(1f), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
-                    IconButton(onClick = onDismiss) { Icon(Icons.Default.Close, contentDescription = "Cerrar") }
-                }
-                DetailRow("Dueño", request.ownerName)
-                DetailRow("Mascota", request.petNames ?: request.petName)
-                DetailRow("Fecha", request.requestedDate)
-                DetailRow("Hora", listOfNotNull(request.startTime, request.endTime).joinToString(" - ").ifBlank { null })
-                DetailRow("Estado", statusText(request.applicationStatus.name))
-                DetailRow("Descripción", request.requestDescription)
-            }
         }
     }
 }
@@ -537,7 +685,12 @@ private fun CaregiverDetailFieldRow(field: CaregiverDetailField) {
         Spacer(Modifier.width(14.dp))
         Column(Modifier.weight(1f)) {
             Text(field.label, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelMedium)
-            Text(field.value, color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
+            Text(
+                field.value,
+                color = MaterialTheme.colorScheme.onSurface,
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.SemiBold
+            )
         }
     }
 }
@@ -607,6 +760,8 @@ private fun parseServiceDateTime(date: String?, time: String?): Long? {
         null
     }
 }
+
+@Composable
 private fun DetailRow(label: String, value: String?) {
     if (value.isNullOrBlank()) return
     Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
@@ -617,7 +772,11 @@ private fun DetailRow(label: String, value: String?) {
 
 @Composable
 private fun IconBubble(icon: ImageVector) {
-    Surface(shape = RoundedCornerShape(14.dp), color = MaterialTheme.colorScheme.surfaceVariant, modifier = Modifier.size(46.dp)) {
+    Surface(
+        shape = RoundedCornerShape(14.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        modifier = Modifier.size(46.dp)
+    ) {
         Box(contentAlignment = Alignment.Center) {
             Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
         }
@@ -640,7 +799,11 @@ private fun StatusChip(status: Enum<*>) {
         onClick = {},
         label = { Text(text, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Medium, color = Color.Black) },
         colors = AssistChipDefaults.assistChipColors(containerColor = color.copy(alpha = 0.1f)),
-        border = AssistChipDefaults.assistChipBorder(enabled = true, borderColor = color.copy(alpha = 0.8f), borderWidth = 1.dp),
+        border = AssistChipDefaults.assistChipBorder(
+            enabled = true,
+            borderColor = color.copy(alpha = 0.8f),
+            borderWidth = 1.dp
+        ),
         shape = RoundedCornerShape(20.dp)
     )
 }
@@ -668,3 +831,4 @@ private fun statusText(status: String): String {
         else -> status
     }
 }
+

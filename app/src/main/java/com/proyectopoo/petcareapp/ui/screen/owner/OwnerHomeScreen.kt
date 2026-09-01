@@ -3,7 +3,6 @@ package com.proyectopoo.petcareapp.ui.screen.owner
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -23,7 +22,6 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.window.Dialog
 import com.proyectopoo.petcareapp.data.local.entity.ApplicationStatus
 import com.proyectopoo.petcareapp.data.local.entity.PetEntity
@@ -59,13 +57,22 @@ fun OwnerHomeScreen(
     var ratingScore by remember { mutableStateOf(5f) }
     var ratingComment by remember { mutableStateOf("") }
     var showAllRequestedScreen by remember { mutableStateOf(false) }
-    var requestToDetail by remember { mutableStateOf<ServiceRequestDetails?>(null) }
-    var applicationToDetail by remember { mutableStateOf<ServiceApplicationDetails?>(null) }
 
     val safeIndex = if (dogs.isEmpty()) 0 else selectedDogIndex.coerceIn(0, dogs.lastIndex)
     val currentDog = dogs.getOrNull(safeIndex)
     val recentRequestLimit = 3
     val visibleRecentRequests = recentRequests.take(recentRequestLimit)
+
+    val pendingApplications = caregiverApplications.filter {
+        it.applicationStatus == ApplicationStatus.PENDING &&
+            it.initiatedBy == com.proyectopoo.petcareapp.data.local.entity.ApplicationInitiator.CAREGIVER
+    }
+    val acceptedApplications = scheduledServices.filter {
+        it.applicationStatus == ApplicationStatus.ACCEPTED
+    }
+    val doneByCaregiverApplications = caregiverApplications.filter {
+        it.applicationStatus == ApplicationStatus.DONE_BY_CAREGIVER
+    }
 
     val services = listOf(
         "Alojamiento" to Icons.Default.Home,
@@ -328,14 +335,6 @@ fun OwnerHomeScreen(
                     fontWeight = FontWeight.SemiBold
                 )
 
-    val pendingApplications = caregiverApplications.filter {
-        it.applicationStatus == ApplicationStatus.PENDING &&
-            it.initiatedBy == com.proyectopoo.petcareapp.data.local.entity.ApplicationInitiator.CAREGIVER
-    }
-    val acceptedApplications = scheduledServices.filter {
-        it.applicationStatus == ApplicationStatus.ACCEPTED
-    }
-
                 if (pendingApplications.isEmpty()) {
                     EmptyStateCard("Aún no hay cuidadores interesados.")
                 } else {
@@ -372,7 +371,7 @@ fun OwnerHomeScreen(
                     }
                 }
 
-                if (doneByCaregiverApplications.isNotEmpty()) {
+                            if (doneByCaregiverApplications.isNotEmpty()) {
                     SectionTitle("Pendientes de calificación")
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         doneByCaregiverApplications.forEach { application ->
@@ -526,6 +525,76 @@ fun OwnerHomeScreen(
     }
 }
 
+@Composable
+private fun EmptyStateCard(message: String) {
+    Card(
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f)),
+        shape = RoundedCornerShape(16.dp),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Text(
+            text = message,
+            modifier = Modifier.padding(18.dp),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = MaterialTheme.typography.bodyMedium
+        )
+    }
+}
+
+@Composable
+private fun SectionTitle(text: String, icon: ImageVector? = null) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        icon?.let {
+            Icon(it, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+        }
+        Text(text, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+    }
+}
+
+@Composable
+private fun ServiceApplicationCard(
+    application: ServiceApplicationDetails,
+    message: String,
+    actionText: String,
+    onAction: () -> Unit,
+    onDetails: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(18.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+    ) {
+        Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(application.requestTitle, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+            Text(message, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                Button(onClick = onAction, modifier = Modifier.weight(1f)) { Text(actionText) }
+                OutlinedButton(onClick = onDetails, modifier = Modifier.weight(1f)) { Text("Detalle") }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ServiceTypeCard(
+    name: String,
+    description: String,
+    icon: ImageVector,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    shape: RoundedCornerShape = RoundedCornerShape(18.dp),
+    colors: CardColors = CardDefaults.cardColors(),
+    content: @Composable () -> Unit = {}
+) {
+    Card(
+        onClick = onClick,
+        shape = shape,
+        colors = colors,
+        modifier = modifier
+    ) {
+        content()
+    }
+}
 
 @Composable
 private fun InterestedCaregiverCard(

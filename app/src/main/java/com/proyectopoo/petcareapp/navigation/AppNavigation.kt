@@ -720,6 +720,7 @@ fun AppNavigation(
                         CaregiverServiceViewModel(
                             offeredServiceRepository = offeredServiceRepository,
                             serviceTypeDao = database.serviceTypeDao(),
+                            offeredServiceDao = database.offeredServiceDao(),
                             caregiverId = caregiverId,
                             apiService = RetrofitClient.apiService
                         )
