@@ -7,10 +7,14 @@ import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.PUT
 import retrofit2.http.Path
+import retrofit2.http.Query
 
 interface ApiService {
     @POST("api/users")
     suspend fun registerUser(@Body request: RegisterRequest): Response<RegisterResponse>
+
+    @GET("api/razas")
+    suspend fun searchDogBreeds(@Query("q") q: String?): Response<DogBreedsResponse>
 
     @PUT("api/users/{id}")
     suspend fun updateUserRole(

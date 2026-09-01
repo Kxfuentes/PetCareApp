@@ -12,8 +12,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.proyectopoo.petcareapp.data.local.entity.PetEntity
+import com.proyectopoo.petcareapp.data.network.RetrofitClient
+import kotlinx.coroutines.delay
 
-@OptIn(ExperimentalLayoutApi::class)
+@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun DogInfoScreen(
     editingDog: PetEntity? = null,
@@ -28,6 +30,21 @@ fun DogInfoScreen(
     var dogName by remember(key) { mutableStateOf(editingDog?.name.orEmpty()) }
     var breed by remember(key) { mutableStateOf(editingDog?.breed.orEmpty()) }
     var selectedSize by remember(key) { mutableStateOf(editingDog?.size.orEmpty()) }
+
+    var breedSuggestions by remember { mutableStateOf<List<String>>(emptyList()) }
+    var breedMenuExpanded by remember { mutableStateOf(false) }
+
+    // Autocompletado de razas: consulta el backend (Dog CEO API) 300ms despues de la ultima tecla.
+    LaunchedEffect(breed) {
+        delay(300)
+        val result = runCatching {
+            RetrofitClient.apiService.searchDogBreeds(breed.takeIf { it.isNotBlank() })
+        }.getOrNull()
+        if (result?.isSuccessful == true) {
+            breedSuggestions = result.body()?.razas.orEmpty()
+            breedMenuExpanded = breedSuggestions.isNotEmpty()
+        }
+    }
 
     val sizes = listOf("XS (1-5 kg)", "S (5-10 kg)", "M (10-20 kg)", "L (20-40 kg)", "XL (>40 kg)")
 

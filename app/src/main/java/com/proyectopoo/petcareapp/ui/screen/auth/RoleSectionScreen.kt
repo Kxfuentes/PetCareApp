@@ -6,6 +6,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.outlined.Favorite
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Pets
@@ -31,8 +32,41 @@ fun RoleSectionScreen(
     errorMessage: String? = null
 ) {
     var selectedRole by remember { mutableStateOf<String?>(null) }
+    var showRoleInfoDialog by remember { mutableStateOf(false) }
+
+    if (showRoleInfoDialog) {
+        AlertDialog(
+            onDismissRequest = { showRoleInfoDialog = false },
+            title = { Text("¿Por qué no puedes ser ambos?") },
+            text = {
+                Text(
+                    "En PetCare, cada usuario elige un rol para garantizar la seguridad y el bienestar de las mascotas.\n\n" +
+                        "🐾 Propietario: Eres dueño de una o más mascotas y buscas cuidadores.\n\n" +
+                        "🐕 Cuidador: Te dedicas a cuidar mascotas de otros.\n\n" +
+                        "No permitimos ambos roles porque:\n" +
+                        "• Evitamos conflictos de interés.\n" +
+                        "• Garantizamos atención exclusiva.\n" +
+                        "• Mantenemos un entorno más seguro.\n\n" +
+                        "Si deseas cambiar de rol, contacta a soporte."
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = { showRoleInfoDialog = false }) { Text("Entendido") }
+            }
+        )
+    }
 
     Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {},
+                actions = {
+                    IconButton(onClick = { showRoleInfoDialog = true }) {
+                        Icon(Icons.Filled.MoreVert, contentDescription = "Por qué no puedes tener ambos roles")
+                    }
+                }
+            )
+        },
         bottomBar = {
             Column(
                 modifier = Modifier

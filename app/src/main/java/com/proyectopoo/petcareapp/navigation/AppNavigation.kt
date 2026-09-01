@@ -303,7 +303,10 @@ fun AppNavigation(
                             )
 
                             if (!roleResponse.isSuccessful) {
-                                throw Exception("No se pudo guardar el rol de propietario en PostgreSQL. HTTP ${roleResponse.code()}")
+                                throw Exception(
+                                    parseRoleErrorMessage(roleResponse.errorBody()?.string())
+                                        ?: "No se pudo guardar el rol de propietario en PostgreSQL. HTTP ${roleResponse.code()}"
+                                )
                             }
 
                             prepareLocalAccount(
@@ -347,7 +350,10 @@ fun AppNavigation(
                             )
 
                             if (!roleResponse.isSuccessful) {
-                                throw Exception("No se pudo guardar el rol de cuidador en PostgreSQL. HTTP ${roleResponse.code()}")
+                                throw Exception(
+                                    parseRoleErrorMessage(roleResponse.errorBody()?.string())
+                                        ?: "No se pudo guardar el rol de cuidador en PostgreSQL. HTTP ${roleResponse.code()}"
+                                )
                             }
 
                             prepareLocalAccount(
@@ -1048,6 +1054,11 @@ private suspend fun cacheAvailableOfferedServices(database: PetCareDatabase) {
         }
         database.offeredServiceDao().insertOfferedService(dto.toEntity())
     }
+}
+
+private fun parseRoleErrorMessage(errorBody: String?): String? {
+    if (errorBody.isNullOrBlank()) return null
+    return runCatching { org.json.JSONObject(errorBody).optString("error").ifBlank { null } }.getOrNull()
 }
 
 private suspend fun ensureCaregiverExists(database: PetCareDatabase, caregiverId: Int) {
