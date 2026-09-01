@@ -23,6 +23,8 @@ import androidx.compose.ui.unit.sp
 import com.proyectopoo.petcareapp.data.network.RegisterRequest
 import com.proyectopoo.petcareapp.data.network.RegisterResponse
 import com.proyectopoo.petcareapp.data.network.RetrofitClient
+import com.proyectopoo.petcareapp.data.network.SendOtpRequest
+import com.proyectopoo.petcareapp.data.network.VerifyOtpRequest
 import kotlinx.coroutines.launch
 import java.net.SocketTimeoutException
 
@@ -43,6 +45,75 @@ fun RegisterScreen(
 
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+
+    // Paso de verificacion de identidad: se pide el OTP antes de crear la cuenta.
+    var otpStep by remember { mutableStateOf(false) }
+    var otpCode by remember { mutableStateOf("") }
+    var devOtpHint by remember { mutableStateOf<String?>(null) }
+
+    suspend fun performRegister() {
+        try {
+            val request = RegisterRequest(
+                username = username,
+                email = email,
+                password = password,
+                rol = null
+            )
+
+            val response = RetrofitClient.apiService.registerUser(request)
+
+            if (response.isSuccessful) {
+                val registerResponse = response.body()
+                val registeredUser = registerResponse?.user ?: registerResponse?.useer
+
+                if (registerResponse != null && registeredUser != null && registeredUser.id > 0) {
+                    onRegisterSuccess(registerResponse)
+                } else {
+                    errorMessage = "La API respondió OK, pero no devolvió usuario. Body: ${response.body()}"
+                }
+            } else {
+                val errorBody = response.errorBody()?.string()
+                val normalizedError = errorBody.orEmpty().lowercase()
+                errorMessage = when {
+                    normalizedError.contains("duplicate") ||
+                        normalizedError.contains("duplicada") ||
+                        normalizedError.contains("duplicado") ||
+                        normalizedError.contains("already") ||
+                        normalizedError.contains("ya está registrado") ||
+                        normalizedError.contains("unique") -> "Este correo electrónico o usuario ya está registrado"
+                    normalizedError.contains("invalid email") ||
+                        normalizedError.contains("email inválido") ||
+                        normalizedError.contains("email invalido") ||
+                        normalizedError.contains("format") -> "Error con el formato del correo"
+                    else -> "HTTP ${response.code()}: $errorBody"
+                }
+            }
+        } catch (e: SocketTimeoutException) {
+            errorMessage = "No se pudo conectar con la API. Revisa que el servidor esté activo y que BASE_URL apunte a tu computadora."
+        } catch (e: Exception) {
+            errorMessage = "Error de conexión: ${e.localizedMessage ?: "no se pudo contactar la API"}"
+        }
+    }
+
+    fun requestOtp() {
+        errorMessage = null
+        isLoading = true
+        scope.launch {
+            try {
+                val response = RetrofitClient.apiService.sendOtp(SendOtpRequest(email))
+                if (response.isSuccessful) {
+                    devOtpHint = response.body()?.otp
+                    otpStep = true
+                } else {
+                    errorMessage = "No se pudo enviar el código de verificación. Intenta de nuevo."
+                }
+            } catch (e: Exception) {
+                errorMessage = "Error de conexión: ${e.localizedMessage ?: "no se pudo contactar la API"}"
+            } finally {
+                isLoading = false
+            }
+        }
+    }
 
     fun validate(): String? {
         if (username.isBlank()) return "El nombre de usuario es requerido"
@@ -109,7 +180,7 @@ fun RegisterScreen(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
                 singleLine = true,
-                enabled = !isLoading
+                enabled = !isLoading && !otpStep
             )
 
             Spacer(modifier = Modifier.height(18.dp))
@@ -122,7 +193,7 @@ fun RegisterScreen(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
                 singleLine = true,
-                enabled = !isLoading
+                enabled = !isLoading && !otpStep
             )
 
             Spacer(modifier = Modifier.height(18.dp))
@@ -144,7 +215,7 @@ fun RegisterScreen(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
                 singleLine = true,
-                enabled = !isLoading
+                enabled = !isLoading && !otpStep
             )
 
             Spacer(modifier = Modifier.height(18.dp))
@@ -166,16 +237,61 @@ fun RegisterScreen(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
                 singleLine = true,
-                enabled = !isLoading
+                enabled = !isLoading && !otpStep
             )
 
-            Spacer(modifier = Modifier.height(40.dp))
+            if (otpStep) {
+                Spacer(modifier = Modifier.height(18.dp))
+
+                Text(
+                    "Enviamos un código de verificación a $email.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                devOtpHint?.let {
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        "Modo de prueba (sin correo real configurado): tu código es $it",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                OutlinedTextField(
+                    value = otpCode,
+                    onValueChange = { if (it.length <= 6 && it.all { c -> c.isDigit() }) otpCode = it },
+                    label = { Text("Código de verificación") },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    singleLine = true,
+                    enabled = !isLoading
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                TextButton(onClick = { requestOtp() }, enabled = !isLoading) {
+                    Text("Reenviar código")
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
 
             Button(
                 onClick = {
-                    val validationError = validate()
-                    if (validationError != null) {
-                        errorMessage = validationError
+                    if (!otpStep) {
+                        val validationError = validate()
+                        if (validationError != null) {
+                            errorMessage = validationError
+                            return@Button
+                        }
+                        requestOtp()
+                        return@Button
+                    }
+
+                    if (otpCode.length != 6) {
+                        errorMessage = "Ingresa el código de 6 dígitos"
                         return@Button
                     }
 
@@ -184,43 +300,12 @@ fun RegisterScreen(
 
                     scope.launch {
                         try {
-                            val request = RegisterRequest(
-                                username = username,
-                                email = email,
-                                password = password,
-                                rol = null
-                            )
-
-                            val response = RetrofitClient.apiService.registerUser(request)
-
-                            if (response.isSuccessful) {
-                                val registerResponse = response.body()
-                                val registeredUser = registerResponse?.user ?: registerResponse?.useer
-
-                                if (registerResponse != null && registeredUser != null && registeredUser.id > 0) {
-                                    onRegisterSuccess(registerResponse)
-                                } else {
-                                    errorMessage = "La API respondió OK, pero no devolvió usuario. Body: ${response.body()}"
-                                }
+                            val response = RetrofitClient.apiService.verifyOtp(VerifyOtpRequest(email, otpCode))
+                            if (response.isSuccessful && response.body()?.verified == true) {
+                                performRegister()
                             } else {
-                                val errorBody = response.errorBody()?.string()
-                                val normalizedError = errorBody.orEmpty().lowercase()
-                                errorMessage = when {
-                                    normalizedError.contains("duplicate") ||
-                                        normalizedError.contains("duplicada") ||
-                                        normalizedError.contains("duplicado") ||
-                                        normalizedError.contains("already") ||
-                                        normalizedError.contains("ya está registrado") ||
-                                        normalizedError.contains("unique") -> "Este correo electrónico o usuario ya está registrado"
-                                    normalizedError.contains("invalid email") ||
-                                        normalizedError.contains("email inválido") ||
-                                        normalizedError.contains("email invalido") ||
-                                        normalizedError.contains("format") -> "Error con el formato del correo"
-                                    else -> "HTTP ${response.code()}: $errorBody"
-                                }
+                                errorMessage = "Código incorrecto o expirado."
                             }
-                        } catch (e: SocketTimeoutException) {
-                            errorMessage = "No se pudo conectar con la API. Revisa que el servidor esté activo y que BASE_URL apunte a tu computadora."
                         } catch (e: Exception) {
                             errorMessage = "Error de conexión: ${e.localizedMessage ?: "no se pudo contactar la API"}"
                         } finally {
@@ -240,7 +325,11 @@ fun RegisterScreen(
                         color = MaterialTheme.colorScheme.onPrimary
                     )
                 } else {
-                    Text("Crear cuenta", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                    Text(
+                        if (otpStep) "Verificar y crear cuenta" else "Crear cuenta",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
             }
 

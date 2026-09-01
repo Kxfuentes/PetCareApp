@@ -31,6 +31,12 @@ interface ApiService {
     @GET("api/chat/no-leidos/{userId}")
     suspend fun getUnreadChatCount(@Path("userId") userId: Int): Response<UnreadCountDto>
 
+    @POST("api/auth/send-otp")
+    suspend fun sendOtp(@Body request: SendOtpRequest): Response<SendOtpResponse>
+
+    @POST("api/auth/verify-otp")
+    suspend fun verifyOtp(@Body request: VerifyOtpRequest): Response<VerifyOtpResponse>
+
     @PUT("api/users/{id}")
     suspend fun updateUserRole(
         @Path("id") userId: Int,
