@@ -10,6 +10,7 @@ interface NominatimService {
     suspend fun searchLocation(
         @Query("q") query: String,          // La dirección que escribe el usuario
         @Query("format") format: String = "json", // Le decimos que queremos JSON
-        @Query("limit") limit: Int = 5      // Máximo 5 resultados
+        @Query("limit") limit: Int = 5,     // Máximo 5 resultados
+        @Query("countrycodes") countryCodes: String = "ni" // Limitado a Nicaragua
     ): List<NominatimResponse>
 }
