@@ -2,6 +2,7 @@ package com.proyectopoo.petcareapp.ui.screen.caregiver
 
 import android.content.Intent
 import android.net.Uri
+import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -39,6 +40,7 @@ fun CaregiverHomeScreen(
     onCompleteAndRate: (ServiceApplicationDetails, Double, String) -> Unit,
     onCancelService: (ServiceApplicationDetails) -> Unit = {},
     onScheduledClick: (ServiceApplicationDetails) -> Unit = {},
+    onOpenChat: (ServiceApplicationDetails) -> Unit = {},
     caregiverId: Int
 ) {
     var available by remember { mutableStateOf(true) }
@@ -205,7 +207,11 @@ fun CaregiverHomeScreen(
     requestToDetails?.let { request ->
         CaregiverServiceDetailsDialog(
             request = request,
-            onDismiss = { requestToDetails = null }
+            onDismiss = { requestToDetails = null },
+            onChatClick = {
+                requestToDetails = null
+                onOpenChat(request)
+            }
         )
     }
 
@@ -467,7 +473,8 @@ private data class CaregiverDetailField(
 @Composable
 private fun CaregiverServiceDetailsDialog(
     request: ServiceApplicationDetails,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    onChatClick: (() -> Unit)? = null
 ) {
     val title = request.serviceTypeName ?: request.requestTitle
     val fields = caregiverDetailFields(request)
@@ -565,6 +572,20 @@ private fun CaregiverServiceDetailsDialog(
                                 Text(notes, color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.bodyMedium)
                             }
                         }
+                    }
+                }
+
+                if (onChatClick != null) {
+                    OutlinedButton(
+                        onClick = onChatClick,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(50.dp),
+                        shape = RoundedCornerShape(14.dp)
+                    ) {
+                        Icon(Icons.AutoMirrored.Filled.Chat, contentDescription = null, modifier = Modifier.size(20.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text("Chat", fontWeight = FontWeight.Bold)
                     }
                 }
 

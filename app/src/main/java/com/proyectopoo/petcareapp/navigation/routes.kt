@@ -74,3 +74,11 @@ data class EditOwnerProfile(val ownerId: Int = -1)
 
 @Serializable
 data class EditCaregiverProfile(val caregiverId: Int = -1)
+
+@Serializable
+data class Chat(
+    val serviceRequestId: Int,
+    val currentUserId: Int,
+    val otherUserId: Int,
+    val otherUserName: String
+)

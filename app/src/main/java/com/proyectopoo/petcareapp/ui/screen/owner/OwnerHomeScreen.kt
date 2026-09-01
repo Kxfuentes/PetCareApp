@@ -2,6 +2,7 @@ package com.proyectopoo.petcareapp.ui.screen.owner
 
 import android.content.Intent
 import android.net.Uri
+import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -49,6 +50,7 @@ fun OwnerHomeScreen(
     onRejectApplication: (Int) -> Unit,
     onCompleteAndRate: (ServiceApplicationDetails, Double, String) -> Unit,
     onCancelService: (ServiceApplicationDetails) -> Unit = {},
+    onOpenChat: (ServiceApplicationDetails) -> Unit = {},
     ownerId: Int
 ) {
     val scrollState = rememberScrollState()
@@ -495,7 +497,11 @@ fun OwnerHomeScreen(
     applicationToDetail?.let { application ->
         ServiceApplicationDetailsDialog(
             application = application,
-            onDismiss = { applicationToDetail = null }
+            onDismiss = { applicationToDetail = null },
+            onChatClick = {
+                applicationToDetail = null
+                onOpenChat(application)
+            }
         )
     }
 
@@ -915,7 +921,8 @@ private fun ServiceRequestDetailsDialog(
 @Composable
 private fun ServiceApplicationDetailsDialog(
     application: ServiceApplicationDetails,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    onChatClick: (() -> Unit)? = null
 ) {
     DetailsCardDialog(
         title = application.serviceTypeName ?: application.requestTitle,
@@ -924,7 +931,8 @@ private fun ServiceApplicationDetailsDialog(
         statusColor = MaterialTheme.colorScheme.primary,
         fields = applicationDetailFields(application),
         notes = parseDescriptionDetails(application.requestDescription)["Notas"],
-        onDismiss = onDismiss
+        onDismiss = onDismiss,
+        onChatClick = onChatClick
     )
 }
 
@@ -946,7 +954,8 @@ private fun DetailsCardDialog(
     statusColor: Color,
     fields: List<DetailField>,
     notes: String?,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    onChatClick: (() -> Unit)? = null
 ) {
     Dialog(onDismissRequest = onDismiss) {
         Card(
@@ -1051,6 +1060,19 @@ private fun DetailsCardDialog(
                             }
                         }
                     }
+                }
+
+                if (onChatClick != null) {
+                    OutlinedButton(
+                        onClick = onChatClick,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp)
+                    ) {
+                        Icon(Icons.AutoMirrored.Filled.Chat, contentDescription = null, modifier = Modifier.size(20.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text("Chat", fontWeight = FontWeight.Bold)
+                    }
+                    Spacer(Modifier.height(10.dp))
                 }
 
                 Button(

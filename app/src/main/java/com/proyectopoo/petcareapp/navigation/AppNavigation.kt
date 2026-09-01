@@ -53,6 +53,7 @@ import com.proyectopoo.petcareapp.ui.screen.caregiver.CaregiverServiceScreen
 import com.proyectopoo.petcareapp.ui.screen.owner.RoleSectionScreen
 import com.proyectopoo.petcareapp.ui.screen.caregiver.EditCaregiverProfileScreen
 import com.proyectopoo.petcareapp.ui.screen.owner.CreateServiceScreen
+import com.proyectopoo.petcareapp.ui.screen.chat.ChatScreen
 import com.proyectopoo.petcareapp.ui.screen.owner.DogInfoScreen
 import com.proyectopoo.petcareapp.ui.screen.owner.EditOwnerProfileScreen
 import com.proyectopoo.petcareapp.ui.screen.owner.OwnerFeedScreen
@@ -454,6 +455,19 @@ fun AppNavigation(
             }
         }
 
+        // ===== CHAT =====
+        composable<Chat> { backStackEntry ->
+            val args = backStackEntry.toRoute<Chat>()
+            ChatScreen(
+                serviceRequestId = args.serviceRequestId,
+                currentUserId = args.currentUserId,
+                otherUserId = args.otherUserId,
+                otherUserName = args.otherUserName,
+                refreshTick = wsRefreshTick,
+                onBack = { navController.popBackStack() }
+            )
+        }
+
         // ===== OWNER HOME =====
         composable<OwnerHome> {
             val ownerId = sessionManager.getBackendUserId()
@@ -516,6 +530,16 @@ fun AppNavigation(
                         applicationId = application.applicationId,
                         reloadOwnerId = ownerId,
                         reloadCaregiverId = application.caregiverId
+                    )
+                },
+                onOpenChat = { application ->
+                    navController.navigate(
+                        Chat(
+                            serviceRequestId = application.serviceRequestId,
+                            currentUserId = ownerId,
+                            otherUserId = application.caregiverId,
+                            otherUserName = application.caregiverName ?: "Cuidador"
+                        )
                     )
                 },
                 ownerId = ownerId
@@ -668,6 +692,16 @@ fun AppNavigation(
                         applicationId = request.applicationId,
                         reloadCaregiverId = caregiverId,
                         reloadOwnerId = request.ownerId
+                    )
+                },
+                onOpenChat = { request ->
+                    navController.navigate(
+                        Chat(
+                            serviceRequestId = request.serviceRequestId,
+                            currentUserId = caregiverId,
+                            otherUserId = request.ownerId,
+                            otherUserName = request.ownerName ?: "Dueño"
+                        )
                     )
                 },
                 caregiverId = caregiverId

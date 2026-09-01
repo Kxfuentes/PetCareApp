@@ -16,6 +16,21 @@ interface ApiService {
     @GET("api/razas")
     suspend fun searchDogBreeds(@Query("q") q: String?): Response<DogBreedsResponse>
 
+    @POST("api/chat/mensajes")
+    suspend fun sendChatMessage(@Body request: ChatMessageRequest): Response<ChatMessageDto>
+
+    @GET("api/chat/mensajes/{serviceRequestId}")
+    suspend fun getChatMessages(@Path("serviceRequestId") serviceRequestId: Int): Response<List<ChatMessageDto>>
+
+    @PUT("api/chat/mensajes/leidos")
+    suspend fun markChatMessagesRead(
+        @Query("serviceRequestId") serviceRequestId: Int,
+        @Query("userId") userId: Int
+    ): Response<Unit>
+
+    @GET("api/chat/no-leidos/{userId}")
+    suspend fun getUnreadChatCount(@Path("userId") userId: Int): Response<UnreadCountDto>
+
     @PUT("api/users/{id}")
     suspend fun updateUserRole(
         @Path("id") userId: Int,
