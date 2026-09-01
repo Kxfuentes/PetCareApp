@@ -5,7 +5,6 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
-import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -21,6 +20,7 @@ import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
@@ -32,6 +32,8 @@ import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.proyectopoo.petcareapp.data.local.database.PetCareDatabase
+import com.proyectopoo.petcareapp.data.local.entity.NotificationType
 import com.proyectopoo.petcareapp.data.local.entity.UserRoleType
 import com.proyectopoo.petcareapp.data.session.SessionManager
 import com.proyectopoo.petcareapp.data.websocket.PetCareWebSocketClient
@@ -45,9 +47,11 @@ import com.proyectopoo.petcareapp.navigation.PasswordRecovery
 import com.proyectopoo.petcareapp.navigation.Register
 import com.proyectopoo.petcareapp.navigation.RequestOffer
 import com.proyectopoo.petcareapp.navigation.RoleSection
+import com.proyectopoo.petcareapp.notifications.AppNotifier
 import com.proyectopoo.petcareapp.ui.components.PetCareNavigationBar
 import com.proyectopoo.petcareapp.ui.theme.PetCareAppTheme
 import com.proyectopoo.petcareapp.viewmodel.UserRoleViewModel
+import kotlinx.coroutines.launch
 
 val LocalUserRoleViewModel = compositionLocalOf<UserRoleViewModel> {
     error("No UserRoleViewModel provided")
@@ -91,17 +95,26 @@ class MainActivity : ComponentActivity() {
                 ) {
                     val navController = rememberNavController()
                     val wsRefreshTick = remember { mutableIntStateOf(0) }
+                    val database = remember { PetCareDatabase.getDatabase(context) }
+                    val notifier = remember { AppNotifier(context, database.notificationDao()) }
+                    val notifierScope = rememberCoroutineScope()
 
                     val webSocketClient = remember {
                         PetCareWebSocketClient(
                             onEvent = { event ->
                                 runOnUiThread {
                                     wsRefreshTick.intValue += 1
-                                    Toast.makeText(
-                                        this@MainActivity,
-                                        event.message ?: "Nuevo evento de PetCare",
-                                        Toast.LENGTH_LONG
-                                    ).show()
+                                }
+                                // Notificacion local (sin FCM): se muestra en la bandeja del sistema
+                                // reusando el WebSocket ya conectado para cualquier evento en tiempo real
+                                // (nuevas solicitudes, postulaciones, mensajes de chat, etc).
+                                notifierScope.launch {
+                                    notifier.push(
+                                        recipientUserId = event.recipientUserId ?: event.userId ?: 0,
+                                        title = event.title ?: "PetCare",
+                                        message = event.message ?: "Nuevo evento de PetCare",
+                                        type = notificationTypeFor(event.type)
+                                    )
                                 }
                             },
                             onStatusChanged = { connected ->
@@ -224,4 +237,10 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+}
+
+private fun notificationTypeFor(eventType: String): NotificationType = when (eventType) {
+    "SERVICE_REQUEST_CREATED", "APPLICATION_CREATED" -> NotificationType.SERVICE_REQUEST
+    "APPLICATION_STATUS_UPDATED", "MY_APPLICATION_STATUS_UPDATED", "SERVICE_REQUEST_STATUS_UPDATED" -> NotificationType.REQUEST_ACCEPTED
+    else -> NotificationType.GENERAL
 }
