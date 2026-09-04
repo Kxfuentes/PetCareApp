@@ -6,6 +6,26 @@ plugins {
     kotlin("kapt")
 }
 
+// --- Firebase Cloud Messaging (FCM) ---
+// El plugin `com.google.gms.google-services` lee `app/google-services.json` para generar
+// los recursos que Firebase necesita para inicializarse (project id, api key, app id, etc).
+// Ese archivo TODAVIA NO EXISTE en este repo (no hay proyecto Firebase creado aun), y
+// aplicar el plugin sin el archivo rompe el build para cualquiera que lo clone.
+//
+// Por eso el plugin solo se aplica condicionalmente, cuando el archivo esta presente.
+// Sin el archivo: el modulo compila normalmente, la dependencia de firebase-messaging
+// esta disponible, pero FirebaseApp nunca se inicializa con credenciales reales, por lo
+// que PetCareFirebaseMessagingService jamas es invocado por el sistema (no hay push real).
+//
+// Para activar FCM de verdad:
+//   1. Crear un proyecto en https://console.firebase.google.com
+//   2. Registrar la app con applicationId "com.proyectopoo.petcareapp"
+//   3. Descargar el `google-services.json` generado y copiarlo a `app/google-services.json`
+//   4. Sincronizar Gradle (este bloque detectara el archivo y aplicara el plugin solo)
+if (file("google-services.json").exists()) {
+    apply(plugin = "com.google.gms.google-services")
+}
+
 android {
     namespace = "com.proyectopoo.petcareapp"
     compileSdk = 36
@@ -75,6 +95,10 @@ dependencies {
     // Room
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
+
+    // Firebase Cloud Messaging. Compila sin google-services.json; solo requiere el archivo
+    // (y el plugin aplicado arriba) para inicializarse con credenciales reales en runtime.
+    implementation(libs.firebase.messaging.ktx)
     implementation(libs.androidx.compose.material3.lint)
     implementation(libs.androidx.ui)
     kapt(libs.androidx.room.compiler)

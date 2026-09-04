@@ -138,6 +138,18 @@ interface ApiService {
         @Body request: ServiceApplicationStatusRequest
     ): Response<ServiceApplicationDto>
 
+    @POST("api/ofertas/{id}/rechazar")
+    suspend fun rejectOferta(
+        @Path("id") id: Int,
+        @Body request: OfertaMotivoRequest
+    ): Response<ServiceApplicationDto>
+
+    @POST("api/ofertas/{id}/cancelar")
+    suspend fun cancelOferta(
+        @Path("id") id: Int,
+        @Body request: OfertaMotivoRequest
+    ): Response<ServiceApplicationDto>
+
     @POST("api/ratings")
     suspend fun createRating(
         @Body request: RatingRequest
@@ -162,4 +174,9 @@ interface ApiService {
     suspend fun getOwnerRatingSummary(
         @Path("ownerId") ownerId: Int
     ): Response<RatingSummaryDto>
+
+    @POST("api/usuarios/fcm-token")
+    suspend fun sendFcmToken(
+        @Body request: FcmTokenRequest
+    ): Response<Unit>
 }

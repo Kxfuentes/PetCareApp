@@ -69,3 +69,10 @@ data class ScheduleUpdateRequest(
     @SerialName("start_time") val startTime: String? = null,
     @SerialName("end_time") val endTime: String? = null
 )
+
+/** Registra/actualiza el token FCM del dispositivo para el usuario autenticado. */
+@Serializable
+data class FcmTokenRequest(
+    @SerialName("usuario_id") val usuarioId: Int,
+    val token: String
+)

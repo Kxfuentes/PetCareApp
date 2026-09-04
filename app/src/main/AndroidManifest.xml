@@ -42,6 +42,19 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!--
+            Firebase Cloud Messaging. Inofensivo sin google-services.json: el sistema solo
+            llega a instanciar este servicio si el dispositivo esta registrado ante FCM con
+            credenciales reales de Firebase (ver comentario en app/build.gradle.kts).
+        -->
+        <service
+            android:name=".notifications.PetCareFirebaseMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
     </application>
 
 </manifest>
