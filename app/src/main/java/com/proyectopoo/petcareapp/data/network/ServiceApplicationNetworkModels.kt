@@ -25,6 +25,12 @@ data class ServiceApplicationStatusRequest(
     val status: String
 )
 
+/** Body opcional para POST /api/ofertas/{id}/rechazar y /cancelar. */
+@Serializable
+data class OfertaMotivoRequest(
+    val motivo: String? = null
+)
+
 @Serializable
 data class ServiceApplicationDto(
     val id: Int,

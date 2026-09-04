@@ -31,6 +31,7 @@ import com.proyectopoo.petcareapp.data.local.relation.ServiceRequestDetails
 import com.proyectopoo.petcareapp.data.local.relation.RequestWithApplications
 import com.proyectopoo.petcareapp.data.local.entity.ServiceBookingEntity
 import com.proyectopoo.petcareapp.data.network.ApiService
+import com.proyectopoo.petcareapp.data.network.OfertaMotivoRequest
 import com.proyectopoo.petcareapp.data.network.RatingDto
 import com.proyectopoo.petcareapp.data.network.RatingRequest
 import com.proyectopoo.petcareapp.data.network.RetrofitClient
@@ -376,7 +377,7 @@ class ServiceRequestViewModel(
             if (application.initiatedBy == ApplicationInitiator.CAREGIVER && ownerId == null) return@launch
             if (application.initiatedBy == ApplicationInitiator.OWNER && caregiverId == null) return@launch
 
-            if (updateRemoteApplicationStatus(applicationId, ApplicationStatus.REJECTED) == null && apiService != null) {
+            if (rejectRemoteApplication(applicationId) == null && apiService != null) {
                 return@launch
             }
             applicationRepo.updateStatus(applicationId, ApplicationStatus.REJECTED)
@@ -535,7 +536,7 @@ class ServiceRequestViewModel(
                 return@launch
             }
 
-            if (updateRemoteApplicationStatus(applicationId, ApplicationStatus.CANCELLED) == null && apiService != null) {
+            if (cancelRemoteApplication(applicationId) == null && apiService != null) {
                 return@launch
             }
             applicationRepo.cancelService(applicationId)
@@ -830,6 +831,42 @@ class ServiceRequestViewModel(
 
         _userMessage.value = parseApiError(response?.errorBody()?.string())
             ?: "No se pudo actualizar el estado del servicio."
+        return null
+    }
+
+    /** Ruta dedicada POST /api/ofertas/{id}/rechazar (en vez del PUT .../status genérico). */
+    private suspend fun rejectRemoteApplication(
+        applicationId: Int,
+        motivo: String? = null
+    ): ServiceApplicationEntity? {
+        val response = runCatching {
+            apiService?.rejectOferta(applicationId, OfertaMotivoRequest(motivo = motivo))
+        }.getOrNull() ?: return null
+
+        if (response?.isSuccessful == true) {
+            return response.body()?.toEntity()
+        }
+
+        _userMessage.value = parseApiError(response?.errorBody()?.string())
+            ?: "No se pudo rechazar la solicitud."
+        return null
+    }
+
+    /** Ruta dedicada POST /api/ofertas/{id}/cancelar (en vez del PUT .../status genérico). */
+    private suspend fun cancelRemoteApplication(
+        applicationId: Int,
+        motivo: String? = null
+    ): ServiceApplicationEntity? {
+        val response = runCatching {
+            apiService?.cancelOferta(applicationId, OfertaMotivoRequest(motivo = motivo))
+        }.getOrNull() ?: return null
+
+        if (response?.isSuccessful == true) {
+            return response.body()?.toEntity()
+        }
+
+        _userMessage.value = parseApiError(response?.errorBody()?.string())
+            ?: "No se pudo cancelar el servicio."
         return null
     }
 
