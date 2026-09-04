@@ -2,6 +2,7 @@ package com.proyectopoo.petcareapp.ui.screen.owner
 
 import android.widget.Toast
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -75,13 +76,44 @@ fun DogInfoScreen(
 
             Spacer(modifier = Modifier.height(18.dp))
 
-            OutlinedTextField(
-                value = breed,
-                onValueChange = { breed = it },
-                label = { Text("Raza") },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp)
-            )
+            Column {
+                OutlinedTextField(
+                    value = breed,
+                    onValueChange = { breed = it },
+                    label = { Text("Raza") },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp)
+                )
+
+                if (breedMenuExpanded && breedSuggestions.isNotEmpty()) {
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 4.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        color = MaterialTheme.colorScheme.surface,
+                        shadowElevation = 4.dp
+                    ) {
+                        Column {
+                            breedSuggestions.forEach { suggestion ->
+                                Text(
+                                    text = suggestion,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable {
+                                            breed = suggestion
+                                            breedMenuExpanded = false
+                                        }
+                                        .padding(12.dp)
+                                )
+                                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                            }
+                        }
+                    }
+                }
+            }
 
             Spacer(modifier = Modifier.height(26.dp))
 
