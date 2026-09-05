@@ -81,4 +81,12 @@ class SessionManager(
     fun clearSession() {
         prefs.edit().clear().apply()
     }
+
+    fun setOnboardingSeen() {
+        prefs.edit().putBoolean("onboarding_seen", true).apply()
+    }
+
+    fun hasSeenOnboarding(): Boolean {
+        return prefs.getBoolean("onboarding_seen", false)
+    }
 }

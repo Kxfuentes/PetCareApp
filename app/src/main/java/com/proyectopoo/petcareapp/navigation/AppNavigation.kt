@@ -60,6 +60,7 @@ import com.proyectopoo.petcareapp.notifications.AppNotifier
 import com.proyectopoo.petcareapp.ui.screen.auth.LoginScreen
 import com.proyectopoo.petcareapp.ui.screen.auth.PasswordRecoveryScreen
 import com.proyectopoo.petcareapp.ui.screen.auth.RegisterScreen
+import com.proyectopoo.petcareapp.ui.screen.auth.OnboardingScreen
 import com.proyectopoo.petcareapp.ui.screen.caregiver.CaregiverFeedScreen
 import com.proyectopoo.petcareapp.ui.screen.caregiver.CaregiverHomeScreen
 import com.proyectopoo.petcareapp.ui.screen.caregiver.CaregiverProfileScreen
@@ -208,9 +209,11 @@ fun AppNavigation(
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
+    val startDestination = if (!sessionManager.hasSeenOnboarding()) Onboarding else Login
+
     NavHost(
         navController = navController,
-        startDestination = Login,
+        startDestination = startDestination,
         modifier = modifier
     ) {
         // ===== LOGIN =====
@@ -312,6 +315,11 @@ fun AppNavigation(
                 },
                 onBack = { navController.popBackStack() }
             )
+        }
+
+        // ===== ONBOARDING =====
+        composable<Onboarding> {
+            OnboardingScreen(navController = navController, sessionManager = sessionManager)
         }
 
         // ===== ROLE SECTION =====

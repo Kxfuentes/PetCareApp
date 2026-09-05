@@ -101,3 +101,6 @@ data class EditarSolicitud(
 data class Favoritos(
     val usuarioId: Int
 )
+
+@Serializable
+object Onboarding
