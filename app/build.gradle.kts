@@ -92,6 +92,9 @@ dependencies {
     implementation(libs.retrofit.kotlin.serialization)
     implementation(libs.okhttp.logging)
 
+    // Coil (carga de imágenes remotas)
+    implementation(libs.coil.compose)
+
     // Room
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)

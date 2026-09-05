@@ -17,6 +17,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -32,8 +33,10 @@ import com.proyectopoo.petcareapp.data.local.entity.ApplicationStatus
 import com.proyectopoo.petcareapp.data.local.entity.PetEntity
 import com.proyectopoo.petcareapp.data.local.relation.ServiceApplicationDetails
 import com.proyectopoo.petcareapp.data.local.relation.ServiceRequestDetails
+import com.proyectopoo.petcareapp.ui.components.SkeletonList
 import com.proyectopoo.petcareapp.ui.components.StarRatingInput
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OwnerHomeScreen(
     dogs: List<PetEntity>,
@@ -51,6 +54,10 @@ fun OwnerHomeScreen(
     onCompleteAndRate: (ServiceApplicationDetails, Double, String) -> Unit,
     onCancelService: (ServiceApplicationDetails) -> Unit = {},
     onOpenChat: (ServiceApplicationDetails) -> Unit = {},
+    isLoading: Boolean = false,
+    isRefreshing: Boolean = false,
+    onRefresh: () -> Unit = {},
+    onEditRequest: (ServiceRequestDetails) -> Unit = {},
     ownerId: Int
 ) {
     val scrollState = rememberScrollState()
@@ -108,7 +115,13 @@ fun OwnerHomeScreen(
         requestToDetail?.let { request ->
             ServiceRequestDetailsDialog(
                 request = request,
-                onDismiss = { requestToDetail = null }
+                onDismiss = { requestToDetail = null },
+                onEditClick = if (request.status.name == "PENDING") {
+                    {
+                        requestToDetail = null
+                        onEditRequest(request)
+                    }
+                } else null
             )
         }
         return
@@ -118,10 +131,16 @@ fun OwnerHomeScreen(
         containerColor = MaterialTheme.colorScheme.background
     ) { padding ->
 
-        Column(
+        PullToRefreshBox(
+            isRefreshing = isRefreshing,
+            onRefresh = onRefresh,
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
+        ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
                 .verticalScroll(scrollState)
         ) {
 
@@ -322,7 +341,9 @@ fun OwnerHomeScreen(
                     }
                 }
 
-                if (recentRequests.isEmpty()) {
+                if (isLoading && recentRequests.isEmpty()) {
+                    SkeletonList(count = 3)
+                } else if (recentRequests.isEmpty()) {
                     EmptyStateCard("Aún no has solicitado servicios.")
                 } else {
                     Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -341,7 +362,9 @@ fun OwnerHomeScreen(
                     fontWeight = FontWeight.SemiBold
                 )
 
-                if (pendingApplications.isEmpty()) {
+                if (isLoading && pendingApplications.isEmpty()) {
+                    SkeletonList(count = 2)
+                } else if (pendingApplications.isEmpty()) {
                     EmptyStateCard("Aún no hay cuidadores interesados.")
                 } else {
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -485,12 +508,19 @@ fun OwnerHomeScreen(
                 }
             }
         }
+        }
     }
 
     requestToDetail?.let { request ->
         ServiceRequestDetailsDialog(
             request = request,
-            onDismiss = { requestToDetail = null }
+            onDismiss = { requestToDetail = null },
+            onEditClick = if (request.status.name == "PENDING") {
+                {
+                    requestToDetail = null
+                    onEditRequest(request)
+                }
+            } else null
         )
     }
 
@@ -904,7 +934,8 @@ private fun AllRequestedServicesScreen(
 @Composable
 private fun ServiceRequestDetailsDialog(
     request: ServiceRequestDetails,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    onEditClick: (() -> Unit)? = null
 ) {
     val status = requestStatusLabelAndColor(request.status.name)
     DetailsCardDialog(
@@ -914,7 +945,8 @@ private fun ServiceRequestDetailsDialog(
         statusColor = status.second,
         fields = requestDetailFields(request),
         notes = parseDescriptionDetails(request.description)["Notas"],
-        onDismiss = onDismiss
+        onDismiss = onDismiss,
+        onEditClick = onEditClick
     )
 }
 
@@ -955,7 +987,8 @@ private fun DetailsCardDialog(
     fields: List<DetailField>,
     notes: String?,
     onDismiss: () -> Unit,
-    onChatClick: (() -> Unit)? = null
+    onChatClick: (() -> Unit)? = null,
+    onEditClick: (() -> Unit)? = null
 ) {
     Dialog(onDismissRequest = onDismiss) {
         Card(
@@ -1071,6 +1104,19 @@ private fun DetailsCardDialog(
                         Icon(Icons.AutoMirrored.Filled.Chat, contentDescription = null, modifier = Modifier.size(20.dp))
                         Spacer(Modifier.width(8.dp))
                         Text("Chat", fontWeight = FontWeight.Bold)
+                    }
+                    Spacer(Modifier.height(10.dp))
+                }
+
+                if (onEditClick != null) {
+                    OutlinedButton(
+                        onClick = onEditClick,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp)
+                    ) {
+                        Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(20.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text("Editar", fontWeight = FontWeight.Bold)
                     }
                     Spacer(Modifier.height(10.dp))
                 }

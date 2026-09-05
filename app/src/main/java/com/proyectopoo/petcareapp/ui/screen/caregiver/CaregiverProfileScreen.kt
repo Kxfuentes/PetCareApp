@@ -33,7 +33,9 @@ fun CaregiverProfileScreen(
     onBack: () -> Unit,
     onLogout: () -> Unit,
     onEditProfile: () -> Unit = {},
-    onManageAvailability: () -> Unit = {}
+    onManageAvailability: () -> Unit = {},
+    noMolestar: Boolean = false,
+    onToggleNoMolestar: (Boolean) -> Unit = {}
 ) {
     val scrollState = rememberScrollState()
 
@@ -167,6 +169,37 @@ fun CaregiverProfileScreen(
                         color = TextoSuave,
                         textAlign = TextAlign.Center
                     )
+                }
+            }
+        }
+
+        Spacer(Modifier.height(16.dp))
+
+        if (isOwnProfile) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            "No molestar",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Text(
+                            "Silencia las notificaciones push mientras esté activo.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = TextoSuave
+                        )
+                    }
+                    Switch(checked = noMolestar, onCheckedChange = onToggleNoMolestar)
                 }
             }
         }

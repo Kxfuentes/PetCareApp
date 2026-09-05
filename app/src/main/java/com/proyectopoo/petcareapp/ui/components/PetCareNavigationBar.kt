@@ -2,6 +2,8 @@ package com.proyectopoo.petcareapp.ui.components
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddCircle
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
@@ -21,7 +23,8 @@ import com.proyectopoo.petcareapp.ui.theme.CafeOscuro
 @Composable
 fun PetCareNavigationBar(
     navController: NavHostController,
-    userRole: UserRole?
+    userRole: UserRole?,
+    userId: Int = -1
 ) {
     val navBackStackEntry = navController.currentBackStackEntryAsState().value
     val currentDestination = navBackStackEntry?.destination
@@ -46,12 +49,37 @@ fun PetCareNavigationBar(
             colors = navigationBarItemColors()
         )
 
+        NavigationBarItem(
+            selected = currentDestination?.hierarchy?.any { it.hasRoute<Historial>() } == true,
+            onClick = {
+                if (userId > 0) {
+                    val role = if (currentRole == UserRole.CAREGIVER) "CAREGIVER" else "OWNER"
+                    navigateToTopLevel(navController, Historial(usuarioId = userId, role = role))
+                }
+            },
+            icon = { Icon(Icons.Default.History, contentDescription = "Historial") },
+            label = { Text("Historial") },
+            colors = navigationBarItemColors()
+        )
+
         if (currentRole == UserRole.OWNER) {
             NavigationBarItem(
                 selected = currentDestination?.hierarchy?.any { it.hasRoute<CreateService>() } == true,
                 onClick = { navigateToTopLevel(navController, CreateService()) },
                 icon = { Icon(Icons.Default.AddCircle, contentDescription = "Publicar") },
                 label = { Text("Publicar") },
+                colors = navigationBarItemColors()
+            )
+
+            NavigationBarItem(
+                selected = currentDestination?.hierarchy?.any { it.hasRoute<Favoritos>() } == true,
+                onClick = {
+                    if (userId > 0) {
+                        navigateToTopLevel(navController, Favoritos(usuarioId = userId))
+                    }
+                },
+                icon = { Icon(Icons.Default.Favorite, contentDescription = "Favoritos") },
+                label = { Text("Favoritos") },
                 colors = navigationBarItemColors()
             )
         }

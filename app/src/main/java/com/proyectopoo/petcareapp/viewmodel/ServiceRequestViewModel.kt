@@ -44,6 +44,7 @@ import com.proyectopoo.petcareapp.data.network.StatusUpdateRequest
 import com.proyectopoo.petcareapp.data.repository.ServiceApplicationRepository
 import com.proyectopoo.petcareapp.data.repository.ServiceRequestRepository
 import com.proyectopoo.petcareapp.notifications.AppNotifier
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -105,9 +106,15 @@ class ServiceRequestViewModel(
         _userMessage.value = null
     }
 
-    fun loadOwnerData(ownerId: Int) {
-        if (ownerId <= 0) return
-        viewModelScope.launch {
+    // Nota: estas funciones de carga devuelven el Job del coroutine lanzado
+    // (o null si no se lanzó nada) para que quien las llame pueda esperar a
+    // que terminen con `.join()` -- por ejemplo, para saber cuándo ocultar
+    // un indicador de "pull to refresh" o un skeleton de carga inicial.
+    // Los call sites existentes que ignoran el valor de retorno no se ven
+    // afectados (antes devolvían Unit implícitamente).
+    fun loadOwnerData(ownerId: Int): Job? {
+        if (ownerId <= 0) return null
+        return viewModelScope.launch {
             syncOwnerRequests(ownerId)
             syncOwnerApplications(ownerId)
             _ownerRequests.value = requestRepo.getWithApplications(ownerId)
@@ -119,9 +126,9 @@ class ServiceRequestViewModel(
         }
     }
 
-    fun loadCaregiverData(caregiverId: Int) {
-        if (caregiverId <= 0) return
-        viewModelScope.launch {
+    fun loadCaregiverData(caregiverId: Int): Job? {
+        if (caregiverId <= 0) return null
+        return viewModelScope.launch {
             syncAvailableRequests()
             syncCaregiverApplications(caregiverId)
             _caregiverApplications.value = applicationRepo.getByCaregiver(caregiverId)
@@ -132,8 +139,8 @@ class ServiceRequestViewModel(
         }
     }
 
-    fun loadAvailableRequests(caregiverId: Int = 0) {
-        viewModelScope.launch {
+    fun loadAvailableRequests(caregiverId: Int = 0): Job {
+        return viewModelScope.launch {
             syncAvailableRequests()
             _availableRequests.value = requestRepo.getAvailableDetails()
         }

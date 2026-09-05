@@ -41,6 +41,8 @@ import com.proyectopoo.petcareapp.model.UserRole
 import com.proyectopoo.petcareapp.navigation.AppNavigation
 import com.proyectopoo.petcareapp.navigation.CaregiverHome
 import com.proyectopoo.petcareapp.navigation.DogInfo
+import com.proyectopoo.petcareapp.navigation.EditarSolicitud
+import com.proyectopoo.petcareapp.navigation.Filtros
 import com.proyectopoo.petcareapp.navigation.Login
 import com.proyectopoo.petcareapp.navigation.OwnerHome
 import com.proyectopoo.petcareapp.navigation.PasswordRecovery
@@ -153,7 +155,9 @@ class MainActivity : ComponentActivity() {
                                 !dest.hasRoute<RoleSection>() &&
                                 !dest.hasRoute<RequestOffer>() &&
                                 !dest.hasRoute<DogInfo>() &&
-                                !dest.hasRoute<PasswordRecovery>()
+                                !dest.hasRoute<PasswordRecovery>() &&
+                                !dest.hasRoute<Filtros>() &&
+                                !dest.hasRoute<EditarSolicitud>()
                     } ?: false
 
                     Scaffold(
@@ -163,7 +167,8 @@ class MainActivity : ComponentActivity() {
                             if (showBottomBar) {
                                 PetCareNavigationBar(
                                     navController = navController,
-                                    userRole = userRole
+                                    userRole = userRole,
+                                    userId = sessionManager.getBackendUserId()
                                 )
                             }
                         }

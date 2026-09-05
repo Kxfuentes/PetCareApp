@@ -15,6 +15,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -28,8 +29,10 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.proyectopoo.petcareapp.data.local.entity.ApplicationStatus
 import com.proyectopoo.petcareapp.data.local.relation.ServiceApplicationDetails
+import com.proyectopoo.petcareapp.ui.components.SkeletonList
 import com.proyectopoo.petcareapp.ui.components.StarRatingInput
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CaregiverHomeScreen(
     onGoToServices: () -> Unit,
@@ -41,6 +44,9 @@ fun CaregiverHomeScreen(
     onCancelService: (ServiceApplicationDetails) -> Unit = {},
     onScheduledClick: (ServiceApplicationDetails) -> Unit = {},
     onOpenChat: (ServiceApplicationDetails) -> Unit = {},
+    isLoading: Boolean = false,
+    isRefreshing: Boolean = false,
+    onRefresh: () -> Unit = {},
     caregiverId: Int
 ) {
     var available by remember { mutableStateOf(true) }
@@ -58,6 +64,11 @@ fun CaregiverHomeScreen(
     var ratingScore by remember { mutableStateOf(5f) }
     var ratingComment by remember { mutableStateOf("") }
 
+    PullToRefreshBox(
+        isRefreshing = isRefreshing,
+        onRefresh = onRefresh,
+        modifier = Modifier.fillMaxSize()
+    ) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -160,7 +171,9 @@ fun CaregiverHomeScreen(
             }
 
             SectionLabel("Dueños que solicitaron tus servicios")
-            if (pendingRequests.isEmpty()) {
+            if (isLoading && pendingRequests.isEmpty()) {
+                SkeletonList(count = 2)
+            } else if (pendingRequests.isEmpty()) {
                 EmptyCaregiverCard("Aún no tienes solicitudes pendientes.")
             } else {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -202,6 +215,7 @@ fun CaregiverHomeScreen(
                 }
             }
         }
+    }
     }
 
     requestToDetails?.let { request ->

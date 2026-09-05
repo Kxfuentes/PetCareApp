@@ -12,11 +12,13 @@ import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.AttachMoney
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.MonetizationOn
 import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -28,6 +30,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.proyectopoo.petcareapp.data.local.relation.ServiceRequestDetails
+import com.proyectopoo.petcareapp.ui.components.SkeletonList
 import com.proyectopoo.petcareapp.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -35,7 +38,12 @@ import com.proyectopoo.petcareapp.ui.theme.*
 fun CaregiverFeedScreen(
     requests: List<ServiceRequestDetails>,
     onGoToOwnerProfile: (Int, Int) -> Unit,
-    onApplyToRequest: (Int) -> Unit
+    onApplyToRequest: (Int) -> Unit,
+    isLoading: Boolean = false,
+    isRefreshing: Boolean = false,
+    onRefresh: () -> Unit = {},
+    distances: Map<Int, Double> = emptyMap(),
+    onOpenFilters: () -> Unit = {}
 ) {
     val tiposServicio = listOf(
         "Todos", "Alojamiento", "GuarderÃ­a", "Paseo", "Taxi", "PeluquerÃ­a", "Visitante"
@@ -69,6 +77,11 @@ fun CaregiverFeedScreen(
                         color = CafeOscuro,
                         fontWeight = FontWeight.Bold
                     )
+                }
+            },
+            actions = {
+                IconButton(onClick = onOpenFilters) {
+                    Icon(Icons.Default.FilterList, contentDescription = "Filtros", tint = CafeMedio)
                 }
             },
             colors = TopAppBarDefaults.topAppBarColors(containerColor = FondoClaro)
@@ -121,6 +134,16 @@ fun CaregiverFeedScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
+            PullToRefreshBox(
+                isRefreshing = isRefreshing,
+                onRefresh = onRefresh,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+            ) {
+            if (isLoading && serviciosFiltrados.isEmpty()) {
+                SkeletonList()
+            } else {
             LazyColumn(
                 verticalArrangement = Arrangement.spacedBy(18.dp)
             ) {
@@ -267,6 +290,15 @@ fun CaregiverFeedScreen(
                                 )
                             }
 
+                            distances[servicio.serviceRequestId]?.let { km ->
+                                Spacer(modifier = Modifier.height(14.dp))
+                                DetailRow(
+                                    icon = Icons.Default.LocationOn,
+                                    title = "Distancia",
+                                    detail = "%.1f km".format(km)
+                                )
+                            }
+
                             Spacer(modifier = Modifier.height(14.dp))
                             DetailRow(
                                 icon = Icons.Default.Email,
@@ -321,6 +353,8 @@ fun CaregiverFeedScreen(
                 item {
                     Spacer(modifier = Modifier.height(20.dp))
                 }
+            }
+            }
             }
         }
     }

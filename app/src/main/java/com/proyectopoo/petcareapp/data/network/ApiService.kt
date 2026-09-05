@@ -179,4 +179,48 @@ interface ApiService {
     suspend fun sendFcmToken(
         @Body request: FcmTokenRequest
     ): Response<Unit>
+
+    @PUT("api/usuarios/no-molestar")
+    suspend fun updateNoMolestar(
+        @Body request: NoMolestarRequest
+    ): Response<Unit>
+
+    @GET("api/users/{id}")
+    suspend fun getUserById(
+        @Path("id") id: Int
+    ): Response<UserLocationDto>
+
+    @GET("api/solicitudes/historial")
+    suspend fun getHistorialSolicitudes(
+        @Query("usuarioId") usuarioId: Int,
+        @Query("role") role: String
+    ): Response<List<ServiceRequestDto>>
+
+    @GET("api/solicitudes/buscar")
+    suspend fun buscarSolicitudes(
+        @Query("q") q: String?,
+        @Query("serviceTypeId") serviceTypeId: Int?,
+        @Query("status") status: String?
+    ): Response<List<ServiceRequestDto>>
+
+    @PUT("api/solicitudes/{id}")
+    suspend fun editarSolicitud(
+        @Path("id") id: Int,
+        @Body request: SolicitudEditRequest
+    ): Response<ServiceRequestDto>
+
+    @GET("api/favoritos")
+    suspend fun getFavoritos(
+        @Query("usuarioId") usuarioId: Int
+    ): Response<List<FavoritoDto>>
+
+    @POST("api/favoritos")
+    suspend fun agregarFavorito(
+        @Body request: FavoritoDto
+    ): Response<FavoritoDto>
+
+    @DELETE("api/favoritos/{id}")
+    suspend fun eliminarFavorito(
+        @Path("id") id: Int
+    ): Response<Unit>
 }

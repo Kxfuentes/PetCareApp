@@ -8,11 +8,14 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.FilterList
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.MailOutline
 import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -24,6 +27,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.proyectopoo.petcareapp.data.local.relation.OfferedServiceDetails
+import com.proyectopoo.petcareapp.ui.components.SkeletonList
 import com.proyectopoo.petcareapp.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -31,7 +35,12 @@ import com.proyectopoo.petcareapp.ui.theme.*
 fun OwnerFeedScreen(
     services: List<OfferedServiceDetails>,
     onGoToCaregiverProfile: (Int) -> Unit,
-    onRequestService: (Int, Int) -> Unit
+    onRequestService: (Int, Int) -> Unit,
+    isLoading: Boolean = false,
+    isRefreshing: Boolean = false,
+    onRefresh: () -> Unit = {},
+    distances: Map<Int, Double> = emptyMap(),
+    onOpenFilters: () -> Unit = {}
 ) {
     val tiposServicio = listOf(
         "Todos", "Alojamiento", "Guardería", "Paseo", "Taxi", "Peluquería", "Visitante"
@@ -65,6 +74,11 @@ fun OwnerFeedScreen(
                         color = CafeOscuro,
                         fontWeight = FontWeight.Bold
                     )
+                }
+            },
+            actions = {
+                IconButton(onClick = onOpenFilters) {
+                    Icon(Icons.Default.FilterList, contentDescription = "Filtros", tint = CafeMedio)
                 }
             },
             colors = TopAppBarDefaults.topAppBarColors(containerColor = FondoClaro)
@@ -118,6 +132,16 @@ fun OwnerFeedScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
+            PullToRefreshBox(
+                isRefreshing = isRefreshing,
+                onRefresh = onRefresh,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+            ) {
+            if (isLoading && filteredServices.isEmpty()) {
+                SkeletonList()
+            } else {
             LazyColumn(
                 verticalArrangement = Arrangement.spacedBy(18.dp)
             ) {
@@ -254,6 +278,24 @@ fun OwnerFeedScreen(
                                 )
                             }
 
+                            distances[service.offeredServiceId]?.let { km ->
+                                Spacer(modifier = Modifier.height(10.dp))
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        Icons.Default.LocationOn,
+                                        contentDescription = "Distancia",
+                                        tint = CafeMedio,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text(
+                                        text = "%.1f km".format(km),
+                                        color = TextoSuave,
+                                        fontSize = 13.sp
+                                    )
+                                }
+                            }
+
                             Spacer(modifier = Modifier.height(14.dp))
 
                             // Chip sin icono
@@ -305,6 +347,8 @@ fun OwnerFeedScreen(
                         }
                     }
                 }
+            }
+            }
             }
         }
     }

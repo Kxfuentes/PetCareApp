@@ -3,7 +3,21 @@ package com.proyectopoo.petcareapp.navigation
 import com.proyectopoo.petcareapp.data.network.RoleUpdateRequest
 import com.proyectopoo.petcareapp.data.network.OfferedServiceDto
 import android.widget.Toast
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
+import com.proyectopoo.petcareapp.data.local.entity.ServiceRequestStatus
+import com.proyectopoo.petcareapp.data.network.FavoritoDto
+import com.proyectopoo.petcareapp.data.network.NoMolestarRequest
+import com.proyectopoo.petcareapp.data.network.ServiceRequestDto
+import com.proyectopoo.petcareapp.ui.screen.EditarSolicitudScreen
+import com.proyectopoo.petcareapp.ui.screen.FavoritosScreen
+import com.proyectopoo.petcareapp.ui.screen.FiltrosResult
+import com.proyectopoo.petcareapp.ui.screen.FiltrosScreen
+import com.proyectopoo.petcareapp.ui.screen.HistorialScreen
+import com.proyectopoo.petcareapp.util.DistanceUtils
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
@@ -14,6 +28,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavHostController
@@ -91,6 +106,7 @@ fun AppNavigation(
         OfferedServiceRepository(database.offeredServiceDao(), apiService)
     }
     val scope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
 
     val dogViewModel: DogViewModel = viewModel(
         factory = viewModelFactory {
@@ -145,9 +161,26 @@ fun AppNavigation(
     val userMessage by serviceRequestViewModel.userMessage.collectAsStateWithLifecycle()
     val currentUserId = sessionManager.getUserId()
 
+    // Ubicación guardada del usuario (lat/lng de su perfil, vía GET /api/users/{id} que ya
+    // expone esos campos y no requiere Authorization). Se usa para calcular distancias en los
+    // feeds; no hay GPS en vivo en la app, así que esta es la mejor fuente disponible hoy.
+    var userLocation by remember { mutableStateOf<Pair<Double, Double>?>(null) }
+    // Filtros (radio/tipo/calificación) aplicados desde FiltrosScreen; null = sin filtro activo.
+    var solicitudFilters by remember { mutableStateOf<FiltrosResult?>(null) }
+
+    LaunchedEffect(currentUserId) {
+        if (currentUserId <= 0) return@LaunchedEffect
+        val backendUserId = sessionManager.getBackendUserId()
+        val response = runCatching { RetrofitClient.apiService.getUserById(backendUserId) }.getOrNull()
+        val body = response?.takeIf { it.isSuccessful }?.body()
+        val lat = body?.latitud
+        val lng = body?.longitud
+        userLocation = if (lat != null && lng != null) lat to lng else null
+    }
+
     LaunchedEffect(userMessage) {
         userMessage?.let { message ->
-            Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+            snackbarHostState.showSnackbar(message)
             serviceRequestViewModel.clearUserMessage()
         }
     }
@@ -174,6 +207,7 @@ fun AppNavigation(
         }
     }
 
+    Box(modifier = Modifier.fillMaxSize()) {
     NavHost(
         navController = navController,
         startDestination = Login,
@@ -428,7 +462,7 @@ fun AppNavigation(
                                     dogViewModel.updateDog(pet)
                                 }
 
-                                Toast.makeText(context, "Mascota guardada correctamente", Toast.LENGTH_SHORT).show()
+                                snackbarHostState.showSnackbar("Mascota guardada correctamente")
 
                                 navController.navigate(OwnerHome) {
                                     popUpTo(DogInfo()) { inclusive = true }
@@ -436,11 +470,9 @@ fun AppNavigation(
                                 }
 
                             } catch (e: Exception) {
-                                Toast.makeText(
-                                    context,
-                                    e.localizedMessage ?: "No se pudo guardar la mascota.",
-                                    Toast.LENGTH_LONG
-                                ).show()
+                                snackbarHostState.showSnackbar(
+                                    e.localizedMessage ?: "No se pudo guardar la mascota."
+                                )
                             }
                         }
                     }
@@ -471,19 +503,33 @@ fun AppNavigation(
         // ===== OWNER HOME =====
         composable<OwnerHome> {
             val ownerId = sessionManager.getBackendUserId()
+            var ownerHomeInitialLoading by remember { mutableStateOf(true) }
+            var ownerHomeRefreshing by remember { mutableStateOf(false) }
 
             LaunchedEffect(ownerId) {
                 if (ownerId > 0) {
                     while (true) {
                         dogViewModel.loadDogs(ownerId)
-                        serviceRequestViewModel.loadOwnerData(ownerId)
+                        serviceRequestViewModel.loadOwnerData(ownerId)?.join()
                         cacheAvailableOfferedServices(database)
+                        ownerHomeInitialLoading = false
                         delay(10_000L)
                     }
                 }
             }
 
             OwnerHomeScreen(
+                isLoading = ownerHomeInitialLoading,
+                isRefreshing = ownerHomeRefreshing,
+                onRefresh = {
+                    scope.launch {
+                        ownerHomeRefreshing = true
+                        dogViewModel.loadDogs(ownerId)
+                        serviceRequestViewModel.loadOwnerData(ownerId)?.join()
+                        cacheAvailableOfferedServices(database)
+                        ownerHomeRefreshing = false
+                    }
+                },
                 dogs = dogs,
                 recentRequests = recentOwnerRequests,
                 caregiverApplications = ownerApplicationDetails,
@@ -550,13 +596,16 @@ fun AppNavigation(
         composable<OwnerFeed> {
             val ownerId = sessionManager.getBackendUserId()
             var offeredServices by remember { mutableStateOf(emptyList<com.proyectopoo.petcareapp.data.local.relation.OfferedServiceDetails>()) }
+            var ownerFeedInitialLoading by remember { mutableStateOf(true) }
+            var ownerFeedRefreshing by remember { mutableStateOf(false) }
 
             LaunchedEffect(ownerId) {
                 if (ownerId > 0) {
                     while (true) {
-                        serviceRequestViewModel.loadOwnerData(ownerId)
+                        serviceRequestViewModel.loadOwnerData(ownerId)?.join()
                         cacheAvailableOfferedServices(database)
                         offeredServices = database.offeredServiceDao().getAvailableServiceDetails()
+                        ownerFeedInitialLoading = false
                         delay(10_000L)
                     }
                 }
@@ -564,6 +613,17 @@ fun AppNavigation(
 
             OwnerFeedScreen(
                 services = offeredServices,
+                isLoading = ownerFeedInitialLoading,
+                isRefreshing = ownerFeedRefreshing,
+                onRefresh = {
+                    scope.launch {
+                        ownerFeedRefreshing = true
+                        serviceRequestViewModel.loadOwnerData(ownerId)?.join()
+                        cacheAvailableOfferedServices(database)
+                        offeredServices = database.offeredServiceDao().getAvailableServiceDetails()
+                        ownerFeedRefreshing = false
+                    }
+                },
                 onGoToCaregiverProfile = { caregiverId ->
                     navController.navigate(CaregiverProfile(caregiverId = caregiverId))
                 },
@@ -607,7 +667,7 @@ fun AppNavigation(
                             notes = notes,
                             suggestedPrice = null
                         )
-                        Toast.makeText(context, "Solicitud de reserva enviada.", Toast.LENGTH_SHORT).show()
+                        scope.launch { snackbarHostState.showSnackbar("Solicitud de reserva enviada.") }
                         navController.navigate(OwnerHome) { launchSingleTop = true }
                     }
                 )
@@ -656,17 +716,29 @@ fun AppNavigation(
         // ===== CAREGIVER HOME =====
         composable<CaregiverHome> {
             val caregiverId = sessionManager.getBackendUserId()
+            var caregiverHomeInitialLoading by remember { mutableStateOf(true) }
+            var caregiverHomeRefreshing by remember { mutableStateOf(false) }
 
             LaunchedEffect(caregiverId) {
                 if (caregiverId > 0) {
                     while (true) {
-                        serviceRequestViewModel.loadCaregiverData(caregiverId)
+                        serviceRequestViewModel.loadCaregiverData(caregiverId)?.join()
+                        caregiverHomeInitialLoading = false
                         delay(10_000L)
                     }
                 }
             }
 
             CaregiverHomeScreen(
+                isLoading = caregiverHomeInitialLoading,
+                isRefreshing = caregiverHomeRefreshing,
+                onRefresh = {
+                    scope.launch {
+                        caregiverHomeRefreshing = true
+                        serviceRequestViewModel.loadCaregiverData(caregiverId)?.join()
+                        caregiverHomeRefreshing = false
+                    }
+                },
                 onGoToServices = { navController.navigate(CaregiverService) },
                 ownerRequests = caregiverApplicationDetails,
                 scheduledServices = caregiverScheduledServices,
@@ -711,24 +783,38 @@ fun AppNavigation(
         // ===== CAREGIVER FEED =====
         composable<CaregiverFeed> {
             val caregiverId = sessionManager.getBackendUserId()
+            var caregiverFeedInitialLoading by remember { mutableStateOf(true) }
+            var caregiverFeedRefreshing by remember { mutableStateOf(false) }
 
             LaunchedEffect(caregiverId) {
                 if (caregiverId > 0) {
-                    serviceRequestViewModel.loadAvailableRequests(caregiverId)
+                    serviceRequestViewModel.loadAvailableRequests(caregiverId).join()
                 }
                 if (caregiverId > 0) {
                     while (true) {
-                        serviceRequestViewModel.loadAvailableRequests()
-                        serviceRequestViewModel.loadCaregiverData(caregiverId)
+                        serviceRequestViewModel.loadAvailableRequests().join()
+                        serviceRequestViewModel.loadCaregiverData(caregiverId)?.join()
+                        caregiverFeedInitialLoading = false
                         delay(10_000L)
                     }
                 } else {
-                    serviceRequestViewModel.loadAvailableRequests()
+                    serviceRequestViewModel.loadAvailableRequests().join()
+                    caregiverFeedInitialLoading = false
                 }
             }
 
             CaregiverFeedScreen(
                 requests = availableRequests,
+                isLoading = caregiverFeedInitialLoading,
+                isRefreshing = caregiverFeedRefreshing,
+                onRefresh = {
+                    scope.launch {
+                        caregiverFeedRefreshing = true
+                        serviceRequestViewModel.loadAvailableRequests(caregiverId).join()
+                        serviceRequestViewModel.loadCaregiverData(caregiverId)?.join()
+                        caregiverFeedRefreshing = false
+                    }
+                },
                 onGoToOwnerProfile = { ownerId, serviceRequestId ->
                     navController.navigate(
                         OwnerProfile(
@@ -740,11 +826,9 @@ fun AppNavigation(
                 onApplyToRequest = { serviceRequestId ->
                     serviceRequestViewModel.applyToRequest(serviceRequestId, caregiverId)
 
-                    Toast.makeText(
-                        context,
-                        "Solicitud de trabajo enviada.",
-                        Toast.LENGTH_SHORT
-                    ).show()
+                    scope.launch {
+                        snackbarHostState.showSnackbar("Solicitud de trabajo enviada.")
+                    }
                 }
             )
         }
@@ -822,23 +906,17 @@ fun AppNavigation(
                     viewModel = profileViewModel,
                     onBack = { navController.popBackStack() },
                     onRequestServices = {
-                        if (args.serviceRequestId == -1) {
-                            Toast.makeText(
-                                context,
-                                "Abre el perfil desde una solicitud disponible.",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                        } else {
-                            serviceRequestViewModel.applyToRequest(
-                                args.serviceRequestId,
-                                loggedUserId
-                            )
+                        scope.launch {
+                            if (args.serviceRequestId == -1) {
+                                snackbarHostState.showSnackbar("Abre el perfil desde una solicitud disponible.")
+                            } else {
+                                serviceRequestViewModel.applyToRequest(
+                                    args.serviceRequestId,
+                                    loggedUserId
+                                )
 
-                            Toast.makeText(
-                                context,
-                                "Solicitud de trabajo enviada.",
-                                Toast.LENGTH_SHORT
-                            ).show()
+                                snackbarHostState.showSnackbar("Solicitud de trabajo enviada.")
+                            }
                         }
                     }
                 )
@@ -901,11 +979,7 @@ fun AppNavigation(
                                 .getAvailableServicesByCaregiver(targetCaregiverId)
                             val firstOffer = offers.firstOrNull()
                             if (firstOffer == null) {
-                                Toast.makeText(
-                                    context,
-                                    "Este cuidador no tiene ofertas activas disponibles.",
-                                    Toast.LENGTH_SHORT
-                                ).show()
+                                snackbarHostState.showSnackbar("Este cuidador no tiene ofertas activas disponibles.")
                             } else {
                                 navController.navigate(
                                     RequestOffer(
@@ -988,6 +1062,12 @@ fun AppNavigation(
                 }
             )
         }
+    }
+
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier.align(Alignment.BottomCenter)
+        )
     }
 }
 

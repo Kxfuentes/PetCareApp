@@ -76,3 +76,24 @@ data class FcmTokenRequest(
     @SerialName("usuario_id") val usuarioId: Int,
     val token: String
 )
+
+/** Activa/desactiva el modo "no molestar" (silencia notificaciones push) de un usuario. */
+@Serializable
+data class NoMolestarRequest(
+    @SerialName("usuario_id") val usuarioId: Int,
+    val activo: Boolean
+)
+
+/**
+ * Respuesta parcial de GET /api/users/{id} (el backend devuelve la entidad completa;
+ * aquí solo se leen los campos que la app necesita: ubicación guardada del usuario,
+ * usada para calcular distancias, y el estado de "no molestar").
+ */
+@Serializable
+data class UserLocationDto(
+    val id: Int,
+    val latitud: Double? = null,
+    val longitud: Double? = null,
+    @SerialName("direccion_texto") val direccionTexto: String? = null,
+    @SerialName("no_molestar") val noMolestar: Boolean? = false
+)

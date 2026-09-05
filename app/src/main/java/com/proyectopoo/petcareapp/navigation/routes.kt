@@ -82,3 +82,22 @@ data class Chat(
     val otherUserId: Int,
     val otherUserName: String
 )
+
+@Serializable
+data class Historial(
+    val usuarioId: Int,
+    val role: String
+)
+
+@Serializable
+object Filtros
+
+@Serializable
+data class EditarSolicitud(
+    val serviceRequestId: Int
+)
+
+@Serializable
+data class Favoritos(
+    val usuarioId: Int
+)
