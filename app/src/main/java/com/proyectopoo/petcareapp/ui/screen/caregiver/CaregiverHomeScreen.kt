@@ -40,6 +40,7 @@ import com.proyectopoo.petcareapp.ui.components.EmergencyReportDialog
 import com.proyectopoo.petcareapp.ui.components.SkeletonList
 import com.proyectopoo.petcareapp.ui.components.StarRatingInput
 import com.proyectopoo.petcareapp.util.abrirNavegacion
+import com.proyectopoo.petcareapp.util.compartirSolicitud
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -97,6 +98,13 @@ fun CaregiverHomeScreen(
     var isReportingEmergency by remember { mutableStateOf(false) }
     val actionsScope = rememberCoroutineScope()
     val actionsSnackbarHostState = remember { SnackbarHostState() }
+    val shareRequest: (Int) -> Unit = { requestId ->
+        if (!compartirSolicitud(context, requestId)) {
+            actionsScope.launch {
+                actionsSnackbarHostState.showSnackbar("No hay ninguna app disponible para compartir")
+            }
+        }
+    }
 
     Box(modifier = Modifier.fillMaxSize()) {
     PullToRefreshBox(
@@ -287,7 +295,8 @@ fun CaregiverHomeScreen(
                     requestToDetails = null
                     emergencyDialogTarget = request
                 }
-            } else null
+            } else null,
+            onShareClick = { shareRequest(request.serviceRequestId) }
         )
     }
 
@@ -581,7 +590,8 @@ private fun CaregiverServiceDetailsDialog(
     onDismiss: () -> Unit,
     onChatClick: (() -> Unit)? = null,
     onComoLlegarClick: (() -> Unit)? = null,
-    onEmergencyClick: (() -> Unit)? = null
+    onEmergencyClick: (() -> Unit)? = null,
+    onShareClick: (() -> Unit)? = null
 ) {
     val title = request.serviceTypeName ?: request.requestTitle
     val fields = caregiverDetailFields(request)
@@ -640,6 +650,15 @@ private fun CaregiverServiceDetailsDialog(
                                 color = MaterialTheme.colorScheme.primary,
                                 style = MaterialTheme.typography.labelMedium,
                                 fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                    if (onShareClick != null) {
+                        IconButton(onClick = onShareClick) {
+                            Icon(
+                                Icons.Default.Share,
+                                contentDescription = "Compartir solicitud",
+                                tint = MaterialTheme.colorScheme.primary
                             )
                         }
                     }

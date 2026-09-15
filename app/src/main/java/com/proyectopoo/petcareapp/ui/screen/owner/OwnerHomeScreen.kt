@@ -46,6 +46,7 @@ import com.proyectopoo.petcareapp.ui.components.EmergencyReportDialog
 import com.proyectopoo.petcareapp.ui.components.SkeletonList
 import com.proyectopoo.petcareapp.ui.components.StarRatingInput
 import com.proyectopoo.petcareapp.util.abrirNavegacion
+import com.proyectopoo.petcareapp.util.compartirSolicitud
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -92,6 +93,13 @@ fun OwnerHomeScreen(
     var isReportingEmergency by remember { mutableStateOf(false) }
     val actionsScope = rememberCoroutineScope()
     val actionsSnackbarHostState = remember { SnackbarHostState() }
+    val shareRequest: (Int) -> Unit = { requestId ->
+        if (!compartirSolicitud(context, requestId)) {
+            actionsScope.launch {
+                actionsSnackbarHostState.showSnackbar("No hay ninguna app disponible para compartir")
+            }
+        }
+    }
 
     val safeIndex = if (dogs.isEmpty()) 0 else selectedDogIndex.coerceIn(0, dogs.lastIndex)
     val currentDog = dogs.getOrNull(safeIndex)
@@ -128,22 +136,30 @@ fun OwnerHomeScreen(
     )
 
     if (showAllRequestedScreen) {
-        AllRequestedServicesScreen(
-            requests = recentRequests,
-            onBack = { showAllRequestedScreen = false },
-            onOpenDetails = { requestToDetail = it }
-        )
+        Box(modifier = Modifier.fillMaxSize()) {
+            AllRequestedServicesScreen(
+                requests = recentRequests,
+                onBack = { showAllRequestedScreen = false },
+                onOpenDetails = { requestToDetail = it }
+            )
 
-        requestToDetail?.let { request ->
-            ServiceRequestDetailsDialog(
-                request = request,
-                onDismiss = { requestToDetail = null },
-                onEditClick = if (request.status.name == "PENDING") {
-                    {
-                        requestToDetail = null
-                        onEditRequest(request)
-                    }
-                } else null
+            requestToDetail?.let { request ->
+                ServiceRequestDetailsDialog(
+                    request = request,
+                    onDismiss = { requestToDetail = null },
+                    onEditClick = if (request.status.name == "PENDING") {
+                        {
+                            requestToDetail = null
+                            onEditRequest(request)
+                        }
+                    } else null,
+                    onShareClick = { shareRequest(request.serviceRequestId) }
+                )
+            }
+
+            SnackbarHost(
+                hostState = actionsSnackbarHostState,
+                modifier = Modifier.align(Alignment.BottomCenter)
             )
         }
         return
@@ -543,7 +559,8 @@ fun OwnerHomeScreen(
                     requestToDetail = null
                     onEditRequest(request)
                 }
-            } else null
+            } else null,
+            onShareClick = { shareRequest(request.serviceRequestId) }
         )
     }
 
@@ -590,7 +607,8 @@ fun OwnerHomeScreen(
                     applicationToDetail = null
                     emergencyDialogTarget = application
                 }
-            } else null
+            } else null,
+            onShareClick = { shareRequest(application.serviceRequestId) }
         )
     }
 
@@ -1023,7 +1041,8 @@ private fun AllRequestedServicesScreen(
 private fun ServiceRequestDetailsDialog(
     request: ServiceRequestDetails,
     onDismiss: () -> Unit,
-    onEditClick: (() -> Unit)? = null
+    onEditClick: (() -> Unit)? = null,
+    onShareClick: (() -> Unit)? = null
 ) {
     val status = requestStatusLabelAndColor(request.status.name)
     DetailsCardDialog(
@@ -1034,7 +1053,8 @@ private fun ServiceRequestDetailsDialog(
         fields = requestDetailFields(request),
         notes = parseDescriptionDetails(request.description)["Notas"],
         onDismiss = onDismiss,
-        onEditClick = onEditClick
+        onEditClick = onEditClick,
+        onShareClick = onShareClick
     )
 }
 
@@ -1045,7 +1065,8 @@ private fun ServiceApplicationDetailsDialog(
     onChatClick: (() -> Unit)? = null,
     onComoLlegarClick: (() -> Unit)? = null,
     onTrackingClick: (() -> Unit)? = null,
-    onEmergencyClick: (() -> Unit)? = null
+    onEmergencyClick: (() -> Unit)? = null,
+    onShareClick: (() -> Unit)? = null
 ) {
     DetailsCardDialog(
         title = application.serviceTypeName ?: application.requestTitle,
@@ -1058,7 +1079,8 @@ private fun ServiceApplicationDetailsDialog(
         onChatClick = onChatClick,
         onComoLlegarClick = onComoLlegarClick,
         onTrackingClick = onTrackingClick,
-        onEmergencyClick = onEmergencyClick
+        onEmergencyClick = onEmergencyClick,
+        onShareClick = onShareClick
     )
 }
 
@@ -1092,7 +1114,8 @@ private fun DetailsCardDialog(
     onEditClick: (() -> Unit)? = null,
     onComoLlegarClick: (() -> Unit)? = null,
     onTrackingClick: (() -> Unit)? = null,
-    onEmergencyClick: (() -> Unit)? = null
+    onEmergencyClick: (() -> Unit)? = null,
+    onShareClick: (() -> Unit)? = null
 ) {
     Dialog(onDismissRequest = onDismiss) {
         Card(
@@ -1144,6 +1167,15 @@ private fun DetailsCardDialog(
                                     fontWeight = FontWeight.Bold
                                 )
                             }
+                        }
+                    }
+                    if (onShareClick != null) {
+                        IconButton(onClick = onShareClick) {
+                            Icon(
+                                Icons.Default.Share,
+                                contentDescription = "Compartir solicitud",
+                                tint = MaterialTheme.colorScheme.primary
+                            )
                         }
                     }
                 }
