@@ -1,6 +1,8 @@
 package com.proyectopoo.petcareapp.ui.screen.caregiver
 
 import android.content.Intent
+import android.net.ConnectivityManager
+import android.net.Network
 import android.net.Uri
 import androidx.compose.material.icons.automirrored.filled.Assignment
 import androidx.compose.material.icons.automirrored.filled.Chat
@@ -36,16 +38,27 @@ import com.proyectopoo.petcareapp.R
 import com.proyectopoo.petcareapp.data.local.entity.ApplicationStatus
 import com.proyectopoo.petcareapp.data.local.relation.ServiceApplicationDetails
 import com.proyectopoo.petcareapp.data.network.EmergenciaRequest
+import com.proyectopoo.petcareapp.data.network.EvidenciaTipo
 import com.proyectopoo.petcareapp.data.network.RetrofitClient
 import com.proyectopoo.petcareapp.data.network.ValoracionDuranteRequest
 import com.proyectopoo.petcareapp.location.LocationReporter
 import com.proyectopoo.petcareapp.ui.components.EmergencyReportDialog
+import com.proyectopoo.petcareapp.ui.components.EvidenciaCaptureDialog
+import com.proyectopoo.petcareapp.ui.components.EvidenciaThumbnails
 import com.proyectopoo.petcareapp.ui.components.ReactionButtonsRow
 import com.proyectopoo.petcareapp.ui.components.SkeletonList
 import com.proyectopoo.petcareapp.ui.components.StarRatingInput
+import com.proyectopoo.petcareapp.ui.components.retryPendingEvidencias
 import com.proyectopoo.petcareapp.util.abrirNavegacion
 import com.proyectopoo.petcareapp.util.compartirSolicitud
 import kotlinx.coroutines.launch
+
+/** Prompt de evidencia pendiente (Bloque 8): qué solicitud/tipo, y qué hacer al cerrarlo. */
+private data class EvidenciaPrompt(
+    val serviceRequestId: Int,
+    val tipo: String,
+    val afterAction: () -> Unit = {}
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -59,9 +72,14 @@ fun CaregiverHomeScreen(
     onCancelService: (ServiceApplicationDetails) -> Unit = {},
     onScheduledClick: (ServiceApplicationDetails) -> Unit = {},
     onOpenChat: (ServiceApplicationDetails) -> Unit = {},
+    onGoToCalendar: () -> Unit = {},
     isLoading: Boolean = false,
     isRefreshing: Boolean = false,
     onRefresh: () -> Unit = {},
+    // Cuando se vuelve desde CalendarioScreen (Bloque 9) tras tocar un servicio, este id abre
+    // directamente su diálogo de detalle (reutilizando el diálogo existente en vez de duplicarlo).
+    initialFocusServiceRequestId: Int? = null,
+    onFocusHandled: () -> Unit = {},
     caregiverId: Int
 ) {
     val context = LocalContext.current
@@ -102,6 +120,35 @@ fun CaregiverHomeScreen(
     var isReportingEmergency by remember { mutableStateOf(false) }
     val actionsScope = rememberCoroutineScope()
     val actionsSnackbarHostState = remember { SnackbarHostState() }
+
+    // Evidencia foto antes/después (Bloque 8): prompt pendiente (tipo + solicitud) y qué hacer
+    // al terminar (subir/encolar/omitir nunca bloquea, ver EvidenciaCaptureDialog.kt).
+    var evidenciaPrompt by remember { mutableStateOf<EvidenciaPrompt?>(null) }
+
+    // Reintenta subir evidencia encolada localmente (sin conexión al capturarla) apenas el
+    // dispositivo recupera conectividad, mismo patrón que ChatScreen.kt (Bloque 5).
+    DisposableEffect(Unit) {
+        val connectivityManager = context.getSystemService(ConnectivityManager::class.java)
+        val callback = object : ConnectivityManager.NetworkCallback() {
+            override fun onAvailable(network: Network) {
+                actionsScope.launch { retryPendingEvidencias(context) }
+            }
+        }
+        runCatching { connectivityManager?.registerDefaultNetworkCallback(callback) }
+        onDispose { runCatching { connectivityManager?.unregisterNetworkCallback(callback) } }
+    }
+    LaunchedEffect(Unit) { retryPendingEvidencias(context) }
+
+    // Al volver desde el calendario (Bloque 9) con un servicio específico para abrir.
+    LaunchedEffect(initialFocusServiceRequestId, scheduledServices, ownerRequests) {
+        val targetId = initialFocusServiceRequestId ?: return@LaunchedEffect
+        val match = scheduledServices.find { it.serviceRequestId == targetId }
+            ?: ownerRequests.find { it.serviceRequestId == targetId }
+        if (match != null) {
+            requestToDetails = match
+            onFocusHandled()
+        }
+    }
     val navAppNotInstalledMessage = stringResource(R.string.nav_app_not_installed)
     val shareRequest: (Int) -> Unit = { requestId ->
         if (!compartirSolicitud(context, requestId)) {
@@ -167,6 +214,9 @@ fun CaregiverHomeScreen(
                             color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.9f),
                             style = MaterialTheme.typography.bodyMedium
                         )
+                    }
+                    IconButton(onClick = onGoToCalendar) {
+                        Icon(Icons.Default.CalendarMonth, contentDescription = "Calendario", tint = MaterialTheme.colorScheme.onPrimary)
                     }
                     IconButton(onClick = { showHeader = false }) {
                         Icon(Icons.Default.Close, contentDescription = "Cerrar", tint = MaterialTheme.colorScheme.onPrimary)
@@ -249,7 +299,13 @@ fun CaregiverHomeScreen(
                         OwnerRequestCard(
                             request = request,
                             onDetails = { requestToDetails = request },
-                            onAccept = { onAcceptApplication(request.applicationId) },
+                            onAccept = {
+                                // La aceptación (PENDING -> ACCEPTED) nunca se bloquea por la
+                                // foto: se dispara primero y el prompt de evidencia es un paso
+                                // adicional encima, no una condición previa (Bloque 8).
+                                onAcceptApplication(request.applicationId)
+                                evidenciaPrompt = EvidenciaPrompt(request.serviceRequestId, EvidenciaTipo.ANTES)
+                            },
                             onReject = { onRejectApplication(request.applicationId) }
                         )
                     }
@@ -265,9 +321,14 @@ fun CaregiverHomeScreen(
                             onDetails = { requestToDetails = request },
                             onCancel = { onCancelService(request) },
                             onFinish = {
-                                requestToRate = request
-                                ratingScore = 5f
-                                ratingComment = ""
+                                // El prompt "Después" se muestra antes del diálogo de
+                                // calificación; al terminarlo (suba, encole u omita), recién
+                                // ahí se abre "Calificar dueño" (nunca se bloquea, Bloque 8).
+                                evidenciaPrompt = EvidenciaPrompt(request.serviceRequestId, EvidenciaTipo.DESPUES) {
+                                    requestToRate = request
+                                    ratingScore = 5f
+                                    ratingComment = ""
+                                }
                             }
                         )
                     }
@@ -331,7 +392,20 @@ fun CaregiverHomeScreen(
             onReact = if (isInProgress) {
                 { tipo -> sendReaction(request.serviceRequestId, tipo) }
             } else null,
-            isReactingEnabled = !isSendingReaction
+            isReactingEnabled = !isSendingReaction,
+            evidenciaContent = { EvidenciaThumbnails(serviceRequestId = request.serviceRequestId) }
+        )
+    }
+
+    evidenciaPrompt?.let { prompt ->
+        EvidenciaCaptureDialog(
+            serviceRequestId = prompt.serviceRequestId,
+            tipo = prompt.tipo,
+            onFinished = {
+                val afterAction = prompt.afterAction
+                evidenciaPrompt = null
+                afterAction()
+            }
         )
     }
 
@@ -628,7 +702,8 @@ private fun CaregiverServiceDetailsDialog(
     onEmergencyClick: (() -> Unit)? = null,
     onShareClick: (() -> Unit)? = null,
     onReact: ((String) -> Unit)? = null,
-    isReactingEnabled: Boolean = true
+    isReactingEnabled: Boolean = true,
+    evidenciaContent: (@Composable () -> Unit)? = null
 ) {
     val title = request.serviceTypeName ?: request.requestTitle
     val fields = caregiverDetailFields(request)
@@ -737,6 +812,8 @@ private fun CaregiverServiceDetailsDialog(
                         }
                     }
                 }
+
+                evidenciaContent?.invoke()
 
                 if (onComoLlegarClick != null) {
                     OutlinedButton(

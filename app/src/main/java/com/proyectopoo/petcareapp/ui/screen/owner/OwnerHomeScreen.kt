@@ -46,6 +46,7 @@ import com.proyectopoo.petcareapp.data.network.EmergenciaRequest
 import com.proyectopoo.petcareapp.data.network.RetrofitClient
 import com.proyectopoo.petcareapp.data.network.ValoracionDuranteRequest
 import com.proyectopoo.petcareapp.ui.components.EmergencyReportDialog
+import com.proyectopoo.petcareapp.ui.components.EvidenciaThumbnails
 import com.proyectopoo.petcareapp.ui.components.ReactionButtonsRow
 import com.proyectopoo.petcareapp.ui.components.SkeletonList
 import com.proyectopoo.petcareapp.ui.components.StarRatingInput
@@ -71,10 +72,15 @@ fun OwnerHomeScreen(
     onCompleteAndRate: (ServiceApplicationDetails, Double, String) -> Unit,
     onCancelService: (ServiceApplicationDetails) -> Unit = {},
     onOpenChat: (ServiceApplicationDetails) -> Unit = {},
+    onGoToCalendar: () -> Unit = {},
     isLoading: Boolean = false,
     isRefreshing: Boolean = false,
     onRefresh: () -> Unit = {},
     onEditRequest: (ServiceRequestDetails) -> Unit = {},
+    // Cuando se vuelve desde CalendarioScreen (Bloque 9) tras tocar un servicio, este id abre
+    // directamente su diálogo de detalle (reutilizando el diálogo existente en vez de duplicarlo).
+    initialFocusServiceRequestId: Int? = null,
+    onFocusHandled: () -> Unit = {},
     // Ubicación de destino (lat/lng) de las ofertas anunciadas de cada cuidador, indexada por
     // offeredServiceId. Se resuelve fuera de este composable (en AppNavigation, con acceso a la
     // base de datos) para no hacer llamadas a Room/red dentro de un diálogo.
@@ -124,6 +130,19 @@ fun OwnerHomeScreen(
                 }
             }
         }
+    }
+
+    // Al volver desde el calendario (Bloque 9) con un servicio específico para abrir.
+    LaunchedEffect(initialFocusServiceRequestId, scheduledServices, caregiverApplications, recentRequests) {
+        val targetId = initialFocusServiceRequestId ?: return@LaunchedEffect
+        val matchedApplication = scheduledServices.find { it.serviceRequestId == targetId }
+            ?: caregiverApplications.find { it.serviceRequestId == targetId }
+        val matchedRequest = recentRequests.find { it.serviceRequestId == targetId }
+        when {
+            matchedApplication != null -> applicationToDetail = matchedApplication
+            matchedRequest != null -> requestToDetail = matchedRequest
+        }
+        if (matchedApplication != null || matchedRequest != null) onFocusHandled()
     }
 
     val safeIndex = if (dogs.isEmpty()) 0 else selectedDogIndex.coerceIn(0, dogs.lastIndex)
@@ -230,6 +249,9 @@ fun OwnerHomeScreen(
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.9f)
                             )
+                        }
+                        IconButton(onClick = onGoToCalendar) {
+                            Icon(Icons.Default.CalendarMonth, contentDescription = "Calendario", tint = MaterialTheme.colorScheme.onPrimary)
                         }
                         IconButton(onClick = { showHeader = false }) {
                             Icon(Icons.Default.Close, contentDescription = "Cerrar", tint = MaterialTheme.colorScheme.onPrimary)
@@ -1119,7 +1141,10 @@ private fun ServiceApplicationDetailsDialog(
         onEmergencyClick = onEmergencyClick,
         onShareClick = onShareClick,
         onReact = onReact,
-        isReactingEnabled = isReactingEnabled
+        isReactingEnabled = isReactingEnabled,
+        // El dueño ve la evidencia (Bloque 8) en modo solo lectura: quien la sube es el
+        // cuidador (EvidenciaCaptureDialog, CaregiverHomeScreen.kt).
+        evidenciaContent = { EvidenciaThumbnails(serviceRequestId = application.serviceRequestId) }
     )
 }
 
@@ -1156,7 +1181,8 @@ private fun DetailsCardDialog(
     onEmergencyClick: (() -> Unit)? = null,
     onShareClick: (() -> Unit)? = null,
     onReact: ((String) -> Unit)? = null,
-    isReactingEnabled: Boolean = true
+    isReactingEnabled: Boolean = true,
+    evidenciaContent: (@Composable () -> Unit)? = null
 ) {
     Dialog(onDismissRequest = onDismiss) {
         Card(
@@ -1270,6 +1296,11 @@ private fun DetailsCardDialog(
                             }
                         }
                     }
+                }
+
+                evidenciaContent?.let {
+                    it()
+                    Spacer(Modifier.height(10.dp))
                 }
 
                 if (onComoLlegarClick != null) {

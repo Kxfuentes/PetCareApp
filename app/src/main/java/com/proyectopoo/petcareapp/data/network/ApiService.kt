@@ -262,4 +262,22 @@ interface ApiService {
     suspend fun eliminarFavorito(
         @Path("id") id: Int
     ): Response<Unit>
+
+    // ===== Evidencia foto antes/después de un servicio (Bloque 8) =====
+
+    @Multipart
+    @POST("api/solicitudes/{id}/evidencia")
+    suspend fun subirEvidencia(
+        @Path("id") id: Int,
+        @Part("tipo") tipo: RequestBody,
+        @Part file: MultipartBody.Part,
+        @Part("nota") nota: RequestBody?,
+        @Query("latitud") latitud: Double? = null,
+        @Query("longitud") longitud: Double? = null
+    ): Response<EvidenciaDto>
+
+    @GET("api/solicitudes/{id}/evidencias")
+    suspend fun getEvidencias(
+        @Path("id") id: Int
+    ): Response<List<EvidenciaDto>>
 }

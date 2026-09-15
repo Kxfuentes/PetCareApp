@@ -31,14 +31,13 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import coil.compose.AsyncImage
 import com.proyectopoo.petcareapp.data.local.database.PetCareDatabase
 import com.proyectopoo.petcareapp.data.local.entity.MensajeLocalEntity
 import com.proyectopoo.petcareapp.data.network.ChatMessageDto
 import com.proyectopoo.petcareapp.data.network.ChatMessageRequest
 import com.proyectopoo.petcareapp.data.network.RetrofitClient
+import com.proyectopoo.petcareapp.ui.components.FullScreenImageViewer
 import kotlinx.coroutines.launch
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
@@ -550,34 +549,3 @@ private fun MessageStatusIcon(message: ChatDisplayMessage) {
     }
 }
 
-@Composable
-private fun FullScreenImageViewer(imageUrl: String, onDismiss: () -> Unit) {
-    Dialog(
-        onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false)
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color.Black)
-                .clickable(onClick = onDismiss)
-        ) {
-            AsyncImage(
-                model = imageUrl,
-                contentDescription = "Imagen ampliada",
-                contentScale = ContentScale.Fit,
-                placeholder = ColorPainter(Color.Black),
-                error = ColorPainter(Color.DarkGray),
-                modifier = Modifier.fillMaxSize()
-            )
-            IconButton(
-                onClick = onDismiss,
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(16.dp)
-            ) {
-                Icon(Icons.Default.Close, contentDescription = "Cerrar", tint = Color.White)
-            }
-        }
-    }
-}

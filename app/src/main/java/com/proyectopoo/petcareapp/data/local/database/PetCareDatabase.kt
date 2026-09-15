@@ -24,9 +24,10 @@ import com.proyectopoo.petcareapp.data.local.entity.*
         RatingEntity::class,
         ServiceBookingEntity::class,
         NotificationEntity::class,
-        MensajeLocalEntity::class
+        MensajeLocalEntity::class,
+        EvidenciaLocalEntity::class
     ],
-    version = 11,
+    version = 12,
     exportSchema = false
 )
 abstract class PetCareDatabase : RoomDatabase() {
@@ -45,6 +46,7 @@ abstract class PetCareDatabase : RoomDatabase() {
     abstract fun serviceBookingDao(): ServiceBookingDao
     abstract fun notificationDao(): NotificationDao
     abstract fun mensajeLocalDao(): MensajeLocalDao
+    abstract fun evidenciaLocalDao(): EvidenciaLocalDao
 
     companion object {
         @Volatile
@@ -181,6 +183,29 @@ abstract class PetCareDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_11_12 = object : Migration(11, 12) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `evidencias_locales` (
+                        `id` INTEGER NOT NULL PRIMARY KEY,
+                        `solicitudId` INTEGER NOT NULL,
+                        `tipo` TEXT NOT NULL,
+                        `imagenUrl` TEXT,
+                        `nota` TEXT,
+                        `latitud` REAL,
+                        `longitud` REAL,
+                        `fecha` INTEGER NOT NULL,
+                        `enviado` INTEGER NOT NULL
+                    )
+                    """
+                )
+                database.execSQL(
+                    "CREATE INDEX IF NOT EXISTS `index_evidencias_locales_solicitudId` ON `evidencias_locales` (`solicitudId`)"
+                )
+            }
+        }
+
         fun getDatabase(context: Context): PetCareDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -190,7 +215,7 @@ abstract class PetCareDatabase : RoomDatabase() {
                 )
                     .addMigrations(
                         MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10,
-                        MIGRATION_10_11
+                        MIGRATION_10_11, MIGRATION_11_12
                     )
                     .build()
 
