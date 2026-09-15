@@ -41,6 +41,7 @@ import com.proyectopoo.petcareapp.data.local.relation.ServiceApplicationDetails
 import com.proyectopoo.petcareapp.data.local.relation.ServiceRequestDetails
 import com.proyectopoo.petcareapp.ui.components.SkeletonList
 import com.proyectopoo.petcareapp.ui.components.StarRatingInput
+import com.proyectopoo.petcareapp.util.abrirNavegacion
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -64,8 +65,13 @@ fun OwnerHomeScreen(
     isRefreshing: Boolean = false,
     onRefresh: () -> Unit = {},
     onEditRequest: (ServiceRequestDetails) -> Unit = {},
+    // Ubicación de destino (lat/lng) de las ofertas anunciadas de cada cuidador, indexada por
+    // offeredServiceId. Se resuelve fuera de este composable (en AppNavigation, con acceso a la
+    // base de datos) para no hacer llamadas a Room/red dentro de un diálogo.
+    offerLocations: Map<Int, Pair<Double, Double>> = emptyMap(),
     ownerId: Int
 ) {
+    val context = LocalContext.current
     val scrollState = rememberScrollState()
     var selectedDogIndex by remember { mutableStateOf(0) }
     var petToDelete by remember { mutableStateOf<PetEntity?>(null) }
@@ -531,12 +537,26 @@ fun OwnerHomeScreen(
     }
 
     applicationToDetail?.let { application ->
+        // "Cómo llegar" solo aplica a servicios con destino fijo (el cuidador no se mueve).
+        // Destino: si la solicitud vino de una oferta anunciada (Flow A), se usa la ubicación
+        // registrada de esa oferta; si es una solicitud abierta (Flow B), se usa la ubicación
+        // propia de la solicitud. Sin ninguna de las dos, el botón simplemente no se muestra.
+        val fixedLocationDestination = if (isFixedLocationServiceType(application.serviceTypeName)) {
+            application.offeredServiceId?.let { offerLocations[it] }
+                ?: application.latitude?.let { lat ->
+                    application.longitude?.let { lng -> lat to lng }
+                }
+        } else null
+
         ServiceApplicationDetailsDialog(
             application = application,
             onDismiss = { applicationToDetail = null },
             onChatClick = {
                 applicationToDetail = null
                 onOpenChat(application)
+            },
+            onComoLlegarClick = fixedLocationDestination?.let { (lat, lng) ->
+                { abrirNavegacion(context, lat, lng) }
             }
         )
     }
@@ -960,7 +980,9 @@ private fun ServiceRequestDetailsDialog(
 private fun ServiceApplicationDetailsDialog(
     application: ServiceApplicationDetails,
     onDismiss: () -> Unit,
-    onChatClick: (() -> Unit)? = null
+    onChatClick: (() -> Unit)? = null,
+    onComoLlegarClick: (() -> Unit)? = null,
+    onTrackingClick: (() -> Unit)? = null
 ) {
     DetailsCardDialog(
         title = application.serviceTypeName ?: application.requestTitle,
@@ -970,8 +992,17 @@ private fun ServiceApplicationDetailsDialog(
         fields = applicationDetailFields(application),
         notes = parseDescriptionDetails(application.requestDescription)["Notas"],
         onDismiss = onDismiss,
-        onChatClick = onChatClick
+        onChatClick = onChatClick,
+        onComoLlegarClick = onComoLlegarClick,
+        onTrackingClick = onTrackingClick
     )
+}
+
+/** Alojamiento, Guardería, Peluquería y Visitante tienen una ubicación de destino fija
+ *  (el cuidador no se desplaza en tiempo real), a diferencia de Taxi/Paseo. */
+private fun isFixedLocationServiceType(serviceTypeName: String?): Boolean {
+    val fixedLocationTypes = setOf("alojamiento", "guardería", "guarderia", "peluquería", "peluqueria", "visitante")
+    return serviceTypeName?.trim()?.lowercase() in fixedLocationTypes
 }
 
 private enum class DetailFieldAction { NONE, CALL, EMAIL }
@@ -994,7 +1025,9 @@ private fun DetailsCardDialog(
     notes: String?,
     onDismiss: () -> Unit,
     onChatClick: (() -> Unit)? = null,
-    onEditClick: (() -> Unit)? = null
+    onEditClick: (() -> Unit)? = null,
+    onComoLlegarClick: (() -> Unit)? = null,
+    onTrackingClick: (() -> Unit)? = null
 ) {
     Dialog(onDismissRequest = onDismiss) {
         Card(
@@ -1099,6 +1132,32 @@ private fun DetailsCardDialog(
                             }
                         }
                     }
+                }
+
+                if (onComoLlegarClick != null) {
+                    OutlinedButton(
+                        onClick = onComoLlegarClick,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp)
+                    ) {
+                        Icon(Icons.Default.Map, contentDescription = null, modifier = Modifier.size(20.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text("Cómo llegar", fontWeight = FontWeight.Bold)
+                    }
+                    Spacer(Modifier.height(10.dp))
+                }
+
+                if (onTrackingClick != null) {
+                    OutlinedButton(
+                        onClick = onTrackingClick,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp)
+                    ) {
+                        Icon(Icons.Default.LocationOn, contentDescription = null, modifier = Modifier.size(20.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text("Ver ubicación en tiempo real", fontWeight = FontWeight.Bold)
+                    }
+                    Spacer(Modifier.height(10.dp))
                 }
 
                 if (onChatClick != null) {

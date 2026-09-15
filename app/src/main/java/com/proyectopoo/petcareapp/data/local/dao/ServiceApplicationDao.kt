@@ -101,7 +101,9 @@ interface ServiceApplicationDao {
             ownerUser.email AS ownerEmail,
             caregiverUser.fullName AS caregiverName,
             caregiverUser.phone AS caregiverPhone,
-            caregiverUser.email AS caregiverEmail
+            caregiverUser.email AS caregiverEmail,
+            sr.latitude AS latitude,
+            sr.longitude AS longitude
         FROM service_applications sa
         INNER JOIN service_requests sr ON sr.serviceRequestId = sa.serviceRequestId
         LEFT JOIN pets p ON p.petId = sr.petId
@@ -152,7 +154,9 @@ interface ServiceApplicationDao {
             ownerUser.email AS ownerEmail,
             caregiverUser.fullName AS caregiverName,
             caregiverUser.phone AS caregiverPhone,
-            caregiverUser.email AS caregiverEmail
+            caregiverUser.email AS caregiverEmail,
+            sr.latitude AS latitude,
+            sr.longitude AS longitude
         FROM service_applications sa
         INNER JOIN service_requests sr ON sr.serviceRequestId = sa.serviceRequestId
         LEFT JOIN pets p ON p.petId = sr.petId
@@ -203,7 +207,9 @@ interface ServiceApplicationDao {
             ownerUser.email AS ownerEmail,
             caregiverUser.fullName AS caregiverName,
             caregiverUser.phone AS caregiverPhone,
-            caregiverUser.email AS caregiverEmail
+            caregiverUser.email AS caregiverEmail,
+            sr.latitude AS latitude,
+            sr.longitude AS longitude
         FROM service_applications sa
         INNER JOIN service_requests sr ON sr.serviceRequestId = sa.serviceRequestId
         LEFT JOIN pets p ON p.petId = sr.petId
@@ -253,7 +259,9 @@ interface ServiceApplicationDao {
             ownerUser.email AS ownerEmail,
             caregiverUser.fullName AS caregiverName,
             caregiverUser.phone AS caregiverPhone,
-            caregiverUser.email AS caregiverEmail
+            caregiverUser.email AS caregiverEmail,
+            sr.latitude AS latitude,
+            sr.longitude AS longitude
         FROM service_applications sa
         INNER JOIN service_requests sr ON sr.serviceRequestId = sa.serviceRequestId
         LEFT JOIN pets p ON p.petId = sr.petId
@@ -300,7 +308,9 @@ interface ServiceApplicationDao {
             ownerUser.email AS ownerEmail,
             caregiverUser.fullName AS caregiverName,
             caregiverUser.phone AS caregiverPhone,
-            caregiverUser.email AS caregiverEmail
+            caregiverUser.email AS caregiverEmail,
+            sr.latitude AS latitude,
+            sr.longitude AS longitude
         FROM service_applications sa
         INNER JOIN service_requests sr ON sr.serviceRequestId = sa.serviceRequestId
         LEFT JOIN pets p ON p.petId = sr.petId

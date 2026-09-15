@@ -35,6 +35,7 @@ import com.proyectopoo.petcareapp.data.local.entity.ApplicationStatus
 import com.proyectopoo.petcareapp.data.local.relation.ServiceApplicationDetails
 import com.proyectopoo.petcareapp.ui.components.SkeletonList
 import com.proyectopoo.petcareapp.ui.components.StarRatingInput
+import com.proyectopoo.petcareapp.util.abrirNavegacion
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -53,6 +54,7 @@ fun CaregiverHomeScreen(
     onRefresh: () -> Unit = {},
     caregiverId: Int
 ) {
+    val context = LocalContext.current
     var available by remember { mutableStateOf(true) }
     var showHeader by remember { mutableStateOf(true) }
     val scrollState = rememberScrollState()
@@ -223,12 +225,22 @@ fun CaregiverHomeScreen(
     }
 
     requestToDetails?.let { request ->
+        // El cuidador solo viaja hacia el dueño en "Visitante" (siempre solicitud abierta,
+        // nunca desde una oferta anunciada), así que la ubicación propia de la solicitud
+        // (request.latitude/longitude) ya es el destino correcto.
+        val visitanteDestination = if (request.serviceTypeName.equals("Visitante", ignoreCase = true)) {
+            request.latitude?.let { lat -> request.longitude?.let { lng -> lat to lng } }
+        } else null
+
         CaregiverServiceDetailsDialog(
             request = request,
             onDismiss = { requestToDetails = null },
             onChatClick = {
                 requestToDetails = null
                 onOpenChat(request)
+            },
+            onComoLlegarClick = visitanteDestination?.let { (lat, lng) ->
+                { abrirNavegacion(context, lat, lng) }
             }
         )
     }
@@ -492,7 +504,8 @@ private data class CaregiverDetailField(
 private fun CaregiverServiceDetailsDialog(
     request: ServiceApplicationDetails,
     onDismiss: () -> Unit,
-    onChatClick: (() -> Unit)? = null
+    onChatClick: (() -> Unit)? = null,
+    onComoLlegarClick: (() -> Unit)? = null
 ) {
     val title = request.serviceTypeName ?: request.requestTitle
     val fields = caregiverDetailFields(request)
@@ -590,6 +603,20 @@ private fun CaregiverServiceDetailsDialog(
                                 Text(notes, color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.bodyMedium)
                             }
                         }
+                    }
+                }
+
+                if (onComoLlegarClick != null) {
+                    OutlinedButton(
+                        onClick = onComoLlegarClick,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(50.dp),
+                        shape = RoundedCornerShape(14.dp)
+                    ) {
+                        Icon(Icons.Default.Map, contentDescription = null, modifier = Modifier.size(20.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text("Cómo llegar", fontWeight = FontWeight.Bold)
                     }
                 }
 

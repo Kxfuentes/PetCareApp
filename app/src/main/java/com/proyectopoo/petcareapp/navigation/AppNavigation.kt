@@ -515,6 +515,11 @@ fun AppNavigation(
             val ownerId = sessionManager.getBackendUserId()
             var ownerHomeInitialLoading by remember { mutableStateOf(true) }
             var ownerHomeRefreshing by remember { mutableStateOf(false) }
+            // Ubicación de destino (lat/lng) de cada oferta anunciada referenciada por los
+            // servicios agendados del dueño, indexada por offeredServiceId. Se resuelve aquí
+            // (con acceso a Room) para que el diálogo de detalle ("Cómo llegar") no tenga que
+            // hacer sus propias consultas a la base de datos.
+            var ownerOfferLocations by remember { mutableStateOf<Map<Int, Pair<Double, Double>>>(emptyMap()) }
 
             LaunchedEffect(ownerId) {
                 if (ownerId > 0) {
@@ -526,6 +531,20 @@ fun AppNavigation(
                         delay(10_000L)
                     }
                 }
+            }
+
+            LaunchedEffect(ownerScheduledServices) {
+                val offerIds = ownerScheduledServices.mapNotNull { it.offeredServiceId }.distinct()
+                val locations = mutableMapOf<Int, Pair<Double, Double>>()
+                offerIds.forEach { offeredServiceId ->
+                    val offer = database.offeredServiceDao().getServiceById(offeredServiceId)
+                    val lat = offer?.latitude
+                    val lng = offer?.longitude
+                    if (lat != null && lng != null) {
+                        locations[offeredServiceId] = lat to lng
+                    }
+                }
+                ownerOfferLocations = locations
             }
 
             OwnerHomeScreen(
@@ -601,6 +620,7 @@ fun AppNavigation(
                 onEditRequest = { request ->
                     navController.navigate(EditarSolicitud(request.serviceRequestId))
                 },
+                offerLocations = ownerOfferLocations,
                 ownerId = ownerId
             )
         }

@@ -51,7 +51,9 @@ data class ServiceApplicationDetails(
     val ownerEmail: String?,
     val caregiverName: String?,
     val caregiverPhone: String?,
-    val caregiverEmail: String?
+    val caregiverEmail: String?,
+    val latitude: Double? = null,
+    val longitude: Double? = null
 )
 
 data class OfferedServiceDetails(
