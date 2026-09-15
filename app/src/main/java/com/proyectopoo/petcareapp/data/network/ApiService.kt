@@ -289,4 +289,37 @@ interface ApiService {
         @Query("mes") mes: Int,
         @Query("anio") anio: Int
     ): Response<CalendarioResponseDto>
+
+    // ===== Expediente médico de la mascota (Bloque 11) =====
+
+    @GET("api/pets/{id}/expediente")
+    suspend fun getExpediente(@Path("id") petId: Int): Response<List<ExpedienteEntryDto>>
+
+    @Multipart
+    @POST("api/pets/{id}/expediente")
+    suspend fun createExpedienteEntry(
+        @Path("id") petId: Int,
+        @Part("usuario_id") usuarioId: RequestBody,
+        @Part("tipo") tipo: RequestBody,
+        @Part("titulo") titulo: RequestBody,
+        @Part("descripcion") descripcion: RequestBody?,
+        @Part("fecha") fecha: RequestBody,
+        @Part("fecha_proxima") fechaProxima: RequestBody?,
+        @Part("veterinario_nombre") veterinarioNombre: RequestBody?,
+        @Part("veterinario_telefono") veterinarioTelefono: RequestBody?,
+        @Part file: MultipartBody.Part?
+    ): Response<ExpedienteEntryDto>
+
+    @PUT("api/pets/expediente/{entradaId}")
+    suspend fun updateExpedienteEntry(
+        @Path("entradaId") entradaId: Int,
+        @Query("usuario_id") usuarioId: Int,
+        @Body request: ExpedienteEntryRequest
+    ): Response<ExpedienteEntryDto>
+
+    @DELETE("api/pets/expediente/{entradaId}")
+    suspend fun deleteExpedienteEntry(
+        @Path("entradaId") entradaId: Int,
+        @Query("usuario_id") usuarioId: Int
+    ): Response<Unit>
 }

@@ -450,6 +450,7 @@ fun AppNavigation(
             if (ownerId > 0) {
                 DogInfoScreen(
                     editingDog = editingDog,
+                    currentUserId = ownerId,
                     onFinish = { name, breed, size ->
                         val isNewDog = args.petId == -1
                         val petId = if (isNewDog) generatePetId(dogs) else args.petId

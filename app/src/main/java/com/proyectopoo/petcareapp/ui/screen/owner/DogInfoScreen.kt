@@ -17,10 +17,20 @@ import com.proyectopoo.petcareapp.data.network.RetrofitClient
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
+/**
+ * Pantalla de perfil de una mascota: crea una mascota nueva, o -- cuando se abre con
+ * [editingDog] no nulo -- funciona como el "perfil" de una mascota existente, con pestañas para
+ * los datos básicos y el expediente médico (Bloque 11).
+ *
+ * La pestaña de Expediente Médico solo aparece al editar una mascota existente (se necesita un
+ * petId real del backend); al crear una mascota nueva se muestra únicamente el formulario
+ * original.
+ */
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun DogInfoScreen(
     editingDog: PetEntity? = null,
+    currentUserId: Int = -1,
     onFinish: (name: String, breed: String, size: String) -> Unit
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
@@ -52,6 +62,9 @@ fun DogInfoScreen(
 
     val sizes = listOf("XS (1-5 kg)", "S (5-10 kg)", "M (10-20 kg)", "L (20-40 kg)", "XL (>40 kg)")
 
+    val isOwner = editingDog != null && currentUserId > 0 && editingDog.ownerId == currentUserId
+    var selectedTab by remember(key) { mutableStateOf(0) }
+
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         snackbarHost = { SnackbarHost(snackbarHostState) }
@@ -60,122 +73,150 @@ fun DogInfoScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .padding(24.dp)
         ) {
-            Spacer(modifier = Modifier.height(40.dp))
+            if (editingDog != null) {
+                SecondaryTabRow(selectedTabIndex = selectedTab) {
+                    Tab(
+                        selected = selectedTab == 0,
+                        onClick = { selectedTab = 0 },
+                        text = { Text("Datos") }
+                    )
+                    Tab(
+                        selected = selectedTab == 1,
+                        onClick = { selectedTab = 1 },
+                        text = { Text("Expediente Médico") }
+                    )
+                }
+            }
 
-            Text(
-                text = if (editingDog == null) stringResource(R.string.dog_info_title_new) else stringResource(R.string.dog_info_title_edit),
-                style = MaterialTheme.typography.headlineMedium
-            )
+            if (editingDog == null || selectedTab == 0) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(24.dp)
+                ) {
+                    if (editingDog == null) Spacer(modifier = Modifier.height(40.dp))
 
-            Spacer(modifier = Modifier.height(30.dp))
+                    Text(
+                        text = if (editingDog == null) stringResource(R.string.dog_info_title_new) else stringResource(R.string.dog_info_title_edit),
+                        style = MaterialTheme.typography.headlineMedium
+                    )
 
-            OutlinedTextField(
-                value = dogName,
-                onValueChange = { dogName = it },
-                label = { Text("Nombre del perro") },
-                leadingIcon = { Icon(Icons.Outlined.Pets, null, tint = MaterialTheme.colorScheme.primary) },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp)
-            )
+                    Spacer(modifier = Modifier.height(30.dp))
 
-            Spacer(modifier = Modifier.height(18.dp))
+                    OutlinedTextField(
+                        value = dogName,
+                        onValueChange = { dogName = it },
+                        label = { Text("Nombre del perro") },
+                        leadingIcon = { Icon(Icons.Outlined.Pets, null, tint = MaterialTheme.colorScheme.primary) },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp)
+                    )
 
-            Column {
-                OutlinedTextField(
-                    value = breed,
-                    onValueChange = { breed = it },
-                    label = { Text("Raza") },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp)
-                )
+                    Spacer(modifier = Modifier.height(18.dp))
 
-                if (breedMenuExpanded && breedSuggestions.isNotEmpty()) {
-                    Surface(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 4.dp),
-                        shape = RoundedCornerShape(12.dp),
-                        color = MaterialTheme.colorScheme.surface,
-                        shadowElevation = 4.dp
-                    ) {
-                        Column {
-                            breedSuggestions.forEach { suggestion ->
-                                Text(
-                                    text = suggestion,
-                                    color = MaterialTheme.colorScheme.onSurface,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clickable {
-                                            breed = suggestion
-                                            breedMenuExpanded = false
-                                        }
-                                        .padding(12.dp)
-                                )
-                                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                    Column {
+                        OutlinedTextField(
+                            value = breed,
+                            onValueChange = { breed = it },
+                            label = { Text("Raza") },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(16.dp)
+                        )
+
+                        if (breedMenuExpanded && breedSuggestions.isNotEmpty()) {
+                            Surface(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 4.dp),
+                                shape = RoundedCornerShape(12.dp),
+                                color = MaterialTheme.colorScheme.surface,
+                                shadowElevation = 4.dp
+                            ) {
+                                Column {
+                                    breedSuggestions.forEach { suggestion ->
+                                        Text(
+                                            text = suggestion,
+                                            color = MaterialTheme.colorScheme.onSurface,
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .clickable {
+                                                    breed = suggestion
+                                                    breedMenuExpanded = false
+                                                }
+                                                .padding(12.dp)
+                                        )
+                                        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                                    }
+                                }
                             }
                         }
                     }
-                }
-            }
 
-            Spacer(modifier = Modifier.height(26.dp))
+                    Spacer(modifier = Modifier.height(26.dp))
 
-            Text("Tamaño", style = MaterialTheme.typography.titleMedium)
-            Spacer(modifier = Modifier.height(18.dp))
+                    Text("Tamaño", style = MaterialTheme.typography.titleMedium)
+                    Spacer(modifier = Modifier.height(18.dp))
 
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                sizes.forEach { size ->
-                    val isSelected = selectedSize == size
-                    Surface(
-                        modifier = Modifier.border(
-                            width = 2.dp,
-                            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
-                            shape = RoundedCornerShape(50.dp)
-                        )
-                        .padding(horizontal = 2.dp),
-                        shape = RoundedCornerShape(50.dp),
-                        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
-                        onClick = { selectedSize = size }
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        sizes.forEach { size ->
+                            val isSelected = selectedSize == size
+                            Surface(
+                                modifier = Modifier.border(
+                                    width = 2.dp,
+                                    color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
+                                    shape = RoundedCornerShape(50.dp)
+                                )
+                                .padding(horizontal = 2.dp),
+                                shape = RoundedCornerShape(50.dp),
+                                color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+                                onClick = { selectedSize = size }
+                            ) {
+                                Text(
+                                    text = size,
+                                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp),
+                                    color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.weight(1f))
+
+                    Button(
+                        onClick = {
+                            if (isSaving) return@Button
+
+                            if (dogName.isBlank() || breed.isBlank() || selectedSize.isBlank()) {
+                                scope.launch { snackbarHostState.showSnackbar(emptyFieldsMessage) }
+                                return@Button
+                            }
+
+                            isSaving = true
+                            onFinish(dogName, breed, selectedSize)
+                        },
+                        enabled = !isSaving,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(58.dp),
+                        shape = RoundedCornerShape(18.dp)
                     ) {
                         Text(
-                            text = size,
-                            modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp),
-                            color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
+                            when {
+                                isSaving -> stringResource(R.string.dog_info_saving)
+                                editingDog == null -> stringResource(R.string.dog_info_save_new)
+                                else -> stringResource(R.string.dog_info_save_edit)
+                            }
                         )
                     }
                 }
-            }
-
-            Spacer(modifier = Modifier.weight(1f))
-
-            Button(
-                onClick = {
-                    if (isSaving) return@Button
-
-                    if (dogName.isBlank() || breed.isBlank() || selectedSize.isBlank()) {
-                        scope.launch { snackbarHostState.showSnackbar(emptyFieldsMessage) }
-                        return@Button
-                    }
-
-                    isSaving = true
-                    onFinish(dogName, breed, selectedSize)
-                },
-                enabled = !isSaving,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(58.dp),
-                shape = RoundedCornerShape(18.dp)
-            ) {
-                Text(
-                    when {
-                        isSaving -> stringResource(R.string.dog_info_saving)
-                        editingDog == null -> stringResource(R.string.dog_info_save_new)
-                        else -> stringResource(R.string.dog_info_save_edit)
-                    }
+            } else {
+                ExpedienteMedicoSection(
+                    petId = editingDog.petId,
+                    isOwner = isOwner,
+                    currentUserId = currentUserId
                 )
             }
         }
