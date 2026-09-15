@@ -63,6 +63,7 @@ import com.proyectopoo.petcareapp.ui.screen.auth.LoginScreen
 import com.proyectopoo.petcareapp.ui.screen.auth.PasswordRecoveryScreen
 import com.proyectopoo.petcareapp.ui.screen.auth.RegisterScreen
 import com.proyectopoo.petcareapp.ui.screen.auth.OnboardingScreen
+import com.proyectopoo.petcareapp.ui.screen.calendario.CalendarioScreen
 import com.proyectopoo.petcareapp.ui.screen.caregiver.CaregiverFeedScreen
 import com.proyectopoo.petcareapp.ui.screen.caregiver.CaregiverHomeScreen
 import com.proyectopoo.petcareapp.ui.screen.caregiver.CaregiverProfileScreen
@@ -520,6 +521,8 @@ fun AppNavigation(
             // (con acceso a Room) para que el diálogo de detalle ("Cómo llegar") no tenga que
             // hacer sus propias consultas a la base de datos.
             var ownerOfferLocations by remember { mutableStateOf<Map<Int, Pair<Double, Double>>>(emptyMap()) }
+            // Servicio a enfocar al volver desde CalendarioScreen (Bloque 9), ver CalendarNavigationBridge.
+            val ownerCalendarFocusId by CalendarNavigationBridge.pendingServiceRequestId.collectAsStateWithLifecycle()
 
             LaunchedEffect(ownerId) {
                 if (ownerId > 0) {
@@ -624,6 +627,9 @@ fun AppNavigation(
                 onGoToTracking = { serviceRequestId ->
                     navController.navigate(Seguimiento(serviceRequestId))
                 },
+                onGoToCalendar = { navController.navigate(Calendario(usuarioId = ownerId)) },
+                initialFocusServiceRequestId = ownerCalendarFocusId,
+                onFocusHandled = { CalendarNavigationBridge.clear() },
                 ownerId = ownerId
             )
         }
@@ -778,6 +784,8 @@ fun AppNavigation(
             val caregiverId = sessionManager.getBackendUserId()
             var caregiverHomeInitialLoading by remember { mutableStateOf(true) }
             var caregiverHomeRefreshing by remember { mutableStateOf(false) }
+            // Servicio a enfocar al volver desde CalendarioScreen (Bloque 9), ver CalendarNavigationBridge.
+            val caregiverCalendarFocusId by CalendarNavigationBridge.pendingServiceRequestId.collectAsStateWithLifecycle()
 
             LaunchedEffect(caregiverId) {
                 if (caregiverId > 0) {
@@ -836,6 +844,9 @@ fun AppNavigation(
                         )
                     )
                 },
+                onGoToCalendar = { navController.navigate(Calendario(usuarioId = caregiverId)) },
+                initialFocusServiceRequestId = caregiverCalendarFocusId,
+                onFocusHandled = { CalendarNavigationBridge.clear() },
                 caregiverId = caregiverId
             )
         }
@@ -1204,6 +1215,22 @@ fun AppNavigation(
                 serviceRequestId = args.serviceRequestId,
                 onBack = { navController.popBackStack() },
                 wsRefreshTick = wsRefreshTick
+            )
+        }
+
+        // ===== CALENDARIO (Bloque 9) =====
+        composable<Calendario> { backStackEntry ->
+            val args = backStackEntry.toRoute<Calendario>()
+            CalendarioScreen(
+                usuarioId = args.usuarioId,
+                onBack = { navController.popBackStack() },
+                onOpenService = { solicitudId ->
+                    // Guarda el id pendiente y vuelve a Owner/CaregiverHome (que ya está en el
+                    // back stack): esa pantalla lo consume vía initialFocusServiceRequestId y
+                    // abre su diálogo de detalle existente (ver CalendarNavigationBridge.kt).
+                    CalendarNavigationBridge.request(solicitudId)
+                    navController.popBackStack()
+                }
             )
         }
 

@@ -109,3 +109,8 @@ object Onboarding
 data class Seguimiento(
     val serviceRequestId: Int
 )
+
+@Serializable
+data class Calendario(
+    val usuarioId: Int
+)

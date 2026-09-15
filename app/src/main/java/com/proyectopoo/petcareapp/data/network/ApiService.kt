@@ -280,4 +280,13 @@ interface ApiService {
     suspend fun getEvidencias(
         @Path("id") id: Int
     ): Response<List<EvidenciaDto>>
+
+    // ===== Calendario integrado (Bloque 9) =====
+
+    @GET("api/calendario")
+    suspend fun getCalendario(
+        @Query("usuario_id") usuarioId: Int,
+        @Query("mes") mes: Int,
+        @Query("anio") anio: Int
+    ): Response<CalendarioResponseDto>
 }

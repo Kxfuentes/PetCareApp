@@ -86,6 +86,13 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
+        // Calendario integrado (Bloque 9): com.kizitonwose.calendar:compose usa java.time
+        // (LocalDate, YearMonth, DayOfWeek) internamente. Esas clases solo existen de forma
+        // nativa desde API 26; este proyecto tiene minSdk 24, así que se necesita core library
+        // desugaring para que no truene en tiempo de ejecución en Android 7.0/7.1. La propia
+        // librería lo documenta (ver notas de la versión 2.5.2 del changelog: "apps with min SDK
+        // version below 26 still need to use desugar").
+        isCoreLibraryDesugaringEnabled = true
     }
 
     buildFeatures {
@@ -141,6 +148,16 @@ dependencies {
     // Kotlin de este proyecto más adelante, estas dos se pueden actualizar también.
     implementation(libs.maps.compose)
     implementation(libs.play.services.location)
+
+    // Calendario integrado (Bloque 9): com.kizitonwose.calendar:compose para las vistas de mes
+    // y semana. Fijada en 2.6.2 (no la última estable) por el mismo motivo documentado arriba
+    // para maps-compose/play-services-location: desde la 2.7.0 esta librería se compila con
+    // Kotlin 2.1.21 (ver su CHANGELOG.md), cuyo metadata el compilador Kotlin 2.0.21 de este
+    // proyecto no puede leer ("Module was compiled with an incompatible version of Kotlin"). La
+    // serie 2.6.x (hasta 2.6.2, la última de esa serie) se compiló con Kotlin 2.0.20, compatible.
+    implementation(libs.calendar.compose)
+    // Requerido por java.time en minSdk 24 (ver compileOptions arriba).
+    coreLibraryDesugaring(libs.desugar.jdk.libs)
 
     // Room
     implementation(libs.androidx.room.runtime)
