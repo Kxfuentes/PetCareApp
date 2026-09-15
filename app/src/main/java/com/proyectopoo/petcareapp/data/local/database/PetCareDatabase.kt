@@ -23,9 +23,10 @@ import com.proyectopoo.petcareapp.data.local.entity.*
         AvailabilityEntity::class,
         RatingEntity::class,
         ServiceBookingEntity::class,
-        NotificationEntity::class
+        NotificationEntity::class,
+        MensajeLocalEntity::class
     ],
-    version = 10,
+    version = 11,
     exportSchema = false
 )
 abstract class PetCareDatabase : RoomDatabase() {
@@ -43,6 +44,7 @@ abstract class PetCareDatabase : RoomDatabase() {
     abstract fun ratingDao(): RatingDao
     abstract fun serviceBookingDao(): ServiceBookingDao
     abstract fun notificationDao(): NotificationDao
+    abstract fun mensajeLocalDao(): MensajeLocalDao
 
     companion object {
         @Volatile
@@ -156,6 +158,29 @@ abstract class PetCareDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_10_11 = object : Migration(10, 11) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS `mensajes_locales` (
+                        `id` INTEGER NOT NULL PRIMARY KEY,
+                        `solicitudId` INTEGER NOT NULL,
+                        `emisorId` INTEGER NOT NULL,
+                        `receptorId` INTEGER NOT NULL,
+                        `mensaje` TEXT NOT NULL,
+                        `imagenUrl` TEXT,
+                        `fecha` INTEGER NOT NULL,
+                        `enviado` INTEGER NOT NULL,
+                        `leido` INTEGER NOT NULL
+                    )
+                    """
+                )
+                database.execSQL(
+                    "CREATE INDEX IF NOT EXISTS `index_mensajes_locales_solicitudId` ON `mensajes_locales` (`solicitudId`)"
+                )
+            }
+        }
+
         fun getDatabase(context: Context): PetCareDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -163,7 +188,10 @@ abstract class PetCareDatabase : RoomDatabase() {
                     PetCareDatabase::class.java,
                     "petcare_database"
                 )
-                    .addMigrations(MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10)
+                    .addMigrations(
+                        MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10,
+                        MIGRATION_10_11
+                    )
                     .build()
 
                 INSTANCE = instance

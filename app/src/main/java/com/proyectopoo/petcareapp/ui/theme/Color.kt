@@ -8,7 +8,11 @@ val FondoClaro = Color(0xFFFFFBF2)
 val FondoCampo = Color(0xFFFFFCF5)
 
 val CafeOscuro = Color(0xFF3B2514)
-val CafeMedio = Color(0xFFB87950)
+// Nota (WCAG AA): el valor original (0xFFB87950) daba un contraste de ~3.57:1 contra
+// blanco (Blanco/onPrimary), por debajo del minimo de 4.5:1 para texto normal. Se oscurecio
+// manteniendo el mismo matiz para alcanzar ~5.0:1 y cumplir AA en botones primarios y en las
+// burbujas de chat propias (texto onPrimary sobre fondo primary).
+val CafeMedio = Color(0xFF976342)
 val CafeClaro = Color(0xFFD9A77F)
 
 val BordeCampo = Color(0xFFD6A57A)

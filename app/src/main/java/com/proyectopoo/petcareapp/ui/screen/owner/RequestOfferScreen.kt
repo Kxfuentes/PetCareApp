@@ -123,7 +123,7 @@ fun RequestOfferScreen(
                 ),
                 trailingIcon = {
                     IconButton(onClick = { showDatePicker = true }) {
-                        Icon(Icons.Default.DateRange, contentDescription = null, tint = Color.DarkGray)
+                        Icon(Icons.Default.DateRange, contentDescription = "Seleccionar fecha", tint = Color.DarkGray)
                     }
                 }
             )
@@ -143,7 +143,7 @@ fun RequestOfferScreen(
                 ),
                 trailingIcon = {
                     IconButton(onClick = { showTimePicker = true }) {
-                        Icon(Icons.Default.AccessTime, contentDescription = null, tint = Color.DarkGray)
+                        Icon(Icons.Default.AccessTime, contentDescription = "Seleccionar hora", tint = Color.DarkGray)
                     }
                 }
             )
@@ -164,7 +164,7 @@ fun RequestOfferScreen(
                     ),
                     trailingIcon = {
                         IconButton(onClick = { showEndTimePicker = true }) {
-                            Icon(Icons.Default.AccessTime, contentDescription = null, tint = Color.DarkGray)
+                            Icon(Icons.Default.AccessTime, contentDescription = "Seleccionar hora de fin", tint = Color.DarkGray)
                         }
                     }
                 )

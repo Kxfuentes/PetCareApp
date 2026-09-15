@@ -645,7 +645,7 @@ private fun ServiceDateField(
         isError = showError,
         trailingIcon = {
             IconButton(onClick = onClick) {
-                Icon(Icons.Default.DateRange, contentDescription = null)
+                Icon(Icons.Default.DateRange, contentDescription = "Seleccionar $label")
             }
         }
     )
