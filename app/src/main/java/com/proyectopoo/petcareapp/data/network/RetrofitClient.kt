@@ -9,10 +9,28 @@ import retrofit2.Retrofit
 import retrofit2.converter.kotlinx.serialization.asConverterFactory
 import java.util.concurrent.TimeUnit
 
+/**
+ * Construye una implementación de [ApiService] apuntando a [baseUrl], usando el mismo
+ * [Json] y (opcionalmente) el mismo [OkHttpClient] que usa la app en producción.
+ *
+ * Extraído de [RetrofitClient] para que los tests puedan apuntar la misma configuración
+ * de Retrofit/serialización a un servidor de prueba (p.ej. MockWebServer) sin depender de
+ * [BuildConfig.BASE_URL]. [RetrofitClient.apiService] es simplemente el resultado de llamar
+ * esta función con la BASE_URL real de la app; su comportamiento público no cambia.
+ */
+fun buildApiService(baseUrl: String, client: OkHttpClient = RetrofitClient.defaultHttpClient): ApiService {
+    return Retrofit.Builder()
+        .baseUrl(baseUrl)
+        .client(client)
+        .addConverterFactory(RetrofitClient.json.asConverterFactory("application/json".toMediaType()))
+        .build()
+        .create(ApiService::class.java)
+}
+
 object RetrofitClient {
     private val BASE_URL = BuildConfig.BASE_URL
 
-    private val json = Json {
+    internal val json = Json {
         ignoreUnknownKeys = true
         coerceInputValues = true
     }
@@ -21,7 +39,7 @@ object RetrofitClient {
         level = HttpLoggingInterceptor.Level.BODY
     }
 
-    private val httpClient = OkHttpClient.Builder()
+    internal val defaultHttpClient = OkHttpClient.Builder()
         .addInterceptor(RetryInterceptor())
         .addInterceptor(logging)
         .connectTimeout(15, TimeUnit.SECONDS)
@@ -30,12 +48,7 @@ object RetrofitClient {
         .build()
 
     val apiService: ApiService by lazy {
-        Retrofit.Builder()
-            .baseUrl(BASE_URL)
-            .client(httpClient)
-            .addConverterFactory(json.asConverterFactory("application/json".toMediaType()))
-            .build()
-            .create(ApiService::class.java)
+        buildApiService(BASE_URL, defaultHttpClient)
     }
 
     /**
