@@ -17,6 +17,7 @@ import androidx.compose.ui.unit.dp
 import com.proyectopoo.petcareapp.data.local.database.PetCareDatabase
 import com.proyectopoo.petcareapp.data.network.FavoritoDto
 import com.proyectopoo.petcareapp.data.network.RetrofitClient
+import com.proyectopoo.petcareapp.ui.components.SkeletonList
 import kotlinx.coroutines.launch
 
 /**
@@ -82,9 +83,12 @@ fun FavoritosScreen(
     ) { padding ->
         when {
             isLoading -> {
-                Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator()
-                }
+                SkeletonList(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(padding)
+                        .padding(16.dp)
+                )
             }
             loadError -> {
                 Box(Modifier.fillMaxSize().padding(padding).padding(24.dp), contentAlignment = Alignment.Center) {
