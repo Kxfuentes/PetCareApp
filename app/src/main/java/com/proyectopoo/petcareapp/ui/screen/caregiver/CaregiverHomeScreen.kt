@@ -939,6 +939,10 @@ private fun CaregiverDetailFieldRow(field: CaregiverDetailField) {
 
 private fun caregiverDetailFields(request: ServiceApplicationDetails): List<CaregiverDetailField> {
     val descriptionDetails = parseCaregiverDescriptionDetails(request.requestDescription)
+    // Telefono/email del dueno solo se muestran una vez que el servicio esta confirmado (Bloque 10).
+    val contactoVisible = request.applicationStatus == ApplicationStatus.ACCEPTED ||
+        request.applicationStatus == ApplicationStatus.DONE_BY_CAREGIVER ||
+        request.applicationStatus == ApplicationStatus.COMPLETED
     return buildList {
         add(CaregiverDetailField("Dueño", request.ownerName ?: "Dueño", Icons.Default.Person))
         add(CaregiverDetailField("Mascota", request.petNames?.takeIf { it.isNotBlank() } ?: request.petName ?: "Mascota", Icons.Default.Pets))
@@ -951,8 +955,10 @@ private fun caregiverDetailFields(request: ServiceApplicationDetails): List<Care
         descriptionDetails["Dirección de recogida"]?.let { add(CaregiverDetailField("Recogida", it, Icons.Default.LocationOn)) }
         descriptionDetails["Dirección de destino"]?.let { add(CaregiverDetailField("Destino", it, Icons.Default.Place)) }
         descriptionDetails["Precio"]?.let { add(CaregiverDetailField("Precio", it, Icons.Default.Payments)) }
-        request.ownerEmail?.takeIf { it.isNotBlank() }?.let { add(CaregiverDetailField("Email", it, Icons.Default.Email, action = CaregiverDetailFieldAction.EMAIL)) }
-        request.ownerPhone?.takeIf { it.isNotBlank() }?.let { add(CaregiverDetailField("Teléfono", it, Icons.Default.Phone, action = CaregiverDetailFieldAction.CALL)) }
+        if (contactoVisible) {
+            request.ownerEmail?.takeIf { it.isNotBlank() }?.let { add(CaregiverDetailField("Email", it, Icons.Default.Email, action = CaregiverDetailFieldAction.EMAIL)) }
+            request.ownerPhone?.takeIf { it.isNotBlank() }?.let { add(CaregiverDetailField("Teléfono", it, Icons.Default.Phone, action = CaregiverDetailFieldAction.CALL)) }
+        }
     }
 }
 

@@ -1506,14 +1506,19 @@ private fun requestDetailFields(request: ServiceRequestDetails): List<DetailFiel
 
 private fun applicationDetailFields(application: ServiceApplicationDetails): List<DetailField> {
     val extracted = parseDescriptionDetails(application.requestDescription)
+    // Telefono/email del cuidador solo se muestran una vez que el servicio esta confirmado
+    // (Bloque 10): antes de aceptar una postulacion no hay razon para compartir datos de contacto.
+    val contactoVisible = application.applicationStatus == ApplicationStatus.ACCEPTED ||
+        application.applicationStatus == ApplicationStatus.DONE_BY_CAREGIVER ||
+        application.applicationStatus == ApplicationStatus.COMPLETED
     return listOfNotNull(
         DetailField(Icons.Default.Pets, "Mascota", application.petNames?.takeIf { it.isNotBlank() } ?: application.petName ?: "Sin mascota"),
         application.petBreed?.let { DetailField(Icons.Default.Badge, "Raza", it) },
         application.petSize?.let { DetailField(Icons.Default.Scale, "Tamaño", it) },
         DetailField(serviceIconFor(application.serviceTypeName ?: application.requestTitle), "Servicio", application.serviceTypeName ?: application.requestTitle),
         DetailField(Icons.Default.Person, "Cuidador", application.caregiverName ?: "Cuidador"),
-        application.caregiverEmail?.let { DetailField(Icons.Default.Email, "Email del cuidador", it, action = DetailFieldAction.EMAIL) },
-        application.caregiverPhone?.let { DetailField(Icons.Default.Phone, "Teléfono del cuidador", it, action = DetailFieldAction.CALL) },
+        if (contactoVisible) application.caregiverEmail?.let { DetailField(Icons.Default.Email, "Email del cuidador", it, action = DetailFieldAction.EMAIL) } else null,
+        if (contactoVisible) application.caregiverPhone?.let { DetailField(Icons.Default.Phone, "Teléfono del cuidador", it, action = DetailFieldAction.CALL) } else null,
         DetailField(Icons.Default.CalendarToday, "Fecha", application.requestedDate ?: "Sin fecha"),
         application.startTime?.let { DetailField(Icons.Default.AccessTime, "Hora inicio", it) },
         application.endTime?.let { DetailField(Icons.Default.Schedule, "Hora fin", it) },
