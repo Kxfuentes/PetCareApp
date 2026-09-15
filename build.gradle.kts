@@ -8,4 +8,5 @@ plugins {
     // este disponible en el classpath, pero solo se aplica de verdad en app/build.gradle.kts
     // y unicamente si existe app/google-services.json. Ver comentario en ese archivo.
     alias(libs.plugins.google.services) apply false
+    alias(libs.plugins.ksp) apply false
 }
