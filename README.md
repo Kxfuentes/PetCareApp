@@ -1,5 +1,7 @@
 # PetCareApp
 
+![Android CI](https://github.com/Kxfuentes/PetCareApp/actions/workflows/build.yml/badge.svg)
+
 Aplicación móvil desarrollada en Android Studio con Kotlin y Jetpack Compose como proyecto universitario de Programación Orientada a Objetos.
 
 ## Descripción
