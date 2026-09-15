@@ -18,6 +18,7 @@ import androidx.compose.material.icons.filled.MonetizationOn
 import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
+import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -46,7 +47,7 @@ fun CaregiverFeedScreen(
     onOpenFilters: () -> Unit = {}
 ) {
     val tiposServicio = listOf(
-        "Todos", "Alojamiento", "GuarderÃ­a", "Paseo", "Taxi", "PeluquerÃ­a", "Visitante"
+        "Todos", "Alojamiento", "Guardería", "Paseo", "Taxi", "Peluquería", "Visitante"
     )
 
     var expanded by remember { mutableStateOf(false) }
@@ -103,7 +104,7 @@ fun CaregiverFeedScreen(
                     label = { Text("Filtrar por servicio") },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .menuAnchor(),
+                        .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, enabled = true),
                     shape = RoundedCornerShape(16.dp),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedContainerColor = MaterialTheme.colorScheme.surface,

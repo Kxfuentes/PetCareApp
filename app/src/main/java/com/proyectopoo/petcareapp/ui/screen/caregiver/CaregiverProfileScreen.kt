@@ -7,6 +7,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -226,7 +227,7 @@ fun CaregiverProfileScreen(
                 shape = RoundedCornerShape(16.dp),
                 colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
             ) {
-                Icon(Icons.Default.Logout, null)
+                Icon(Icons.AutoMirrored.Filled.Logout, null)
                 Spacer(Modifier.width(8.dp))
                 Text("Cerrar Sesión")
             }

@@ -2,7 +2,11 @@ package com.proyectopoo.petcareapp.ui.screen.caregiver
 
 import android.content.Intent
 import android.net.Uri
+import androidx.compose.material.icons.automirrored.filled.Assignment
 import androidx.compose.material.icons.automirrored.filled.Chat
+import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
+import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.automirrored.filled.Notes
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -156,7 +160,7 @@ fun CaregiverHomeScreen(
                         modifier = Modifier.size(52.dp)
                     ) {
                         Box(contentAlignment = Alignment.Center) {
-                            Icon(Icons.Default.List, null, tint = MaterialTheme.colorScheme.primary)
+                            Icon(Icons.AutoMirrored.Filled.List, null, tint = MaterialTheme.colorScheme.primary)
                         }
                     }
                     Spacer(Modifier.width(16.dp))
@@ -579,7 +583,7 @@ private fun CaregiverServiceDetailsDialog(
                         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
                     ) {
                         Row(Modifier.padding(14.dp), verticalAlignment = Alignment.Top) {
-                            Icon(Icons.Default.Notes, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
+                            Icon(Icons.AutoMirrored.Filled.Notes, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
                             Spacer(Modifier.width(12.dp))
                             Column {
                                 Text("Notas", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelMedium)
@@ -783,7 +787,7 @@ private fun parseCaregiverDescriptionDetails(description: String?): Map<String, 
 private fun caregiverServiceIcon(serviceName: String): ImageVector = when (serviceName) {
     "Alojamiento" -> Icons.Default.NightShelter
     "Guardería" -> Icons.Default.WbSunny
-    "Paseo" -> Icons.Default.DirectionsWalk
+    "Paseo" -> Icons.AutoMirrored.Filled.DirectionsWalk
     "Taxi" -> Icons.Default.LocalTaxi
     "Peluquería" -> Icons.Default.ContentCut
     else -> Icons.Default.Pets
@@ -864,13 +868,13 @@ private fun StatusChip(status: Enum<*>) {
 
 private fun serviceIcon(serviceName: String): ImageVector {
     return when (serviceName.lowercase()) {
-        "paseo" -> Icons.Default.DirectionsWalk
+        "paseo" -> Icons.AutoMirrored.Filled.DirectionsWalk
         "alojamiento" -> Icons.Default.Home
         "guardería", "guarderia" -> Icons.Default.WbSunny
         "taxi" -> Icons.Default.LocalTaxi
         "peluquería", "peluqueria" -> Icons.Default.ContentCut
         "visitante" -> Icons.Default.HomeRepairService
-        else -> Icons.Default.Assignment
+        else -> Icons.AutoMirrored.Filled.Assignment
     }
 }
 

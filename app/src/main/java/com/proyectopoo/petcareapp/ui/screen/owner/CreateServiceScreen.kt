@@ -9,8 +9,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -215,7 +217,7 @@ fun CreateServiceScreen(
                 readOnly = true,
                 label = { Text("Tipo de Servicio") },
                 leadingIcon = { Icon(serviceIconForCreate(tipoServicio), null) },
-                modifier = Modifier.fillMaxWidth().menuAnchor(),
+                modifier = Modifier.fillMaxWidth().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, enabled = true),
                 shape = RoundedCornerShape(14.dp),
                 trailingIcon = { IconButton(onClick = { expandedService = !expandedService }) { Icon(Icons.Default.ArrowDropDown, null) } },
                 isError = showError && tipoServicio.isBlank()
@@ -325,7 +327,7 @@ fun CreateServiceScreen(
                 }
             }
             "Paseo" -> {
-                SectionHeaderCreate(Icons.Default.DirectionsWalk, "Detalles de Paseo")
+                SectionHeaderCreate(Icons.AutoMirrored.Filled.DirectionsWalk, "Detalles de Paseo")
                 Spacer(Modifier.height(8.dp))
                 LocationAutocompleteField(
                     query = ubicacion,
@@ -388,7 +390,7 @@ fun CreateServiceScreen(
                         onValueChange = {},
                         readOnly = true,
                         label = { Text("Tipo de servicio") },
-                        modifier = Modifier.fillMaxWidth().menuAnchor(),
+                        modifier = Modifier.fillMaxWidth().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, enabled = true),
                         trailingIcon = { Icon(Icons.Default.ArrowDropDown, null) },
                         isError = showError && tipoPeluqueria.isBlank()
                     )
@@ -593,7 +595,7 @@ private fun SectionHeaderCreate(icon: androidx.compose.ui.graphics.vector.ImageV
 private fun serviceIconForCreate(service: String): androidx.compose.ui.graphics.vector.ImageVector = when (service) {
     "Alojamiento" -> Icons.Default.Home
     "Guardería" -> Icons.Default.WbSunny
-    "Paseo" -> Icons.Default.DirectionsWalk
+    "Paseo" -> Icons.AutoMirrored.Filled.DirectionsWalk
     "Taxi" -> Icons.Default.LocalTaxi
     "Peluquería" -> Icons.Default.ContentCut
     "Visitante" -> Icons.Default.HomeRepairService

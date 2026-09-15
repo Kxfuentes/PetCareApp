@@ -275,7 +275,7 @@ fun AppNavigation(
                         }
                     } catch (e: Exception) {
                         navigationError = e.localizedMessage
-                            ?: "No se pudo preparar la sesiÃ³n local."
+                            ?: "No se pudo preparar la sesión local."
                     }
                 }
             }
@@ -1348,7 +1348,7 @@ private suspend fun ensureOwnerExists(
         database.userDao().insertUser(
             UserEntity(
                 userId = ownerId,
-                fullName = email.substringBefore("@").ifBlank { "DueÃ±o" },
+                fullName = email.substringBefore("@").ifBlank { "Dueño" },
                 email = email.ifBlank { "dueno$ownerId@petcare.local" },
                 password = null,
                 role = UserRoleType.OWNER

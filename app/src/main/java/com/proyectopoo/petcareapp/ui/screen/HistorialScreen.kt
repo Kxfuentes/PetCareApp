@@ -5,7 +5,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -63,7 +63,7 @@ fun HistorialScreen(
                 title = { Text("Historial") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
@@ -71,7 +71,7 @@ fun HistorialScreen(
         }
     ) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding)) {
-            TabRow(selectedTabIndex = selectedTab) {
+            PrimaryTabRow(selectedTabIndex = selectedTab) {
                 Tab(
                     selected = selectedTab == 0,
                     onClick = { selectedTab = 0 },

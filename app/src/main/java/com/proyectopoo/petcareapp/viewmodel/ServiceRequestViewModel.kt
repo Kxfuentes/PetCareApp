@@ -98,7 +98,7 @@ class ServiceRequestViewModel(
     private val _caregiverBookings = MutableStateFlow<List<ServiceBookingEntity>>(emptyList())
     val caregiverBookings = _caregiverBookings.asStateFlow()
 
-    // Mensajes puntuales para mostrar al usuario (errores de validaciÃ³n, confirmaciones).
+    // Mensajes puntuales para mostrar al usuario (errores de validación, confirmaciones).
     private val _userMessage = MutableStateFlow<String?>(null)
     val userMessage = _userMessage.asStateFlow()
 
@@ -266,7 +266,7 @@ class ServiceRequestViewModel(
                 status = ApplicationStatus.PENDING
             )
             val remoteApplication = createRemoteApplication(application)
-            if (remoteApplication == null && apiService != null) return@launch
+            if (remoteApplication == null) return@launch
             applicationRepo.insert(remoteApplication ?: application)
 
             refreshOwnerData(ownerId)
@@ -274,8 +274,8 @@ class ServiceRequestViewModel(
 
             notifier.push(
                 recipientUserId = caregiverId,
-                title = "Nueva solicitud de un dueÃ±o",
-                message = "Un dueÃ±o solicitÃ³ tu servicio de $serviceTypeName.",
+                title = "Nueva solicitud de un dueño",
+                message = "Un dueño solicitó tu servicio de $serviceTypeName.",
                 type = NotificationType.SERVICE_REQUEST
             )
             _userMessage.value = "Solicitud enviada al cuidador."
@@ -291,7 +291,7 @@ class ServiceRequestViewModel(
                 initiatedBy = ApplicationInitiator.CAREGIVER
             )
             val remoteApplication = createRemoteApplication(application)
-            if (remoteApplication == null && apiService != null) return@launch
+            if (remoteApplication == null) return@launch
             applicationRepo.insert(remoteApplication ?: application)
             _caregiverApplicationDetails.value = applicationRepo.getIncomingOwnerRequestsForCaregiver(caregiverId)
 
@@ -348,7 +348,7 @@ class ServiceRequestViewModel(
             }
 
             val remoteApplication = updateRemoteApplicationStatus(applicationId, ApplicationStatus.ACCEPTED)
-            if (remoteApplication == null && apiService != null) return@launch
+            if (remoteApplication == null) return@launch
 
             applicationRepo.acceptAndCreateBooking(remoteApplication?.applicationId ?: applicationId)
             _availableRequests.value = requestRepo.getAvailableDetails()
@@ -384,7 +384,7 @@ class ServiceRequestViewModel(
             if (application.initiatedBy == ApplicationInitiator.CAREGIVER && ownerId == null) return@launch
             if (application.initiatedBy == ApplicationInitiator.OWNER && caregiverId == null) return@launch
 
-            if (rejectRemoteApplication(applicationId) == null && apiService != null) {
+            if (rejectRemoteApplication(applicationId) == null) {
                 return@launch
             }
             applicationRepo.updateStatus(applicationId, ApplicationStatus.REJECTED)
@@ -420,7 +420,7 @@ class ServiceRequestViewModel(
         reloadCaregiverId: Int? = null
     ) {
         viewModelScope.launch {
-            if (updateRemoteApplicationStatus(applicationId, ApplicationStatus.COMPLETED) == null && apiService != null) {
+            if (updateRemoteApplicationStatus(applicationId, ApplicationStatus.COMPLETED) == null) {
                 return@launch
             }
             applicationRepo.completeAndCloseRequest(applicationId)
@@ -543,7 +543,7 @@ class ServiceRequestViewModel(
                 return@launch
             }
 
-            if (cancelRemoteApplication(applicationId) == null && apiService != null) {
+            if (cancelRemoteApplication(applicationId) == null) {
                 return@launch
             }
             applicationRepo.cancelService(applicationId)
@@ -584,7 +584,7 @@ class ServiceRequestViewModel(
         if (wa != null && wb != null) {
             return wa.first < wb.second && wb.first < wa.second
         }
-        // Sin horas parseables: consideramos conflicto si es el mismo dÃ­a.
+        // Sin horas parseables: consideramos conflicto si es el mismo día.
         return !a.requestedDate.isNullOrBlank() && a.requestedDate == b.requestedDate
     }
 
@@ -624,7 +624,7 @@ class ServiceRequestViewModel(
         phone: String? = null,
         email: String? = null
     ) {
-        upsertUserContact(ownerId, "DueÃ±o", "dueno@petcare.local", name, phone, email, UserRoleType.OWNER)
+        upsertUserContact(ownerId, "Dueño", "dueno@petcare.local", name, phone, email, UserRoleType.OWNER)
 
         if (ownerDao.getOwnerById(ownerId) == null) {
             ownerDao.insertOwner(
@@ -709,10 +709,10 @@ class ServiceRequestViewModel(
     private fun serviceTypeIdFor(serviceTypeName: String): Int {
         return when (serviceTypeName.lowercase()) {
             "alojamiento" -> 1
-            "guarderÃ­a", "guarderia" -> 2
+            "guardería", "guarderia" -> 2
             "paseo" -> 3
             "taxi" -> 4
-            "peluquerÃ­a", "peluqueria" -> 5
+            "peluquería", "peluqueria" -> 5
             "visitante" -> 6
             else -> (serviceTypeName.hashCode() and Int.MAX_VALUE)
         }
@@ -830,7 +830,10 @@ class ServiceRequestViewModel(
     ): ServiceApplicationEntity? {
         val response = runCatching {
             apiService?.updateServiceApplicationStatus(applicationId, ServiceApplicationStatusRequest(status.name))
-        }.getOrNull() ?: return null
+        }.getOrNull() ?: run {
+            _userMessage.value = "Sin conexión. No se pudo actualizar el estado del servicio."
+            return null
+        }
 
         if (response?.isSuccessful == true) {
             return response.body()?.toEntity()
@@ -848,7 +851,10 @@ class ServiceRequestViewModel(
     ): ServiceApplicationEntity? {
         val response = runCatching {
             apiService?.rejectOferta(applicationId, OfertaMotivoRequest(motivo = motivo))
-        }.getOrNull() ?: return null
+        }.getOrNull() ?: run {
+            _userMessage.value = "Sin conexión. No se pudo rechazar la solicitud."
+            return null
+        }
 
         if (response?.isSuccessful == true) {
             return response.body()?.toEntity()
@@ -866,7 +872,10 @@ class ServiceRequestViewModel(
     ): ServiceApplicationEntity? {
         val response = runCatching {
             apiService?.cancelOferta(applicationId, OfertaMotivoRequest(motivo = motivo))
-        }.getOrNull() ?: return null
+        }.getOrNull() ?: run {
+            _userMessage.value = "Sin conexión. No se pudo cancelar el servicio."
+            return null
+        }
 
         if (response?.isSuccessful == true) {
             return response.body()?.toEntity()
@@ -894,7 +903,10 @@ class ServiceRequestViewModel(
     private suspend fun createRemoteApplication(application: ServiceApplicationEntity): ServiceApplicationEntity? {
         val response = runCatching {
             apiService?.createServiceApplication(application.toDto())
-        }.getOrNull() ?: return null
+        }.getOrNull() ?: run {
+            _userMessage.value = "Sin conexión. No se pudo registrar la postulación."
+            return null
+        }
 
         if (response?.isSuccessful == true) {
             return response.body()?.toEntity()

@@ -8,6 +8,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Assignment
+import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -171,7 +174,7 @@ fun OwnerProfileScreen(
         }
 
         OutlinedButton(onClick = onLogout, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp), colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)) {
-            Icon(Icons.Default.Logout, null)
+            Icon(Icons.AutoMirrored.Filled.Logout, null)
             Spacer(Modifier.width(8.dp))
             Text("Cerrar Sesión", fontWeight = FontWeight.Bold)
         }
@@ -185,5 +188,5 @@ fun OwnerProfileScreen(
 @Composable private fun EmptyProfileCard(title: String, subtitle: String) { Column(Modifier.fillMaxWidth().padding(28.dp), horizontalAlignment = Alignment.CenterHorizontally) { Icon(Icons.Default.Pets, null, Modifier.size(56.dp), tint = MaterialTheme.colorScheme.outline); Spacer(Modifier.height(10.dp)); Text(title, fontWeight = FontWeight.Bold); Text(subtitle, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center) } }
 @Composable private fun ServiceBubble(service: String) { Surface(shape = CircleShape, color = MaterialTheme.colorScheme.surfaceVariant, modifier = Modifier.size(48.dp)) { Box(contentAlignment = Alignment.Center) { Icon(serviceIconForProfile(service), null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(25.dp)) } } }
 @Composable private fun StatusPill(text: String, color: Color) { Surface(shape = RoundedCornerShape(50), color = color.copy(alpha = .12f)) { Text(text, modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp), color = color, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold) } }
-private fun serviceIconForProfile(service: String): ImageVector = when (service.lowercase()) { "paseo" -> Icons.Default.DirectionsWalk; "guardería" -> Icons.Default.WbSunny; "taxi" -> Icons.Default.LocalTaxi; "peluquería" -> Icons.Default.ContentCut; "alojamiento" -> Icons.Default.Home; else -> Icons.Default.Assignment }
+private fun serviceIconForProfile(service: String): ImageVector = when (service.lowercase()) { "paseo" -> Icons.AutoMirrored.Filled.DirectionsWalk; "guardería" -> Icons.Default.WbSunny; "taxi" -> Icons.Default.LocalTaxi; "peluquería" -> Icons.Default.ContentCut; "alojamiento" -> Icons.Default.Home; else -> Icons.AutoMirrored.Filled.Assignment }
 private fun formatProfilePetSize(size: String): String = if (size.contains("kg", true) || size.contains("tamaño", true)) size else "Tamaño $size"

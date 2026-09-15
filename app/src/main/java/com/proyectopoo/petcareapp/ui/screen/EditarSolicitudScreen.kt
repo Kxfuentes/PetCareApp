@@ -5,8 +5,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
+import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -53,7 +54,7 @@ fun EditarSolicitudScreen(
                 title = { Text("Editar solicitud") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
@@ -93,7 +94,7 @@ fun EditarSolicitudScreen(
                         onValueChange = {},
                         readOnly = true,
                         label = { Text("Mascota") },
-                        modifier = Modifier.fillMaxWidth().menuAnchor(),
+                        modifier = Modifier.fillMaxWidth().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, enabled = true),
                         shape = RoundedCornerShape(14.dp)
                     )
                     ExposedDropdownMenu(expanded = expandedPet, onDismissRequest = { expandedPet = false }) {
@@ -116,7 +117,7 @@ fun EditarSolicitudScreen(
                     onValueChange = {},
                     readOnly = true,
                     label = { Text("Tipo de servicio") },
-                    modifier = Modifier.fillMaxWidth().menuAnchor(),
+                    modifier = Modifier.fillMaxWidth().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, enabled = true),
                     shape = RoundedCornerShape(14.dp)
                 )
                 ExposedDropdownMenu(expanded = expandedService, onDismissRequest = { expandedService = false }) {

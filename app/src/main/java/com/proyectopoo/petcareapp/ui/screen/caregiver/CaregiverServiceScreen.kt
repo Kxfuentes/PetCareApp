@@ -11,8 +11,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
+import androidx.compose.material.icons.automirrored.filled.Label
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -79,7 +83,7 @@ fun CaregiverServiceScreen(
     fun obtenerIcono(nombre: String) = when (nombre) {
         "Alojamiento" -> Icons.Default.NightShelter
         "Guardería" -> Icons.Default.WbSunny
-        "Paseo" -> Icons.Default.DirectionsWalk
+        "Paseo" -> Icons.AutoMirrored.Filled.DirectionsWalk
         "Taxi" -> Icons.Default.LocalTaxi
         "Peluquería" -> Icons.Default.ContentCut
         else -> Icons.Default.House
@@ -91,7 +95,7 @@ fun CaregiverServiceScreen(
             TopAppBar(
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Volver", tint = colorScheme.onPrimary)
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver", tint = colorScheme.onPrimary)
                     }
                 },
                 title = {
@@ -266,7 +270,7 @@ fun CaregiverServiceScreen(
                             label = { Text("Tipo de servicio") },
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .menuAnchor(),
+                                .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, enabled = true),
                             shape = RoundedCornerShape(16.dp),
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedContainerColor = colorScheme.background, // Fondo cambiado al color general
@@ -574,7 +578,7 @@ private fun ServiceOfferedCard(
                     Text("C$ ${servicio.price}", color = colorScheme.primary, fontWeight = FontWeight.Bold, fontSize = 17.sp)
                     if (description.isNotBlank()) {
                         Spacer(Modifier.height(8.dp))
-                        Row(verticalAlignment = Alignment.Top) { Icon(Icons.Default.Label, null, tint = colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp)); Spacer(Modifier.width(8.dp)); Text(description, color = colorScheme.onSurfaceVariant) }
+                        Row(verticalAlignment = Alignment.Top) { Icon(Icons.AutoMirrored.Filled.Label, null, tint = colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp)); Spacer(Modifier.width(8.dp)); Text(description, color = colorScheme.onSurfaceVariant) }
                     }
                     if (address.isNotBlank()) {
                         Spacer(Modifier.height(8.dp))

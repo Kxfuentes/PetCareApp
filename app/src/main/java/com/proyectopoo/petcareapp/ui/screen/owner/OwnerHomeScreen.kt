@@ -2,7 +2,13 @@ package com.proyectopoo.petcareapp.ui.screen.owner
 
 import android.content.Intent
 import android.net.Uri
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.automirrored.filled.Article
+import androidx.compose.material.icons.automirrored.filled.Assignment
 import androidx.compose.material.icons.automirrored.filled.Chat
+import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -90,7 +96,7 @@ fun OwnerHomeScreen(
     val services = listOf(
         "Alojamiento" to Icons.Default.Home,
         "Guardería" to Icons.Default.WbSunny,
-        "Paseo" to Icons.Default.DirectionsWalk,
+        "Paseo" to Icons.AutoMirrored.Filled.DirectionsWalk,
         "Taxi" to Icons.Default.LocalTaxi,
         "Peluquería" to Icons.Default.ContentCut,
         "Visitante" to Icons.Default.HomeRepairService
@@ -270,11 +276,11 @@ fun OwnerHomeScreen(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 IconButton(onClick = { if (selectedDogIndex > 0) selectedDogIndex-- }) {
-                                    Icon(Icons.Default.ArrowBack, null)
+                                    Icon(Icons.AutoMirrored.Filled.ArrowBack, null)
                                 }
                                 Text("${safeIndex + 1}/${dogs.size}")
                                 IconButton(onClick = { if (selectedDogIndex < dogs.lastIndex) selectedDogIndex++ }) {
-                                    Icon(Icons.Default.ArrowForward, null)
+                                    Icon(Icons.AutoMirrored.Filled.ArrowForward, null)
                                 }
                             }
                         }
@@ -333,7 +339,7 @@ fun OwnerHomeScreen(
                             Text("Ver más", style = MaterialTheme.typography.labelMedium)
                             Spacer(Modifier.width(2.dp))
                             Icon(
-                                Icons.Default.KeyboardArrowRight,
+                                Icons.AutoMirrored.Filled.KeyboardArrowRight,
                                 contentDescription = null,
                                 modifier = Modifier.size(16.dp)
                             )
@@ -890,7 +896,7 @@ private fun AllRequestedServicesScreen(
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 IconButton(onClick = onBack) {
-                    Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
                 }
                 Text(
                     "Todos los servicios solicitados",
@@ -1073,7 +1079,7 @@ private fun DetailsCardDialog(
                             verticalAlignment = Alignment.Top
                         ) {
                             Icon(
-                                Icons.Default.Article,
+                                Icons.AutoMirrored.Filled.Article,
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.size(24.dp)
@@ -1205,13 +1211,13 @@ private fun ServiceIconBubble(serviceName: String) {
 }
 
 private fun serviceIconFor(serviceName: String): ImageVector = when (serviceName.lowercase()) {
-    "paseo" -> Icons.Default.DirectionsWalk
+    "paseo" -> Icons.AutoMirrored.Filled.DirectionsWalk
     "alojamiento" -> Icons.Default.Home
     "guardería" -> Icons.Default.WbSunny
     "taxi" -> Icons.Default.LocalTaxi
     "peluquería" -> Icons.Default.ContentCut
     "visitante" -> Icons.Default.HomeRepairService
-    else -> Icons.Default.Assignment
+    else -> Icons.AutoMirrored.Filled.Assignment
 }
 
 @Composable
@@ -1232,7 +1238,6 @@ private fun StatusChip(status: Enum<*>, overrideText: String? = null) {
         "COMPLETED" -> "Completado" to Color(0xFF607D8B)
         "REJECTED" -> "Rechazado" to Color(0xFFF44336)
         "CANCELLED" -> "Cancelado" to Color(0xFF795548)
-        "COMPLETED" -> "Completado" to Color(0xFF607D8B)
         else -> status.name.replace('_', ' ').lowercase().replaceFirstChar { it.uppercase() } to MaterialTheme.colorScheme.outline
     }
 

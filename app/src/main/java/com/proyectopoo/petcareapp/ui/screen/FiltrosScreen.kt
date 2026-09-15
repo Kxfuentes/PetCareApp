@@ -3,8 +3,9 @@ package com.proyectopoo.petcareapp.ui.screen
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
+import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -45,7 +46,7 @@ fun FiltrosScreen(
                 title = { Text("Filtros") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Volver")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
@@ -80,7 +81,7 @@ fun FiltrosScreen(
                         value = selectedType,
                         onValueChange = {},
                         readOnly = true,
-                        modifier = Modifier.fillMaxWidth().menuAnchor(),
+                        modifier = Modifier.fillMaxWidth().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, enabled = true),
                         shape = RoundedCornerShape(14.dp)
                     )
                     ExposedDropdownMenu(

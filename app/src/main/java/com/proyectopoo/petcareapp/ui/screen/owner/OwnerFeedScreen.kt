@@ -15,6 +15,7 @@ import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
+import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -101,7 +102,7 @@ fun OwnerFeedScreen(
                     label = { Text("Filtrar por servicio") },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .menuAnchor(),
+                        .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, enabled = true),
                     shape = RoundedCornerShape(16.dp),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedContainerColor = MaterialTheme.colorScheme.surface,

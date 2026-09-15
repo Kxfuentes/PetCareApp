@@ -130,8 +130,8 @@ class ServiceRequestRepository(
     }
 
     suspend fun loadAvailableFromApi() {
-        // Ya no guardamos solicitudes remotas en Room aquÃ­,
-        // porque pueden venir con mascotas/tipos/dueÃ±os que no existen localmente.
+        // Ya no guardamos solicitudes remotas en Room aquí,
+        // porque pueden venir con mascotas/tipos/dueños que no existen localmente.
         getAvailableDetailsFromApi()
     }
 
@@ -232,7 +232,7 @@ class ServiceRequestRepository(
             petBreed = null,
             petSize = null,
             serviceTypeName = title,
-            ownerName = "DueÃ±o #$ownerId",
+            ownerName = "Dueño #$ownerId",
             ownerPhone = null,
             ownerEmail = null
         )
