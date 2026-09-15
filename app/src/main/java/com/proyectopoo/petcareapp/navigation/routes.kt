@@ -114,3 +114,21 @@ data class Seguimiento(
 data class Calendario(
     val usuarioId: Int
 )
+
+@Serializable
+data class AlertasPerdidas(
+    val usuarioId: Int
+)
+
+@Serializable
+data class AlertaPerdidaDetalle(
+    val alertaId: Int,
+    val petsId: Int,
+    val reporterId: Int,
+    val descripcion: String? = null,
+    val latitud: Double,
+    val longitud: Double,
+    val direccionTexto: String? = null,
+    val estado: String,
+    val currentUserId: Int
+)

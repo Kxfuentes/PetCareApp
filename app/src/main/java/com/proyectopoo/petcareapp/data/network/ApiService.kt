@@ -322,4 +322,31 @@ interface ApiService {
         @Path("entradaId") entradaId: Int,
         @Query("usuario_id") usuarioId: Int
     ): Response<Unit>
+
+    // ===== Alerta de mascota perdida (Bloque 12) =====
+
+    @POST("api/alertas-perdida")
+    suspend fun crearAlertaPerdida(@Body request: AlertaPerdidaRequest): Response<AlertaPerdidaDto>
+
+    @POST("api/alertas-perdida/{id}/avistamiento")
+    suspend fun reportarAvistamiento(
+        @Path("id") alertaId: Int,
+        @Body request: AvistamientoRequest
+    ): Response<AvistamientoDto>
+
+    @GET("api/alertas-perdida/{id}/avistamientos")
+    suspend fun getAvistamientos(@Path("id") alertaId: Int): Response<List<AvistamientoDto>>
+
+    @PUT("api/alertas-perdida/{id}/encontrada")
+    suspend fun marcarAlertaEncontrada(
+        @Path("id") alertaId: Int,
+        @Query("usuario_id") usuarioId: Int
+    ): Response<AlertaPerdidaDto>
+
+    @GET("api/alertas-perdida/cercanas")
+    suspend fun getAlertasCercanas(
+        @Query("lat") lat: Double,
+        @Query("lng") lng: Double,
+        @Query("radio") radioKm: Double = 10.0
+    ): Response<List<AlertaCercanaDto>>
 }

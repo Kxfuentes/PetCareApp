@@ -1,26 +1,32 @@
 package com.proyectopoo.petcareapp.ui.screen.owner
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.outlined.Pets
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.proyectopoo.petcareapp.R
 import com.proyectopoo.petcareapp.data.local.entity.PetEntity
+import com.proyectopoo.petcareapp.data.network.AlertaPerdidaDto
 import com.proyectopoo.petcareapp.data.network.RetrofitClient
+import com.proyectopoo.petcareapp.ui.components.ReportarMascotaPerdidaDialog
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /**
  * Pantalla de perfil de una mascota: crea una mascota nueva, o -- cuando se abre con
  * [editingDog] no nulo -- funciona como el "perfil" de una mascota existente, con pestañas para
- * los datos básicos y el expediente médico (Bloque 11).
+ * los datos básicos y el expediente médico (Bloque 11), y el flujo de alerta de mascota perdida
+ * (Bloque 12, botones en la pestaña "Datos").
  *
  * La pestaña de Expediente Médico solo aparece al editar una mascota existente (se necesita un
  * petId real del backend); al crear una mascota nueva se muestra únicamente el formulario
@@ -64,6 +70,13 @@ fun DogInfoScreen(
 
     val isOwner = editingDog != null && currentUserId > 0 && editingDog.ownerId == currentUserId
     var selectedTab by remember(key) { mutableStateOf(0) }
+    var showLostPetDialog by remember { mutableStateOf(false) }
+    // Alerta activa reportada en esta misma sesión de la pantalla: el backend no expone un
+    // endpoint para consultar "¿tiene esta mascota una alerta activa?", así que este estado no
+    // sobrevive a salir de la pantalla o reiniciar la app -- ver nota de alcance en el reporte
+    // del Bloque 12.
+    var activeAlert by remember(key) { mutableStateOf<AlertaPerdidaDto?>(null) }
+    var isMarkingFound by remember { mutableStateOf(false) }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -185,6 +198,53 @@ fun DogInfoScreen(
 
                     Spacer(modifier = Modifier.weight(1f))
 
+                    if (isOwner) {
+                        if (activeAlert != null) {
+                            Button(
+                                onClick = {
+                                    val alertId = activeAlert?.id ?: return@Button
+                                    if (isMarkingFound) return@Button
+                                    isMarkingFound = true
+                                    scope.launch {
+                                        val response = runCatching {
+                                            RetrofitClient.apiService.marcarAlertaEncontrada(alertId, currentUserId)
+                                        }.getOrNull()
+                                        isMarkingFound = false
+                                        if (response?.isSuccessful == true) {
+                                            activeAlert = null
+                                            snackbarHostState.showSnackbar("¡Qué alegría! Marcamos a $dogName como encontrada.")
+                                        } else {
+                                            snackbarHostState.showSnackbar("No se pudo actualizar la alerta. Intenta de nuevo.")
+                                        }
+                                    }
+                                },
+                                enabled = !isMarkingFound,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(52.dp),
+                                shape = RoundedCornerShape(18.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.tertiary)
+                            ) {
+                                Text(if (isMarkingFound) "Actualizando..." else "¡La encontré!", fontWeight = FontWeight.Bold)
+                            }
+                        } else {
+                            OutlinedButton(
+                                onClick = { showLostPetDialog = true },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(52.dp),
+                                shape = RoundedCornerShape(18.dp),
+                                colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                                border = BorderStroke(1.5.dp, MaterialTheme.colorScheme.error)
+                            ) {
+                                Icon(Icons.Default.Warning, contentDescription = null)
+                                Spacer(Modifier.width(8.dp))
+                                Text("🚨 Mi mascota se perdió", fontWeight = FontWeight.Bold)
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(12.dp))
+                    }
+
                     Button(
                         onClick = {
                             if (isSaving) return@Button
@@ -220,5 +280,21 @@ fun DogInfoScreen(
                 )
             }
         }
+    }
+
+    if (showLostPetDialog && editingDog != null) {
+        ReportarMascotaPerdidaDialog(
+            petName = editingDog.name,
+            petId = editingDog.petId,
+            currentUserId = currentUserId,
+            onDismiss = { showLostPetDialog = false },
+            onReported = { alert ->
+                showLostPetDialog = false
+                activeAlert = alert
+                scope.launch {
+                    snackbarHostState.showSnackbar("Alerta publicada. Notificaremos a usuarios cercanos.")
+                }
+            }
+        )
     }
 }

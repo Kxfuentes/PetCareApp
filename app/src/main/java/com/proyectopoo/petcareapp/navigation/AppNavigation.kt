@@ -11,6 +11,8 @@ import com.proyectopoo.petcareapp.data.local.entity.ServiceRequestStatus
 import com.proyectopoo.petcareapp.data.network.FavoritoDto
 import com.proyectopoo.petcareapp.data.network.NoMolestarRequest
 import com.proyectopoo.petcareapp.data.network.ServiceRequestDto
+import com.proyectopoo.petcareapp.ui.screen.AlertaPerdidaDetalleScreen
+import com.proyectopoo.petcareapp.ui.screen.AlertasPerdidasScreen
 import com.proyectopoo.petcareapp.ui.screen.EditarSolicitudScreen
 import com.proyectopoo.petcareapp.ui.screen.FavoritosScreen
 import com.proyectopoo.petcareapp.ui.screen.FiltrosResult
@@ -629,6 +631,7 @@ fun AppNavigation(
                     navController.navigate(Seguimiento(serviceRequestId))
                 },
                 onGoToCalendar = { navController.navigate(Calendario(usuarioId = ownerId)) },
+                onGoToLostPetAlerts = { navController.navigate(AlertasPerdidas(usuarioId = ownerId)) },
                 initialFocusServiceRequestId = ownerCalendarFocusId,
                 onFocusHandled = { CalendarNavigationBridge.clear() },
                 ownerId = ownerId
@@ -846,6 +849,7 @@ fun AppNavigation(
                     )
                 },
                 onGoToCalendar = { navController.navigate(Calendario(usuarioId = caregiverId)) },
+                onGoToLostPetAlerts = { navController.navigate(AlertasPerdidas(usuarioId = caregiverId)) },
                 initialFocusServiceRequestId = caregiverCalendarFocusId,
                 onFocusHandled = { CalendarNavigationBridge.clear() },
                 caregiverId = caregiverId
@@ -1232,6 +1236,49 @@ fun AppNavigation(
                     CalendarNavigationBridge.request(solicitudId)
                     navController.popBackStack()
                 }
+            )
+        }
+
+        // ===== ALERTAS DE MASCOTA PERDIDA (Bloque 12) =====
+        composable<AlertasPerdidas> { backStackEntry ->
+            val args = backStackEntry.toRoute<AlertasPerdidas>()
+            AlertasPerdidasScreen(
+                currentUserId = args.usuarioId,
+                onBack = { navController.popBackStack() },
+                onOpenAlerta = { item ->
+                    val alerta = item.alerta
+                    val id = alerta.id
+                    if (id != null) {
+                        navController.navigate(
+                            AlertaPerdidaDetalle(
+                                alertaId = id,
+                                petsId = alerta.petsId,
+                                reporterId = alerta.usuarioId,
+                                descripcion = alerta.descripcion,
+                                latitud = alerta.latitud,
+                                longitud = alerta.longitud,
+                                direccionTexto = alerta.direccionTexto,
+                                estado = alerta.estado ?: "ACTIVA",
+                                currentUserId = args.usuarioId
+                            )
+                        )
+                    }
+                }
+            )
+        }
+
+        composable<AlertaPerdidaDetalle> { backStackEntry ->
+            val args = backStackEntry.toRoute<AlertaPerdidaDetalle>()
+            AlertaPerdidaDetalleScreen(
+                alertaId = args.alertaId,
+                descripcion = args.descripcion,
+                latitud = args.latitud,
+                longitud = args.longitud,
+                direccionTexto = args.direccionTexto,
+                estadoInicial = args.estado,
+                isReporter = args.reporterId == args.currentUserId,
+                currentUserId = args.currentUserId,
+                onBack = { navController.popBackStack() }
             )
         }
 

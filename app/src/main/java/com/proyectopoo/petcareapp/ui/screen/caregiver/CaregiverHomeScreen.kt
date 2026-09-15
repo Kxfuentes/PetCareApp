@@ -73,6 +73,7 @@ fun CaregiverHomeScreen(
     onScheduledClick: (ServiceApplicationDetails) -> Unit = {},
     onOpenChat: (ServiceApplicationDetails) -> Unit = {},
     onGoToCalendar: () -> Unit = {},
+    onGoToLostPetAlerts: () -> Unit = {},
     isLoading: Boolean = false,
     isRefreshing: Boolean = false,
     onRefresh: () -> Unit = {},
@@ -214,6 +215,9 @@ fun CaregiverHomeScreen(
                             color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.9f),
                             style = MaterialTheme.typography.bodyMedium
                         )
+                    }
+                    IconButton(onClick = onGoToLostPetAlerts) {
+                        Icon(Icons.Default.Campaign, contentDescription = "Mascotas perdidas cerca", tint = MaterialTheme.colorScheme.onPrimary)
                     }
                     IconButton(onClick = onGoToCalendar) {
                         Icon(Icons.Default.CalendarMonth, contentDescription = "Calendario", tint = MaterialTheme.colorScheme.onPrimary)

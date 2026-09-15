@@ -86,6 +86,7 @@ fun OwnerHomeScreen(
     // base de datos) para no hacer llamadas a Room/red dentro de un diálogo.
     offerLocations: Map<Int, Pair<Double, Double>> = emptyMap(),
     onGoToTracking: (Int) -> Unit = {},
+    onGoToLostPetAlerts: () -> Unit = {},
     ownerId: Int
 ) {
     val context = LocalContext.current
@@ -249,6 +250,9 @@ fun OwnerHomeScreen(
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.9f)
                             )
+                        }
+                        IconButton(onClick = onGoToLostPetAlerts) {
+                            Icon(Icons.Default.Campaign, contentDescription = "Mascotas perdidas cerca", tint = MaterialTheme.colorScheme.onPrimary)
                         }
                         IconButton(onClick = onGoToCalendar) {
                             Icon(Icons.Default.CalendarMonth, contentDescription = "Calendario", tint = MaterialTheme.colorScheme.onPrimary)
