@@ -5,12 +5,20 @@ Aplicación móvil desarrollada en Android Studio con Kotlin y Jetpack Compose c
 ## Descripción
 PetCareApp es una app estilo “niñera de mascotas” donde usuarios pueden registrarse como dueños o cuidadores, visualizar solicitudes de servicios para mascotas y publicar nuevas solicitudes.
 
-##  Funcionalidades implementadas (Primer avance)
-* Login de usuario
-* Selección de rol (Dueño / Cuidador)
-* Feed de servicios disponibles
-* Creación de solicitudes de servicio
-* Perfil de usuario
+## Funcionalidades implementadas (v2.0)
+* Login/registro de usuario, selección de rol (Dueño / Cuidador)
+* Feed de servicios disponibles, creación y gestión de solicitudes de servicio
+* Perfil de usuario y de mascota
+* Chat interno con fotos y confirmación de lectura
+* Seguimiento en vivo por mapa (Google Maps) para Taxi/Paseo
+* Botón de emergencia, compartir solicitud, valoración en tiempo real
+* Botón de llamada telefónica directa
+* Etiquetas de usuario por calificación (badges)
+* Foto obligatoria antes/después de un servicio (con cola offline)
+* Calendario integrado (vista mensual y semanal)
+* Expediente médico de la mascota con alertas de vacunas próximas
+* Alerta de mascota perdida con notificación a usuarios cercanos y avistamientos
+* Caché offline de chat, accesibilidad (WCAG AA), soporte para inglés
 * Navegación completa entre pantallas
 
 ## Tecnologías utilizadas
