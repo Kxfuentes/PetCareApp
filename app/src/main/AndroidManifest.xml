@@ -44,6 +44,17 @@
         </activity>
 
         <!--
+            Google Maps SDK. La key viene de `secrets.properties` (gitignored) via
+            manifestPlaceholders en app/build.gradle.kts; sin una key real ahi, el mapa
+            embebido de seguimiento en vivo compila y corre pero muestra el watermark
+            "for development purposes only" en vez de imagenes reales (ver comentario en
+            app/build.gradle.kts).
+        -->
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="${mapsApiKey}" />
+
+        <!--
             Firebase Cloud Messaging. Inofensivo sin google-services.json: el sistema solo
             llega a instanciar este servicio si el dispositivo esta registrado ante FCM con
             credenciales reales de Firebase (ver comentario en app/build.gradle.kts).

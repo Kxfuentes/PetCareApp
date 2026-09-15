@@ -16,3 +16,6 @@ local.properties
 .idea/
 *.iml
 local.properties
+
+# API key real de Google Maps (ver secrets.properties.example para el formato esperado).
+secrets.properties

@@ -17,6 +17,7 @@ import com.proyectopoo.petcareapp.ui.screen.FavoritosScreen
 import com.proyectopoo.petcareapp.ui.screen.FiltrosResult
 import com.proyectopoo.petcareapp.ui.screen.FiltrosScreen
 import com.proyectopoo.petcareapp.ui.screen.HistorialScreen
+import com.proyectopoo.petcareapp.ui.screen.SeguimientoMapaScreen
 import com.proyectopoo.petcareapp.util.DistanceUtils
 import com.proyectopoo.petcareapp.util.distanceKmOrNull
 import com.proyectopoo.petcareapp.util.matchesFiltros
@@ -621,6 +622,9 @@ fun AppNavigation(
                     navController.navigate(EditarSolicitud(request.serviceRequestId))
                 },
                 offerLocations = ownerOfferLocations,
+                onGoToTracking = { serviceRequestId ->
+                    navController.navigate(Seguimiento(serviceRequestId))
+                },
                 ownerId = ownerId
             )
         }
@@ -1191,6 +1195,16 @@ fun AppNavigation(
                     solicitudFilters = null
                     navController.popBackStack()
                 }
+            )
+        }
+
+        // ===== SEGUIMIENTO (mapa de ubicación en vivo, Taxi/Paseo) =====
+        composable<Seguimiento> { backStackEntry ->
+            val args = backStackEntry.toRoute<Seguimiento>()
+            SeguimientoMapaScreen(
+                serviceRequestId = args.serviceRequestId,
+                onBack = { navController.popBackStack() },
+                wsRefreshTick = wsRefreshTick
             )
         }
 

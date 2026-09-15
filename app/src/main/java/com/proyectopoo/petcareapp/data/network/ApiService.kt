@@ -209,6 +209,17 @@ interface ApiService {
         @Body request: SolicitudEditRequest
     ): Response<ServiceRequestDto>
 
+    @POST("api/solicitudes/{id}/ubicacion")
+    suspend fun postUbicacion(
+        @Path("id") id: Int,
+        @Body request: UbicacionRequest
+    ): Response<UbicacionResponse>
+
+    @GET("api/solicitudes/{id}/ubicacion-actual")
+    suspend fun getUbicacionActual(
+        @Path("id") id: Int
+    ): Response<UbicacionActualResponse>
+
     @GET("api/favoritos")
     suspend fun getFavoritos(
         @Query("usuarioId") usuarioId: Int

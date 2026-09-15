@@ -69,6 +69,7 @@ fun OwnerHomeScreen(
     // offeredServiceId. Se resuelve fuera de este composable (en AppNavigation, con acceso a la
     // base de datos) para no hacer llamadas a Room/red dentro de un diálogo.
     offerLocations: Map<Int, Pair<Double, Double>> = emptyMap(),
+    onGoToTracking: (Int) -> Unit = {},
     ownerId: Int
 ) {
     val context = LocalContext.current
@@ -548,6 +549,11 @@ fun OwnerHomeScreen(
                 }
         } else null
 
+        // Taxi/Paseo: el cuidador se mueve, así que en vez de "Cómo llegar" (destino fijo) se
+        // ofrece ver su posición en vivo. Mutuamente excluyentes por tipo de servicio.
+        val isTrackableServiceType = application.serviceTypeName.equals("Taxi", ignoreCase = true) ||
+            application.serviceTypeName.equals("Paseo", ignoreCase = true)
+
         ServiceApplicationDetailsDialog(
             application = application,
             onDismiss = { applicationToDetail = null },
@@ -557,7 +563,13 @@ fun OwnerHomeScreen(
             },
             onComoLlegarClick = fixedLocationDestination?.let { (lat, lng) ->
                 { abrirNavegacion(context, lat, lng) }
-            }
+            },
+            onTrackingClick = if (isTrackableServiceType) {
+                {
+                    applicationToDetail = null
+                    onGoToTracking(application.serviceRequestId)
+                }
+            } else null
         )
     }
 

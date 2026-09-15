@@ -104,3 +104,8 @@ data class Favoritos(
 
 @Serializable
 object Onboarding
+
+@Serializable
+data class Seguimiento(
+    val serviceRequestId: Int
+)

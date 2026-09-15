@@ -49,6 +49,7 @@ import com.proyectopoo.petcareapp.navigation.PasswordRecovery
 import com.proyectopoo.petcareapp.navigation.Register
 import com.proyectopoo.petcareapp.navigation.RequestOffer
 import com.proyectopoo.petcareapp.navigation.RoleSection
+import com.proyectopoo.petcareapp.navigation.Seguimiento
 import com.proyectopoo.petcareapp.notifications.AppNotifier
 import com.proyectopoo.petcareapp.ui.components.PetCareNavigationBar
 import com.proyectopoo.petcareapp.ui.theme.PetCareAppTheme
@@ -157,7 +158,8 @@ class MainActivity : ComponentActivity() {
                                 !dest.hasRoute<DogInfo>() &&
                                 !dest.hasRoute<PasswordRecovery>() &&
                                 !dest.hasRoute<Filtros>() &&
-                                !dest.hasRoute<EditarSolicitud>()
+                                !dest.hasRoute<EditarSolicitud>() &&
+                                !dest.hasRoute<Seguimiento>()
                     } ?: false
 
                     Scaffold(

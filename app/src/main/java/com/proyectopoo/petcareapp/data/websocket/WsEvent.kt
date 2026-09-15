@@ -15,5 +15,10 @@ data class WsEvent(
     @SerialName("application_id")
     val applicationId: Int? = null,
     @SerialName("user_id")
-    val userId: Int? = null
+    val userId: Int? = null,
+    // Solo presentes cuando type == "LOCATION_UPDATE". A diferencia de los endpoints REST de
+    // ubicacion (que usan latitud/longitud en español), el evento de WebSocket usa estos
+    // nombres en ingles porque asi estan definidos en WsEvent.kt del backend — es intencional.
+    val latitude: Double? = null,
+    val longitude: Double? = null
 )

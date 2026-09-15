@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -26,6 +28,26 @@ if (file("google-services.json").exists()) {
     apply(plugin = "com.google.gms.google-services")
 }
 
+// --- Google Maps (seguimiento en vivo de Taxi/Paseo) ---
+// Igual que con Firebase arriba: este repo NO trae una API key real de Google Maps (no hay
+// proyecto de Google Cloud configurado). En vez de depender del plugin oficial
+// "secrets-gradle-plugin", leemos la key directamente de `secrets.properties` (raiz del repo,
+// gitignored) con el mismo patron que BASE_URL usa mas abajo con gradle.properties.
+//
+// Sin `secrets.properties` (o sin MAPS_API_KEY dentro): el proyecto compila y corre normal,
+// pero el mapa embebido de seguimiento se ve con el watermark "for development purposes only"
+// y tiles grises en vez de imagenes reales — es el comportamiento esperado del SDK sin key
+// valida, no un bug. Para activarlo de verdad:
+//   1. Crear un proyecto en https://console.cloud.google.com y habilitar "Maps SDK for Android"
+//   2. Generar una API key y copiarla a `secrets.properties` como MAPS_API_KEY=...
+//   3. Sincronizar Gradle (se inyecta via manifestPlaceholders, ver AndroidManifest.xml)
+val secretsProperties = Properties().apply {
+    val secretsFile = rootProject.file("secrets.properties")
+    if (secretsFile.exists()) {
+        secretsFile.inputStream().use { stream -> load(stream) }
+    }
+}
+
 android {
     namespace = "com.proyectopoo.petcareapp"
     compileSdk = 36
@@ -45,6 +67,10 @@ android {
             ?: System.getenv("BASE_URL")
             ?: "http://10.0.2.2:8080/"
         buildConfigField("String", "BASE_URL", "\"$baseUrl\"")
+
+        // Ver comentario de "Google Maps" arriba: vacio por defecto si no hay secrets.properties.
+        val mapsApiKey = secretsProperties.getProperty("MAPS_API_KEY")?.toString().orEmpty()
+        manifestPlaceholders["mapsApiKey"] = mapsApiKey
     }
 
     buildTypes {
@@ -106,6 +132,15 @@ dependencies {
 
     // Coil (carga de imágenes remotas)
     implementation(libs.coil.compose)
+
+    // Google Maps (mapa embebido de seguimiento en vivo) y Fused Location (GPS del cuidador).
+    // Versiones fijadas deliberadamente por debajo de la última estable: las versiones más
+    // recientes de maps-compose y play-services-location vienen compiladas con metadata de
+    // Kotlin 2.1+/2.2+, que el compilador Kotlin 2.0.21 de este proyecto no puede leer
+    // ("Module was compiled with an incompatible version of Kotlin"). Si se sube el plugin de
+    // Kotlin de este proyecto más adelante, estas dos se pueden actualizar también.
+    implementation(libs.maps.compose)
+    implementation(libs.play.services.location)
 
     // Room
     implementation(libs.androidx.room.runtime)

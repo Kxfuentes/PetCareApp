@@ -33,6 +33,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.proyectopoo.petcareapp.data.local.entity.ApplicationStatus
 import com.proyectopoo.petcareapp.data.local.relation.ServiceApplicationDetails
+import com.proyectopoo.petcareapp.location.LocationReporter
 import com.proyectopoo.petcareapp.ui.components.SkeletonList
 import com.proyectopoo.petcareapp.ui.components.StarRatingInput
 import com.proyectopoo.petcareapp.util.abrirNavegacion
@@ -64,6 +65,25 @@ fun CaregiverHomeScreen(
     }
     val acceptedRequests = scheduledServices.filter { it.applicationStatus == ApplicationStatus.ACCEPTED }
     val waitingOwnerConfirmation = ownerRequests.filter { it.applicationStatus == ApplicationStatus.DONE_BY_CAREGIVER }
+
+    // Mientras el cuidador tiene un Taxi/Paseo ACCEPTED activo, reporta su GPS en vivo (POST
+    // .../ubicacion) para que el dueño lo vea en SeguimientoMapaScreen. Se arranca/detiene con
+    // el ciclo de vida de este composable, igual que MainActivity conecta/desconecta su
+    // PetCareWebSocketClient en un DisposableEffect.
+    val trackingRequestId = acceptedRequests
+        .firstOrNull { it.serviceTypeName.equals("Taxi", ignoreCase = true) || it.serviceTypeName.equals("Paseo", ignoreCase = true) }
+        ?.serviceRequestId
+    val locationReporter = remember { LocationReporter(context) }
+    val locationReporterScope = rememberCoroutineScope()
+
+    DisposableEffect(trackingRequestId) {
+        if (trackingRequestId != null) {
+            locationReporter.start(trackingRequestId, locationReporterScope)
+        } else {
+            locationReporter.stop()
+        }
+        onDispose { locationReporter.stop() }
+    }
     val nextCommitment = acceptedRequests.minByOrNull { it.requestedDate ?: "" }
     var requestToRate by remember { mutableStateOf<ServiceApplicationDetails?>(null) }
     var requestToDetails by remember { mutableStateOf<ServiceApplicationDetails?>(null) }
