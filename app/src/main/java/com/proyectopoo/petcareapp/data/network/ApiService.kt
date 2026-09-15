@@ -237,6 +237,11 @@ interface ApiService {
         @Path("id") id: Int
     ): Response<UbicacionActualResponse>
 
+    @POST("api/emergencias")
+    suspend fun reportarEmergencia(
+        @Body request: EmergenciaRequest
+    ): Response<EmergenciaDto>
+
     @GET("api/favoritos")
     suspend fun getFavoritos(
         @Query("usuarioId") usuarioId: Int

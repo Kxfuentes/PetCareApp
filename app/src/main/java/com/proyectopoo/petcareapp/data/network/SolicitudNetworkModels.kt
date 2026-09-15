@@ -49,3 +49,27 @@ data class UbicacionActualResponse(
     val longitud: Double,
     val actualizadoEn: String
 )
+
+/**
+ * Cuerpo para POST /api/emergencias: reporta una emergencia durante un servicio en curso
+ * (ACCEPTED). `tipo` debe ser exactamente uno de MEDICA, ACCIDENTE, MASCOTA_PERDIDA, OTRO.
+ * El backend notifica por FCM al dueño, al cuidador asignado y a los admins.
+ */
+@Serializable
+data class EmergenciaRequest(
+    @SerialName("service_request_id") val serviceRequestId: Int,
+    @SerialName("reported_by") val reportedBy: Int,
+    val tipo: String,
+    val descripcion: String? = null
+)
+
+/** Respuesta 201 de POST /api/emergencias. */
+@Serializable
+data class EmergenciaDto(
+    val id: Int? = null,
+    @SerialName("service_request_id") val serviceRequestId: Int,
+    @SerialName("reported_by") val reportedBy: Int,
+    val tipo: String,
+    val descripcion: String? = null,
+    @SerialName("created_at") val createdAt: String? = null
+)

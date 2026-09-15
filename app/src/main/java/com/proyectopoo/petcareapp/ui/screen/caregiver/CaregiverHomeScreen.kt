@@ -33,10 +33,14 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.proyectopoo.petcareapp.data.local.entity.ApplicationStatus
 import com.proyectopoo.petcareapp.data.local.relation.ServiceApplicationDetails
+import com.proyectopoo.petcareapp.data.network.EmergenciaRequest
+import com.proyectopoo.petcareapp.data.network.RetrofitClient
 import com.proyectopoo.petcareapp.location.LocationReporter
+import com.proyectopoo.petcareapp.ui.components.EmergencyReportDialog
 import com.proyectopoo.petcareapp.ui.components.SkeletonList
 import com.proyectopoo.petcareapp.ui.components.StarRatingInput
 import com.proyectopoo.petcareapp.util.abrirNavegacion
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -89,7 +93,12 @@ fun CaregiverHomeScreen(
     var requestToDetails by remember { mutableStateOf<ServiceApplicationDetails?>(null) }
     var ratingScore by remember { mutableStateOf(5f) }
     var ratingComment by remember { mutableStateOf("") }
+    var emergencyDialogTarget by remember { mutableStateOf<ServiceApplicationDetails?>(null) }
+    var isReportingEmergency by remember { mutableStateOf(false) }
+    val actionsScope = rememberCoroutineScope()
+    val actionsSnackbarHostState = remember { SnackbarHostState() }
 
+    Box(modifier = Modifier.fillMaxSize()) {
     PullToRefreshBox(
         isRefreshing = isRefreshing,
         onRefresh = onRefresh,
@@ -244,6 +253,12 @@ fun CaregiverHomeScreen(
     }
     }
 
+    SnackbarHost(
+        hostState = actionsSnackbarHostState,
+        modifier = Modifier.align(Alignment.BottomCenter)
+    )
+    }
+
     requestToDetails?.let { request ->
         // El cuidador solo viaja hacia el dueño en "Visitante" (siempre solicitud abierta,
         // nunca desde una oferta anunciada), así que la ubicación propia de la solicitud
@@ -251,6 +266,11 @@ fun CaregiverHomeScreen(
         val visitanteDestination = if (request.serviceTypeName.equals("Visitante", ignoreCase = true)) {
             request.latitude?.let { lat -> request.longitude?.let { lng -> lat to lng } }
         } else null
+
+        // "En curso" == ServiceRequestStatus.ACCEPTED (convención de este proyecto: no existe
+        // un valor literal "EN_PROGRESO"). El botón de emergencia solo aplica mientras el
+        // servicio está activo.
+        val isInProgress = request.requestStatus.name == "ACCEPTED"
 
         CaregiverServiceDetailsDialog(
             request = request,
@@ -261,7 +281,13 @@ fun CaregiverHomeScreen(
             },
             onComoLlegarClick = visitanteDestination?.let { (lat, lng) ->
                 { abrirNavegacion(context, lat, lng) }
-            }
+            },
+            onEmergencyClick = if (isInProgress) {
+                {
+                    requestToDetails = null
+                    emergencyDialogTarget = request
+                }
+            } else null
         )
     }
 
@@ -293,6 +319,35 @@ fun CaregiverHomeScreen(
             dismissButton = {
                 TextButton(onClick = { requestToRate = null }) {
                     Text("Cancelar")
+                }
+            }
+        )
+    }
+
+    emergencyDialogTarget?.let { request ->
+        EmergencyReportDialog(
+            isSubmitting = isReportingEmergency,
+            onDismiss = { if (!isReportingEmergency) emergencyDialogTarget = null },
+            onSubmit = { tipo, descripcion ->
+                actionsScope.launch {
+                    isReportingEmergency = true
+                    val response = runCatching {
+                        RetrofitClient.apiService.reportarEmergencia(
+                            EmergenciaRequest(
+                                serviceRequestId = request.serviceRequestId,
+                                reportedBy = caregiverId,
+                                tipo = tipo,
+                                descripcion = descripcion
+                            )
+                        )
+                    }.getOrNull()
+                    isReportingEmergency = false
+                    if (response?.isSuccessful == true) {
+                        emergencyDialogTarget = null
+                        actionsSnackbarHostState.showSnackbar("Emergencia reportada")
+                    } else {
+                        actionsSnackbarHostState.showSnackbar("No se pudo reportar la emergencia. Intenta de nuevo.")
+                    }
                 }
             }
         )
@@ -525,7 +580,8 @@ private fun CaregiverServiceDetailsDialog(
     request: ServiceApplicationDetails,
     onDismiss: () -> Unit,
     onChatClick: (() -> Unit)? = null,
-    onComoLlegarClick: (() -> Unit)? = null
+    onComoLlegarClick: (() -> Unit)? = null,
+    onEmergencyClick: (() -> Unit)? = null
 ) {
     val title = request.serviceTypeName ?: request.requestTitle
     val fields = caregiverDetailFields(request)
@@ -651,6 +707,22 @@ private fun CaregiverServiceDetailsDialog(
                         Icon(Icons.AutoMirrored.Filled.Chat, contentDescription = null, modifier = Modifier.size(20.dp))
                         Spacer(Modifier.width(8.dp))
                         Text("Chat", fontWeight = FontWeight.Bold)
+                    }
+                }
+
+                if (onEmergencyClick != null) {
+                    Spacer(Modifier.height(4.dp))
+                    Button(
+                        onClick = onEmergencyClick,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(50.dp),
+                        shape = RoundedCornerShape(14.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                    ) {
+                        Icon(Icons.Default.Warning, contentDescription = null, modifier = Modifier.size(20.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text("Reportar emergencia", fontWeight = FontWeight.Bold)
                     }
                 }
 

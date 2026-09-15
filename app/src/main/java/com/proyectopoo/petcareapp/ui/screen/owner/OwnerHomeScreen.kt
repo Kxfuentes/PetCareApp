@@ -35,13 +35,18 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.runtime.rememberCoroutineScope
 import com.proyectopoo.petcareapp.data.local.entity.ApplicationStatus
 import com.proyectopoo.petcareapp.data.local.entity.PetEntity
 import com.proyectopoo.petcareapp.data.local.relation.ServiceApplicationDetails
 import com.proyectopoo.petcareapp.data.local.relation.ServiceRequestDetails
+import com.proyectopoo.petcareapp.data.network.EmergenciaRequest
+import com.proyectopoo.petcareapp.data.network.RetrofitClient
+import com.proyectopoo.petcareapp.ui.components.EmergencyReportDialog
 import com.proyectopoo.petcareapp.ui.components.SkeletonList
 import com.proyectopoo.petcareapp.ui.components.StarRatingInput
 import com.proyectopoo.petcareapp.util.abrirNavegacion
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -83,6 +88,10 @@ fun OwnerHomeScreen(
     var ratingScore by remember { mutableStateOf(5f) }
     var ratingComment by remember { mutableStateOf("") }
     var showAllRequestedScreen by remember { mutableStateOf(false) }
+    var emergencyDialogTarget by remember { mutableStateOf<ServiceApplicationDetails?>(null) }
+    var isReportingEmergency by remember { mutableStateOf(false) }
+    val actionsScope = rememberCoroutineScope()
+    val actionsSnackbarHostState = remember { SnackbarHostState() }
 
     val safeIndex = if (dogs.isEmpty()) 0 else selectedDogIndex.coerceIn(0, dogs.lastIndex)
     val currentDog = dogs.getOrNull(safeIndex)
@@ -141,7 +150,8 @@ fun OwnerHomeScreen(
     }
 
     Scaffold(
-        containerColor = MaterialTheme.colorScheme.background
+        containerColor = MaterialTheme.colorScheme.background,
+        snackbarHost = { SnackbarHost(actionsSnackbarHostState) }
     ) { padding ->
 
         PullToRefreshBox(
@@ -554,6 +564,11 @@ fun OwnerHomeScreen(
         val isTrackableServiceType = application.serviceTypeName.equals("Taxi", ignoreCase = true) ||
             application.serviceTypeName.equals("Paseo", ignoreCase = true)
 
+        // "En curso" == ServiceRequestStatus.ACCEPTED (convención de este proyecto: no existe
+        // un valor literal "EN_PROGRESO"). El botón de emergencia solo aplica mientras el
+        // servicio está activo.
+        val isInProgress = application.requestStatus.name == "ACCEPTED"
+
         ServiceApplicationDetailsDialog(
             application = application,
             onDismiss = { applicationToDetail = null },
@@ -568,6 +583,12 @@ fun OwnerHomeScreen(
                 {
                     applicationToDetail = null
                     onGoToTracking(application.serviceRequestId)
+                }
+            } else null,
+            onEmergencyClick = if (isInProgress) {
+                {
+                    applicationToDetail = null
+                    emergencyDialogTarget = application
                 }
             } else null
         )
@@ -598,6 +619,35 @@ fun OwnerHomeScreen(
             },
             dismissButton = {
                 TextButton(onClick = { applicationToRate = null }) { Text("Cancelar") }
+            }
+        )
+    }
+
+    emergencyDialogTarget?.let { application ->
+        EmergencyReportDialog(
+            isSubmitting = isReportingEmergency,
+            onDismiss = { if (!isReportingEmergency) emergencyDialogTarget = null },
+            onSubmit = { tipo, descripcion ->
+                actionsScope.launch {
+                    isReportingEmergency = true
+                    val response = runCatching {
+                        RetrofitClient.apiService.reportarEmergencia(
+                            EmergenciaRequest(
+                                serviceRequestId = application.serviceRequestId,
+                                reportedBy = ownerId,
+                                tipo = tipo,
+                                descripcion = descripcion
+                            )
+                        )
+                    }.getOrNull()
+                    isReportingEmergency = false
+                    if (response?.isSuccessful == true) {
+                        emergencyDialogTarget = null
+                        actionsSnackbarHostState.showSnackbar("Emergencia reportada")
+                    } else {
+                        actionsSnackbarHostState.showSnackbar("No se pudo reportar la emergencia. Intenta de nuevo.")
+                    }
+                }
             }
         )
     }
@@ -994,7 +1044,8 @@ private fun ServiceApplicationDetailsDialog(
     onDismiss: () -> Unit,
     onChatClick: (() -> Unit)? = null,
     onComoLlegarClick: (() -> Unit)? = null,
-    onTrackingClick: (() -> Unit)? = null
+    onTrackingClick: (() -> Unit)? = null,
+    onEmergencyClick: (() -> Unit)? = null
 ) {
     DetailsCardDialog(
         title = application.serviceTypeName ?: application.requestTitle,
@@ -1006,7 +1057,8 @@ private fun ServiceApplicationDetailsDialog(
         onDismiss = onDismiss,
         onChatClick = onChatClick,
         onComoLlegarClick = onComoLlegarClick,
-        onTrackingClick = onTrackingClick
+        onTrackingClick = onTrackingClick,
+        onEmergencyClick = onEmergencyClick
     )
 }
 
@@ -1039,7 +1091,8 @@ private fun DetailsCardDialog(
     onChatClick: (() -> Unit)? = null,
     onEditClick: (() -> Unit)? = null,
     onComoLlegarClick: (() -> Unit)? = null,
-    onTrackingClick: (() -> Unit)? = null
+    onTrackingClick: (() -> Unit)? = null,
+    onEmergencyClick: (() -> Unit)? = null
 ) {
     Dialog(onDismissRequest = onDismiss) {
         Card(
@@ -1194,6 +1247,20 @@ private fun DetailsCardDialog(
                         Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(20.dp))
                         Spacer(Modifier.width(8.dp))
                         Text("Editar", fontWeight = FontWeight.Bold)
+                    }
+                    Spacer(Modifier.height(10.dp))
+                }
+
+                if (onEmergencyClick != null) {
+                    Button(
+                        onClick = onEmergencyClick,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                    ) {
+                        Icon(Icons.Default.Warning, contentDescription = null, modifier = Modifier.size(20.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text("Reportar emergencia", fontWeight = FontWeight.Bold)
                     }
                     Spacer(Modifier.height(10.dp))
                 }
