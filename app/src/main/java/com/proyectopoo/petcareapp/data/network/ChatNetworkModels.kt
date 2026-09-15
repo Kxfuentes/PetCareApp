@@ -19,7 +19,8 @@ data class ChatMessageDto(
     @SerialName("receiver_id") val receiverId: Int,
     val message: String,
     @SerialName("is_read") val isRead: Boolean = false,
-    @SerialName("created_at") val createdAt: String? = null
+    @SerialName("created_at") val createdAt: String? = null,
+    @SerialName("image_url") val imageUrl: String? = null
 )
 
 @Serializable

@@ -37,4 +37,15 @@ object RetrofitClient {
             .build()
             .create(ApiService::class.java)
     }
+
+    /**
+     * El backend devuelve URLs de imagen como rutas root-relative (p.ej. "/api/chat/imagen/xyz.jpg").
+     * Las prefija con BASE_URL (sin la barra final) para que Coil pueda cargarlas. Si [path] ya
+     * es una URL absoluta o es nulo/vacío, se devuelve tal cual (o null).
+     */
+    fun resolveImageUrl(path: String?): String? {
+        if (path.isNullOrBlank()) return null
+        if (path.startsWith("http://") || path.startsWith("https://")) return path
+        return BASE_URL.trimEnd('/') + path
+    }
 }

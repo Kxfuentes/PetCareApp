@@ -1,11 +1,15 @@
 package com.proyectopoo.petcareapp.data.network
 
+import okhttp3.MultipartBody
+import okhttp3.RequestBody
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
-import retrofit2.http.POST
+import retrofit2.http.Multipart
 import retrofit2.http.PUT
+import retrofit2.http.POST
+import retrofit2.http.Part
 import retrofit2.http.Path
 import retrofit2.http.Query
 
@@ -30,6 +34,19 @@ interface ApiService {
 
     @GET("api/chat/no-leidos/{userId}")
     suspend fun getUnreadChatCount(@Path("userId") userId: Int): Response<UnreadCountDto>
+
+    @Multipart
+    @POST("api/chat/{serviceRequestId}/imagen")
+    suspend fun sendChatImage(
+        @Path("serviceRequestId") serviceRequestId: Int,
+        @Part("senderId") senderId: RequestBody,
+        @Part("receiverId") receiverId: RequestBody,
+        @Part("message") message: RequestBody,
+        @Part file: MultipartBody.Part
+    ): Response<ChatMessageDto>
+
+    @GET("api/chat/{serviceRequestId}/imagenes")
+    suspend fun getChatImages(@Path("serviceRequestId") serviceRequestId: Int): Response<List<ChatMessageDto>>
 
     @POST("api/auth/send-otp")
     suspend fun sendOtp(@Body request: SendOtpRequest): Response<SendOtpResponse>
