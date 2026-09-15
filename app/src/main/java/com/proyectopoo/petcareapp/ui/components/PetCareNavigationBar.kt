@@ -10,11 +10,13 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
+import com.proyectopoo.petcareapp.R
 import com.proyectopoo.petcareapp.model.UserRole
 import com.proyectopoo.petcareapp.navigation.*
 import com.proyectopoo.petcareapp.ui.theme.CafeClaro
@@ -36,16 +38,16 @@ fun PetCareNavigationBar(
         NavigationBarItem(
             selected = currentDestination.isHomeRoute(currentRole),
             onClick = { navigateToTopLevel(navController, getHomeRoute(currentRole)) },
-            icon = { Icon(Icons.Default.Home, contentDescription = "Inicio") },
-            label = { Text("Inicio") },
+            icon = { Icon(Icons.Default.Home, contentDescription = stringResource(R.string.nav_home)) },
+            label = { Text(stringResource(R.string.nav_home)) },
             colors = navigationBarItemColors()
         )
 
         NavigationBarItem(
             selected = currentDestination.isFeedRoute(currentRole),
             onClick = { navigateToTopLevel(navController, getFeedRoute(currentRole)) },
-            icon = { Icon(Icons.Default.Search, contentDescription = "Buscar") },
-            label = { Text("Buscar") },
+            icon = { Icon(Icons.Default.Search, contentDescription = stringResource(R.string.nav_search)) },
+            label = { Text(stringResource(R.string.nav_search)) },
             colors = navigationBarItemColors()
         )
 
@@ -57,8 +59,8 @@ fun PetCareNavigationBar(
                     navigateToTopLevel(navController, Historial(usuarioId = userId, role = role))
                 }
             },
-            icon = { Icon(Icons.Default.History, contentDescription = "Historial") },
-            label = { Text("Historial") },
+            icon = { Icon(Icons.Default.History, contentDescription = stringResource(R.string.nav_history)) },
+            label = { Text(stringResource(R.string.nav_history)) },
             colors = navigationBarItemColors()
         )
 
@@ -66,8 +68,8 @@ fun PetCareNavigationBar(
             NavigationBarItem(
                 selected = currentDestination?.hierarchy?.any { it.hasRoute<CreateService>() } == true,
                 onClick = { navigateToTopLevel(navController, CreateService()) },
-                icon = { Icon(Icons.Default.AddCircle, contentDescription = "Publicar") },
-                label = { Text("Publicar") },
+                icon = { Icon(Icons.Default.AddCircle, contentDescription = stringResource(R.string.nav_publish)) },
+                label = { Text(stringResource(R.string.nav_publish)) },
                 colors = navigationBarItemColors()
             )
 
@@ -78,8 +80,8 @@ fun PetCareNavigationBar(
                         navigateToTopLevel(navController, Favoritos(usuarioId = userId))
                     }
                 },
-                icon = { Icon(Icons.Default.Favorite, contentDescription = "Favoritos") },
-                label = { Text("Favoritos") },
+                icon = { Icon(Icons.Default.Favorite, contentDescription = stringResource(R.string.nav_favorites)) },
+                label = { Text(stringResource(R.string.nav_favorites)) },
                 colors = navigationBarItemColors()
             )
         }
@@ -87,8 +89,8 @@ fun PetCareNavigationBar(
         NavigationBarItem(
             selected = currentDestination.isProfileRoute(currentRole),
             onClick = { navigateToTopLevel(navController, getProfileRoute(currentRole)) },
-            icon = { Icon(Icons.Default.Person, contentDescription = "Perfil") },
-            label = { Text("Perfil") },
+            icon = { Icon(Icons.Default.Person, contentDescription = stringResource(R.string.nav_profile)) },
+            label = { Text(stringResource(R.string.nav_profile)) },
             colors = navigationBarItemColors()
         )
     }

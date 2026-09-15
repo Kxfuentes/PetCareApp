@@ -12,12 +12,14 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.proyectopoo.petcareapp.R
 import com.proyectopoo.petcareapp.ui.theme.CafeOscuro
 import com.proyectopoo.petcareapp.ui.theme.FondoCrema
 
@@ -57,7 +59,7 @@ fun LoginScreen(
             Spacer(modifier = Modifier.height(12.dp))
 
             Text(
-                text = "PetCare",
+                text = stringResource(R.string.login_brand),
                 style = MaterialTheme.typography.headlineLarge,
                 color = CafeOscuro,
                 fontWeight = FontWeight.Bold
@@ -92,7 +94,7 @@ fun LoginScreen(
                     OutlinedTextField(
                         value = correo,
                         onValueChange = { correo = it },
-                        label = { Text("Correo electrónico") },
+                        label = { Text(stringResource(R.string.login_email_label)) },
                         leadingIcon = { Icon(Icons.Outlined.Email, null) },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(16.dp)
@@ -103,7 +105,7 @@ fun LoginScreen(
                     OutlinedTextField(
                         value = password,
                         onValueChange = { password = it },
-                        label = { Text("Contraseña") },
+                        label = { Text(stringResource(R.string.login_password_label)) },
                         leadingIcon = { Icon(Icons.Outlined.Lock, null) },
                         trailingIcon = {
                             IconButton(onClick = { passwordVisible = !passwordVisible }) {
@@ -125,7 +127,7 @@ fun LoginScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Checkbox(checked = rememberSession, onCheckedChange = { rememberSession = it })
-                        Text("Mantener sesión iniciada")
+                        Text(stringResource(R.string.login_remember_session))
                     }
 
                     Spacer(modifier = Modifier.height(32.dp))
@@ -139,7 +141,7 @@ fun LoginScreen(
                         if (isLoading) {
                             CircularProgressIndicator(modifier = Modifier.size(24.dp), color = MaterialTheme.colorScheme.onPrimary)
                         } else {
-                            Text("Iniciar Sesión", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                            Text(stringResource(R.string.login_button), fontSize = 18.sp, fontWeight = FontWeight.Bold)
                         }
                     }
                 }
@@ -148,13 +150,13 @@ fun LoginScreen(
             Spacer(modifier = Modifier.height(24.dp))
 
             TextButton(onClick = onGoToPasswordRecovery) {
-                Text("¿Olvidaste tu contraseña?")
+                Text(stringResource(R.string.login_forgot_password))
             }
 
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("¿No tienes cuenta?")
+                Text(stringResource(R.string.login_no_account))
                 TextButton(onClick = onGoToRegister) {
-                    Text("Regístrate")
+                    Text(stringResource(R.string.login_register_link))
                 }
             }
         }

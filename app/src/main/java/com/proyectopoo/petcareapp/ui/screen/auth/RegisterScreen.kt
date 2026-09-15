@@ -15,11 +15,13 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.proyectopoo.petcareapp.R
 import com.proyectopoo.petcareapp.data.network.RegisterRequest
 import com.proyectopoo.petcareapp.data.network.RegisterResponse
 import com.proyectopoo.petcareapp.data.network.RetrofitClient
@@ -152,11 +154,11 @@ fun RegisterScreen(
             Spacer(modifier = Modifier.height(20.dp))
 
             Text(
-                text = "Únete a PetCare",
+                text = stringResource(R.string.register_title),
                 style = MaterialTheme.typography.headlineMedium
             )
             Text(
-                text = "Crea tu cuenta en segundos",
+                text = stringResource(R.string.register_subtitle),
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -175,7 +177,7 @@ fun RegisterScreen(
             OutlinedTextField(
                 value = username,
                 onValueChange = { username = it },
-                label = { Text("Nombre de usuario") },
+                label = { Text(stringResource(R.string.register_username_label)) },
                 leadingIcon = { Icon(Icons.Outlined.Person, null) },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
@@ -188,7 +190,7 @@ fun RegisterScreen(
             OutlinedTextField(
                 value = email,
                 onValueChange = { email = it },
-                label = { Text("Correo electrónico") },
+                label = { Text(stringResource(R.string.register_email_label)) },
                 leadingIcon = { Icon(Icons.Outlined.Email, null) },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
@@ -201,7 +203,7 @@ fun RegisterScreen(
             OutlinedTextField(
                 value = password,
                 onValueChange = { password = it },
-                label = { Text("Contraseña") },
+                label = { Text(stringResource(R.string.register_password_label)) },
                 leadingIcon = { Icon(Icons.Outlined.Lock, null) },
                 trailingIcon = {
                     IconButton(onClick = { passwordVisible = !passwordVisible }) {
@@ -223,7 +225,7 @@ fun RegisterScreen(
             OutlinedTextField(
                 value = confirmPassword,
                 onValueChange = { confirmPassword = it },
-                label = { Text("Confirmar contraseña") },
+                label = { Text(stringResource(R.string.register_confirm_password_label)) },
                 leadingIcon = { Icon(Icons.Outlined.Lock, null) },
                 trailingIcon = {
                     IconButton(onClick = { confirmPasswordVisible = !confirmPasswordVisible }) {
@@ -244,7 +246,7 @@ fun RegisterScreen(
                 Spacer(modifier = Modifier.height(18.dp))
 
                 Text(
-                    "Enviamos un código de verificación a $email.",
+                    stringResource(R.string.register_otp_sent_message, email),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -262,7 +264,7 @@ fun RegisterScreen(
                 OutlinedTextField(
                     value = otpCode,
                     onValueChange = { if (it.length <= 6 && it.all { c -> c.isDigit() }) otpCode = it },
-                    label = { Text("Código de verificación") },
+                    label = { Text(stringResource(R.string.register_otp_label)) },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(16.dp),
                     singleLine = true,
@@ -272,7 +274,7 @@ fun RegisterScreen(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 TextButton(onClick = { requestOtp() }, enabled = !isLoading) {
-                    Text("Reenviar código")
+                    Text(stringResource(R.string.register_resend_code))
                 }
             }
 
@@ -326,7 +328,7 @@ fun RegisterScreen(
                     )
                 } else {
                     Text(
-                        if (otpStep) "Verificar y crear cuenta" else "Crear cuenta",
+                        if (otpStep) stringResource(R.string.register_button_verify) else stringResource(R.string.register_button_create),
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold
                     )
@@ -340,7 +342,7 @@ fun RegisterScreen(
                 modifier = Modifier.fillMaxWidth().height(56.dp),
                 shape = RoundedCornerShape(16.dp)
             ) {
-                Text("Volver")
+                Text(stringResource(R.string.register_back))
             }
         }
     }

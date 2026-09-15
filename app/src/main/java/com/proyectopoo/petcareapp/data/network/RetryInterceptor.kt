@@ -7,7 +7,7 @@ import java.io.IOException
 /**
  * Reintenta automáticamente peticiones que fallan por errores de conexión
  * (timeout, sin red, host inalcanzable, etc.) usando backoff exponencial
- * (500ms, 1000ms, 2000ms para los reintentos 1, 2 y 3).
+ * (1000ms, 2000ms, 4000ms para los reintentos 1, 2 y 3).
  *
  * Solo se reintentan fallos de red (IOException lanzada por OkHttp antes de
  * recibir una respuesta). Las respuestas HTTP con código de error (4xx/5xx)
@@ -22,7 +22,7 @@ import java.io.IOException
  */
 class RetryInterceptor(
     private val maxRetries: Int = 3,
-    private val initialBackoffMs: Long = 500L
+    private val initialBackoffMs: Long = 1000L
 ) : Interceptor {
 
     override fun intercept(chain: Interceptor.Chain): Response {
@@ -46,7 +46,7 @@ class RetryInterceptor(
                     throw error
                 }
 
-                // Backoff exponencial: 500ms, 1000ms, 2000ms
+                // Backoff exponencial: 1000ms, 2000ms, 4000ms
                 val backoffMs = initialBackoffMs * (1L shl attempt)
                 try {
                     Thread.sleep(backoffMs)

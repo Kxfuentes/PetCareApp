@@ -1,6 +1,5 @@
 package com.proyectopoo.petcareapp.ui.screen.caregiver
 
-import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -10,10 +9,12 @@ import androidx.compose.material.icons.filled.Save
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.proyectopoo.petcareapp.R
 import com.proyectopoo.petcareapp.viewmodel.EditCaregiverProfileViewModel
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -23,7 +24,6 @@ fun EditCaregiverProfileScreen(
     onBack: () -> Unit,
     onSaveSuccess: () -> Unit
 ) {
-    val context = LocalContext.current
     val user by viewModel.user.collectAsStateWithLifecycle()
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
     val isSaving by viewModel.isSaving.collectAsStateWithLifecycle()
@@ -32,45 +32,51 @@ fun EditCaregiverProfileScreen(
     var name by remember(user) { mutableStateOf(user?.username ?: "") }
     var email by remember(user) { mutableStateOf(user?.email ?: "") }
 
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    val emptyFieldsMessage = stringResource(R.string.error_empty_fields)
+    val profileUpdatedMessage = stringResource(R.string.caregiver_profile_updated)
+
     LaunchedEffect(error) {
         error?.let {
-            Toast.makeText(context, it, Toast.LENGTH_LONG).show()
+            scope.launch { snackbarHostState.showSnackbar(it) }
         }
     }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
-                title = { Text("Edición de tu perfil") },
+                title = { Text(stringResource(R.string.caregiver_profile_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.action_back))
                     }
                 },
                 actions = {
                     IconButton(
                         onClick = {
                             if (name.isBlank() || email.isBlank()) {
-                                Toast.makeText(context, "Completa todos los campos", Toast.LENGTH_SHORT).show()
+                                scope.launch { snackbarHostState.showSnackbar(emptyFieldsMessage) }
                                 return@IconButton
                             }
                             viewModel.updateUser(
                                 fullName = name,
                                 email = email,
                                 onSuccess = {
-                                    Toast.makeText(context, "Perfil actualizado correctamente", Toast.LENGTH_SHORT).show()
+                                    scope.launch { snackbarHostState.showSnackbar(profileUpdatedMessage) }
                                     onSaveSuccess()
                                 },
                                 onError = { msg ->
-                                    Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
+                                    scope.launch { snackbarHostState.showSnackbar(msg) }
                                 }
                             )
                         },
                         enabled = !isSaving && !isLoading
                     ) {
-                        Icon(Icons.Default.Save, contentDescription = "Guardar")
+                        Icon(Icons.Default.Save, contentDescription = stringResource(R.string.action_save))
                     }
                 }
             )

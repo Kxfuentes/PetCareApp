@@ -4,14 +4,21 @@ import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import android.widget.Toast
 
 /**
  * Abre Waze o Google Maps (el usuario elige) con la navegación ya iniciada hacia
- * [latitud]/[longitud]. Si ninguna de las dos apps está instalada, muestra un aviso
- * en vez de fallar silenciosamente o crashear (patrón "fail open" de este codebase).
+ * [latitud]/[longitud]. Si ninguna de las dos apps está instalada, invoca
+ * [onNoNavigationApp] en vez de fallar silenciosamente o crashear (patrón "fail
+ * open" de este codebase). Este archivo no depende de UI de Android (Toast/Snackbar):
+ * el llamador decide cómo mostrar el aviso (normalmente con el SnackbarHostState de
+ * su propia pantalla).
  */
-fun abrirNavegacion(context: Context, latitud: Double, longitud: Double) {
+fun abrirNavegacion(
+    context: Context,
+    latitud: Double,
+    longitud: Double,
+    onNoNavigationApp: () -> Unit = {}
+) {
     val destino = "$latitud,$longitud"
     val intentWaze = Intent(Intent.ACTION_VIEW, Uri.parse("https://waze.com/ul?ll=$destino&navigate=yes")).apply {
         setPackage("com.waze")
@@ -25,6 +32,6 @@ fun abrirNavegacion(context: Context, latitud: Double, longitud: Double) {
     try {
         context.startActivity(chooserIntent)
     } catch (e: ActivityNotFoundException) {
-        Toast.makeText(context, "No tienes una app de navegación instalada (Waze o Google Maps).", Toast.LENGTH_LONG).show()
+        onNoNavigationApp()
     }
 }

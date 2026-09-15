@@ -1,6 +1,5 @@
 package com.proyectopoo.petcareapp.ui.screen.owner
 
-import android.widget.Toast
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -10,11 +9,13 @@ import androidx.compose.material.icons.outlined.Pets
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.proyectopoo.petcareapp.R
 import com.proyectopoo.petcareapp.data.local.entity.PetEntity
 import com.proyectopoo.petcareapp.data.network.RetrofitClient
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -22,7 +23,9 @@ fun DogInfoScreen(
     editingDog: PetEntity? = null,
     onFinish: (name: String, breed: String, size: String) -> Unit
 ) {
-    val context = LocalContext.current
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    val emptyFieldsMessage = stringResource(R.string.error_empty_fields)
 
     // Clave segura para reiniciar el estado al cambiar de mascota
     val key = editingDog?.petId ?: -1
@@ -49,7 +52,10 @@ fun DogInfoScreen(
 
     val sizes = listOf("XS (1-5 kg)", "S (5-10 kg)", "M (10-20 kg)", "L (20-40 kg)", "XL (>40 kg)")
 
-    Scaffold(containerColor = MaterialTheme.colorScheme.background) { paddingValues ->
+    Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
+        snackbarHost = { SnackbarHost(snackbarHostState) }
+    ) { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -59,7 +65,7 @@ fun DogInfoScreen(
             Spacer(modifier = Modifier.height(40.dp))
 
             Text(
-                text = if (editingDog == null) "Cuéntanos sobre tu perro" else "Edita los datos de tu perro",
+                text = if (editingDog == null) stringResource(R.string.dog_info_title_new) else stringResource(R.string.dog_info_title_edit),
                 style = MaterialTheme.typography.headlineMedium
             )
 
@@ -151,7 +157,7 @@ fun DogInfoScreen(
                     if (isSaving) return@Button
 
                     if (dogName.isBlank() || breed.isBlank() || selectedSize.isBlank()) {
-                        Toast.makeText(context, "Completa todos los campos", Toast.LENGTH_SHORT).show()
+                        scope.launch { snackbarHostState.showSnackbar(emptyFieldsMessage) }
                         return@Button
                     }
 
@@ -166,9 +172,9 @@ fun DogInfoScreen(
             ) {
                 Text(
                     when {
-                        isSaving -> "Guardando..."
-                        editingDog == null -> "Guardar Mascota"
-                        else -> "Guardar cambios"
+                        isSaving -> stringResource(R.string.dog_info_saving)
+                        editingDog == null -> stringResource(R.string.dog_info_save_new)
+                        else -> stringResource(R.string.dog_info_save_edit)
                     }
                 )
             }

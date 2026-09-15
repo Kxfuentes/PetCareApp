@@ -8,8 +8,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.proyectopoo.petcareapp.R
 import com.proyectopoo.petcareapp.data.session.SessionManager
 
 @Composable
@@ -20,9 +22,9 @@ fun OnboardingScreen(
     val page = remember { mutableStateOf(0) }
 
     val pages = listOf(
-        "Bienvenido a PetCare\nEncuentra cuidadores confiables.",
-        "Publica solicitudes y recibe ofertas\nRápido y seguro.",
-        "Chatea con cuidadores y gestiona servicios\nTodo en una misma app."
+        stringResource(R.string.onboarding_page_1),
+        stringResource(R.string.onboarding_page_2),
+        stringResource(R.string.onboarding_page_3)
     )
 
     Column(
@@ -39,12 +41,12 @@ fun OnboardingScreen(
             Button(onClick = {
                 if (page.value > 0) page.value = page.value - 1
             }) {
-                Text(text = if (page.value == 0) "" else "Atrás")
+                Text(text = if (page.value == 0) "" else stringResource(R.string.onboarding_back))
             }
 
             if (page.value < pages.lastIndex) {
                 Button(onClick = { page.value = page.value + 1 }) {
-                    Text(text = "Siguiente")
+                    Text(text = stringResource(R.string.onboarding_next))
                 }
             } else {
                 Button(onClick = {
@@ -54,7 +56,7 @@ fun OnboardingScreen(
                         popUpTo(0)
                     }
                 }) {
-                    Text(text = "Comenzar")
+                    Text(text = stringResource(R.string.onboarding_start))
                 }
             }
         }

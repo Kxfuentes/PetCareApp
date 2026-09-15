@@ -31,11 +31,13 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.runtime.rememberCoroutineScope
+import com.proyectopoo.petcareapp.R
 import com.proyectopoo.petcareapp.data.local.entity.ApplicationStatus
 import com.proyectopoo.petcareapp.data.local.entity.PetEntity
 import com.proyectopoo.petcareapp.data.local.relation.ServiceApplicationDetails
@@ -95,6 +97,7 @@ fun OwnerHomeScreen(
     var isReportingEmergency by remember { mutableStateOf(false) }
     val actionsScope = rememberCoroutineScope()
     val actionsSnackbarHostState = remember { SnackbarHostState() }
+    val navAppNotInstalledMessage = stringResource(R.string.nav_app_not_installed)
     val shareRequest: (Int) -> Unit = { requestId ->
         if (!compartirSolicitud(context, requestId)) {
             actionsScope.launch {
@@ -317,7 +320,7 @@ fun OwnerHomeScreen(
                                     color = MaterialTheme.colorScheme.error.copy(alpha = 0.08f)
                                 ) {
                                     IconButton(onClick = { currentDog?.let { petToDelete = it } }, enabled = currentDog != null) {
-                                        Icon(Icons.Default.Delete, "Eliminar", tint = MaterialTheme.colorScheme.error)
+                                        Icon(Icons.Default.Delete, stringResource(R.string.action_delete), tint = MaterialTheme.colorScheme.error)
                                     }
                                 }
                             }
@@ -365,10 +368,10 @@ fun OwnerHomeScreen(
                                     selectedDogIndex = 0.coerceAtMost((dogs.size - 1).coerceAtLeast(0))
                                 },
                                 colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
-                            ) { Text("Eliminar") }
+                            ) { Text(stringResource(R.string.action_delete)) }
                         },
                         dismissButton = {
-                            OutlinedButton(onClick = { petToDelete = null }) { Text("Cancelar") }
+                            OutlinedButton(onClick = { petToDelete = null }) { Text(stringResource(R.string.action_cancel)) }
                         }
                     )
                 }
@@ -616,7 +619,13 @@ fun OwnerHomeScreen(
                 onOpenChat(application)
             },
             onComoLlegarClick = fixedLocationDestination?.let { (lat, lng) ->
-                { abrirNavegacion(context, lat, lng) }
+                {
+                    abrirNavegacion(context, lat, lng) {
+                        actionsScope.launch {
+                            actionsSnackbarHostState.showSnackbar(navAppNotInstalledMessage)
+                        }
+                    }
+                }
             },
             onTrackingClick = if (isTrackableServiceType) {
                 {
@@ -659,10 +668,10 @@ fun OwnerHomeScreen(
                         onCompleteAndRate(application, ratingScore.toDouble(), ratingComment)
                         applicationToRate = null
                     }
-                ) { Text("Guardar") }
+                ) { Text(stringResource(R.string.action_save)) }
             },
             dismissButton = {
-                TextButton(onClick = { applicationToRate = null }) { Text("Cancelar") }
+                TextButton(onClick = { applicationToRate = null }) { Text(stringResource(R.string.action_cancel)) }
             }
         )
     }
@@ -839,14 +848,14 @@ private fun InterestedCaregiverCard(
                     shape = RoundedCornerShape(16.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                 ) {
-                    Text("Aceptar", fontWeight = FontWeight.Medium)
+                    Text(stringResource(R.string.action_accept), fontWeight = FontWeight.Medium)
                 }
                 OutlinedButton(
                     onClick = onReject,
                     modifier = Modifier.weight(1f),
                     shape = RoundedCornerShape(16.dp)
                 ) {
-                    Text("Rechazar", fontWeight = FontWeight.Medium)
+                    Text(stringResource(R.string.action_reject), fontWeight = FontWeight.Medium)
                 }
             }
         }
@@ -983,7 +992,7 @@ private fun ScheduledServiceCard(
                         contentColor = MaterialTheme.colorScheme.error
                     )
                 ) {
-                    Text("Cancelar", style = MaterialTheme.typography.labelMedium)
+                    Text(stringResource(R.string.action_cancel), style = MaterialTheme.typography.labelMedium)
                 }
                 Button(
                     onClick = onRate,

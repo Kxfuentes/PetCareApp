@@ -22,6 +22,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -236,6 +238,8 @@ private fun ChatBubble(message: ChatMessageDto, isMine: Boolean, onImageClick: (
                         model = resolvedImageUrl,
                         contentDescription = "Imagen adjunta",
                         contentScale = ContentScale.Crop,
+                        placeholder = ColorPainter(MaterialTheme.colorScheme.surfaceVariant),
+                        error = ColorPainter(MaterialTheme.colorScheme.errorContainer),
                         modifier = Modifier
                             .size(200.dp)
                             .clip(RoundedCornerShape(12.dp))
@@ -292,13 +296,15 @@ private fun FullScreenImageViewer(imageUrl: String, onDismiss: () -> Unit) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(androidx.compose.ui.graphics.Color.Black)
+                .background(Color.Black)
                 .clickable(onClick = onDismiss)
         ) {
             AsyncImage(
                 model = imageUrl,
                 contentDescription = "Imagen ampliada",
                 contentScale = ContentScale.Fit,
+                placeholder = ColorPainter(Color.Black),
+                error = ColorPainter(Color.DarkGray),
                 modifier = Modifier.fillMaxSize()
             )
             IconButton(
@@ -307,7 +313,7 @@ private fun FullScreenImageViewer(imageUrl: String, onDismiss: () -> Unit) {
                     .align(Alignment.TopEnd)
                     .padding(16.dp)
             ) {
-                Icon(Icons.Default.Close, contentDescription = "Cerrar", tint = androidx.compose.ui.graphics.Color.White)
+                Icon(Icons.Default.Close, contentDescription = "Cerrar", tint = Color.White)
             }
         }
     }

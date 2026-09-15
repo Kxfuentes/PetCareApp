@@ -1,3 +1,70 @@
 <resources>
     <string name="app_name">PetCareApp</string>
+
+    <!-- Onboarding -->
+    <string name="onboarding_page_1">Bienvenido a PetCare\nEncuentra cuidadores confiables.</string>
+    <string name="onboarding_page_2">Publica solicitudes y recibe ofertas\nRápido y seguro.</string>
+    <string name="onboarding_page_3">Chatea con cuidadores y gestiona servicios\nTodo en una misma app.</string>
+    <string name="onboarding_back">Atrás</string>
+    <string name="onboarding_next">Siguiente</string>
+    <string name="onboarding_start">Comenzar</string>
+
+    <!-- Login -->
+    <string name="login_brand">PetCare</string>
+    <string name="login_email_label">Correo electrónico</string>
+    <string name="login_password_label">Contraseña</string>
+    <string name="login_remember_session">Mantener sesión iniciada</string>
+    <string name="login_button">Iniciar Sesión</string>
+    <string name="login_forgot_password">¿Olvidaste tu contraseña?</string>
+    <string name="login_no_account">¿No tienes cuenta?</string>
+    <string name="login_register_link">Regístrate</string>
+
+    <!-- Register -->
+    <string name="register_title">Únete a PetCare</string>
+    <string name="register_subtitle">Crea tu cuenta en segundos</string>
+    <string name="register_username_label">Nombre de usuario</string>
+    <string name="register_email_label">Correo electrónico</string>
+    <string name="register_password_label">Contraseña</string>
+    <string name="register_confirm_password_label">Confirmar contraseña</string>
+    <string name="register_otp_sent_message">Enviamos un código de verificación a %1$s.</string>
+    <string name="register_otp_label">Código de verificación</string>
+    <string name="register_resend_code">Reenviar código</string>
+    <string name="register_button_verify">Verificar y crear cuenta</string>
+    <string name="register_button_create">Crear cuenta</string>
+    <string name="register_back">Volver</string>
+
+    <!-- Bottom navigation -->
+    <string name="nav_home">Inicio</string>
+    <string name="nav_search">Buscar</string>
+    <string name="nav_history">Historial</string>
+    <string name="nav_publish">Publicar</string>
+    <string name="nav_favorites">Favoritos</string>
+    <string name="nav_profile">Perfil</string>
+
+    <!-- Common actions -->
+    <string name="action_save">Guardar</string>
+    <string name="action_cancel">Cancelar</string>
+    <string name="action_delete">Eliminar</string>
+    <string name="action_accept">Aceptar</string>
+    <string name="action_reject">Rechazar</string>
+    <string name="action_back">Volver</string>
+
+    <!-- Common errors / snackbar messages -->
+    <string name="error_empty_fields">Completa todos los campos</string>
+    <string name="error_network_generic">No se pudo conectar con el servidor. Intenta de nuevo.</string>
+    <string name="error_generic">Ocurrió un error. Intenta de nuevo.</string>
+    <string name="nav_app_not_installed">No tienes una app de navegación instalada (Waze o Google Maps).</string>
+
+    <!-- Owner / Caregiver profile editing -->
+    <string name="caregiver_profile_title">Edición de tu perfil</string>
+    <string name="caregiver_profile_updated">Perfil actualizado correctamente</string>
+    <string name="owner_profile_title">Editar Perfil</string>
+    <string name="owner_profile_updated">Perfil actualizado</string>
+
+    <!-- Dog info (add/edit pet) -->
+    <string name="dog_info_title_new">Cuéntanos sobre tu perro</string>
+    <string name="dog_info_title_edit">Edita los datos de tu perro</string>
+    <string name="dog_info_save_new">Guardar Mascota</string>
+    <string name="dog_info_save_edit">Guardar cambios</string>
+    <string name="dog_info_saving">Guardando...</string>
 </resources>

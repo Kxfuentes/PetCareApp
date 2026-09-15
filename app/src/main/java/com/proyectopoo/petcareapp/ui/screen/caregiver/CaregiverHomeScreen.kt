@@ -27,10 +27,12 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import com.proyectopoo.petcareapp.R
 import com.proyectopoo.petcareapp.data.local.entity.ApplicationStatus
 import com.proyectopoo.petcareapp.data.local.relation.ServiceApplicationDetails
 import com.proyectopoo.petcareapp.data.network.EmergenciaRequest
@@ -100,6 +102,7 @@ fun CaregiverHomeScreen(
     var isReportingEmergency by remember { mutableStateOf(false) }
     val actionsScope = rememberCoroutineScope()
     val actionsSnackbarHostState = remember { SnackbarHostState() }
+    val navAppNotInstalledMessage = stringResource(R.string.nav_app_not_installed)
     val shareRequest: (Int) -> Unit = { requestId ->
         if (!compartirSolicitud(context, requestId)) {
             actionsScope.launch {
@@ -310,7 +313,13 @@ fun CaregiverHomeScreen(
                 onOpenChat(request)
             },
             onComoLlegarClick = visitanteDestination?.let { (lat, lng) ->
-                { abrirNavegacion(context, lat, lng) }
+                {
+                    abrirNavegacion(context, lat, lng) {
+                        actionsScope.launch {
+                            actionsSnackbarHostState.showSnackbar(navAppNotInstalledMessage)
+                        }
+                    }
+                }
             },
             onEmergencyClick = if (isInProgress) {
                 {
@@ -353,7 +362,7 @@ fun CaregiverHomeScreen(
             },
             dismissButton = {
                 TextButton(onClick = { requestToRate = null }) {
-                    Text("Cancelar")
+                    Text(stringResource(R.string.action_cancel))
                 }
             }
         )
@@ -516,14 +525,14 @@ private fun OwnerRequestCard(
                     modifier = Modifier.weight(1f),
                     shape = RoundedCornerShape(14.dp)
                 ) {
-                    Text("Aceptar", fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.action_accept), fontWeight = FontWeight.Bold)
                 }
                 OutlinedButton(
                     onClick = onReject,
                     modifier = Modifier.weight(1f),
                     shape = RoundedCornerShape(14.dp)
                 ) {
-                    Text("Rechazar", fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.action_reject), fontWeight = FontWeight.Bold)
                 }
             }
         }
@@ -583,7 +592,7 @@ private fun ScheduledCaregiverRow(
                 ) {
                     Icon(Icons.Default.Close, null)
                     Spacer(Modifier.width(6.dp))
-                    Text("Cancelar")
+                    Text(stringResource(R.string.action_cancel))
                 }
                 OutlinedButton(
                     onClick = onRate,
@@ -828,7 +837,7 @@ private fun ActiveServiceCard(
                     modifier = Modifier.weight(1f),
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
                 ) {
-                    Text("Cancelar")
+                    Text(stringResource(R.string.action_cancel))
                 }
                 Button(onClick = onFinish, modifier = Modifier.weight(1f)) {
                     Text("Finalizar")
