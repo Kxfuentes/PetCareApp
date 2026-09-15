@@ -1,0 +1,59 @@
+name: Android CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Cache Gradle packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', 'gradle/libs.versions.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Build and unit test
+        # Not `./gradlew build`: the full `build` lifecycle runs `lintAnalyzeDebug`, which
+        # currently crashes with an internal IncompatibleClassChangeError in the Compose
+        # lint detectors (AGP/Lint's UAST vs. the Kotlin 2.0 analysis API) — a lint tooling
+        # bug unrelated to this project's code, not something to "fix" here. assembleDebug
+        # covers compilation for both variants' entry point and testDebugUnitTest covers
+        # the actual test suite.
+        run: ./gradlew assembleDebug testDebugUnitTest --console=plain
+        env:
+          # google-services.json isn't committed (no Firebase project wired up yet); the
+          # build only applies the Firebase plugin when that file is present, so CI builds
+          # fine without it — see the comment in app/build.gradle.kts.
+          BASE_URL: http://10.0.2.2:8080/
+
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-test-reports
+          path: app/build/reports/tests
+          retention-days: 7
