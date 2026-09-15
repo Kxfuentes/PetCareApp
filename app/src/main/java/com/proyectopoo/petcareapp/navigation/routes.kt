@@ -126,8 +126,13 @@ data class AlertaPerdidaDetalle(
     val petsId: Int,
     val reporterId: Int,
     val descripcion: String? = null,
-    val latitud: Double,
-    val longitud: Double,
+    // Float, no Double: Navigation Compose's automatic NavType inference para rutas
+    // type-safe no soporta Double (solo Int/Long/Boolean/Float/String y variantes) -
+    // usar Double aqui rompia el arranque de la app con
+    // "Cannot cast latitud of type kotlin.Double to a NavType". Float tiene precision
+    // mas que suficiente para mostrar un pin en el mapa.
+    val latitud: Float,
+    val longitud: Float,
     val direccionTexto: String? = null,
     val estado: String,
     val currentUserId: Int

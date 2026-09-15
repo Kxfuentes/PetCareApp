@@ -1255,8 +1255,8 @@ fun AppNavigation(
                                 petsId = alerta.petsId,
                                 reporterId = alerta.usuarioId,
                                 descripcion = alerta.descripcion,
-                                latitud = alerta.latitud,
-                                longitud = alerta.longitud,
+                                latitud = alerta.latitud.toFloat(),
+                                longitud = alerta.longitud.toFloat(),
                                 direccionTexto = alerta.direccionTexto,
                                 estado = alerta.estado ?: "ACTIVA",
                                 currentUserId = args.usuarioId
@@ -1272,8 +1272,8 @@ fun AppNavigation(
             AlertaPerdidaDetalleScreen(
                 alertaId = args.alertaId,
                 descripcion = args.descripcion,
-                latitud = args.latitud,
-                longitud = args.longitud,
+                latitud = args.latitud.toDouble(),
+                longitud = args.longitud.toDouble(),
                 direccionTexto = args.direccionTexto,
                 estadoInicial = args.estado,
                 isReporter = args.reporterId == args.currentUserId,

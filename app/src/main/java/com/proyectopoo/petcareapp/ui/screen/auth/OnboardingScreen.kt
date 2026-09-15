@@ -13,6 +13,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.proyectopoo.petcareapp.R
 import com.proyectopoo.petcareapp.data.session.SessionManager
+import com.proyectopoo.petcareapp.navigation.Login
 
 @Composable
 fun OnboardingScreen(
@@ -52,7 +53,7 @@ fun OnboardingScreen(
                 Button(onClick = {
                     // Mark onboarding as seen and navigate to Login
                     sessionManager.setOnboardingSeen()
-                    navController.navigate("Login") {
+                    navController.navigate(Login) {
                         popUpTo(0)
                     }
                 }) {

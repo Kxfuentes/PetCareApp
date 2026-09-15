@@ -30,13 +30,29 @@ PetCareApp es una app estilo “niñera de mascotas” donde usuarios pueden reg
 
 ## Instrucciones para ejecutar
 1. Clonar el repositorio:
+   ```
    git clone URL_DE_ESTE_REPOSITORIO
+   ```
+2. Copiar `secrets.properties.example` a `secrets.properties` en la raíz del repo (ya está en
+   `.gitignore`). Sin una API Key real de Google Maps, la app compila y corre normal, pero el
+   mapa de seguimiento se ve con el watermark "for development purposes only" — ver
+   [`GOOGLE_MAPS_SETUP.md`](GOOGLE_MAPS_SETUP.md).
+3. Abrir el proyecto en Android Studio y sincronizar Gradle, o desde la línea de comandos:
+   ```powershell
+   ./gradlew assembleDebug
+   ```
+4. Ejecutar en un emulador o dispositivo físico (▶ en Android Studio, o `./gradlew installDebug`
+   con un emulador/dispositivo ya conectado).
+5. `BASE_URL` apunta por defecto a `http://10.0.2.2:8080/` (el backend corriendo en `localhost`
+   desde el emulador). Si usas un dispositivo físico o el backend está en otra máquina, pásalo
+   como propiedad de Gradle: `./gradlew installDebug -PBASE_URL=http://TU_IP:8080/`.
 
-2. Abrir el proyecto en Android Studio
-
-3. Sincronizar Gradle
-
-4. Ejecutar en emulador o dispositivo físico
+### Solución de problemas conocidos
+- **La app crashea al abrir / al terminar el onboarding** (`IllegalArgumentException` sobre
+  `NavType` o "Navigation destination ... cannot be found"): estos dos bugs ya se corrigieron
+  (rutas `Double` sin `NavType` en navegación type-safe, y una navegación con ruta de texto
+  (`navigate("Login")`) en vez de la ruta tipada (`navigate(Login)`) — si ves un error parecido
+  en una pantalla nueva, es casi siempre una de estas dos causas.
 
 ## Tests
 El módulo `app` incluye tests unitarios (JVM, sin emulador) bajo `app/src/test/`.

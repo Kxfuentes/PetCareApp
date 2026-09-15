@@ -38,18 +38,7 @@ import com.proyectopoo.petcareapp.data.local.entity.UserRoleType
 import com.proyectopoo.petcareapp.data.session.SessionManager
 import com.proyectopoo.petcareapp.data.websocket.PetCareWebSocketClient
 import com.proyectopoo.petcareapp.model.UserRole
-import com.proyectopoo.petcareapp.navigation.AppNavigation
-import com.proyectopoo.petcareapp.navigation.CaregiverHome
-import com.proyectopoo.petcareapp.navigation.DogInfo
-import com.proyectopoo.petcareapp.navigation.EditarSolicitud
-import com.proyectopoo.petcareapp.navigation.Filtros
-import com.proyectopoo.petcareapp.navigation.Login
-import com.proyectopoo.petcareapp.navigation.OwnerHome
-import com.proyectopoo.petcareapp.navigation.PasswordRecovery
-import com.proyectopoo.petcareapp.navigation.Register
-import com.proyectopoo.petcareapp.navigation.RequestOffer
-import com.proyectopoo.petcareapp.navigation.RoleSection
-import com.proyectopoo.petcareapp.navigation.Seguimiento
+import com.proyectopoo.petcareapp.navigation.*
 import com.proyectopoo.petcareapp.notifications.AppNotifier
 import com.proyectopoo.petcareapp.ui.components.PetCareNavigationBar
 import com.proyectopoo.petcareapp.ui.theme.PetCareAppTheme
@@ -64,7 +53,7 @@ class MainActivity : ComponentActivity() {
 
     private val requestNotificationPermission = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
-    ) { /* Si se deniega, las notificaciones solo se persisten en la base de datos. */ }
+    ) { /* Las notificaciones se persisten aunque no haya permiso de mostrar el aviso */ }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -72,7 +61,8 @@ class MainActivity : ComponentActivity() {
 
         val sessionManager = SessionManager(this)
 
-        if (!shouldKeepSessionOpen()) {
+        // Limpiar sesión si no se debe recordar
+        if (!sessionManager.shouldRememberSession()) {
             sessionManager.clearSession()
         }
 
@@ -81,11 +71,13 @@ class MainActivity : ComponentActivity() {
         setContent {
             PetCareAppTheme {
                 val context = LocalContext.current
-
+                
+                // Usar el mismo SharedPreferences que SessionManager para consistencia si es necesario, 
+                // o mantener "app_prefs" si UserRoleViewModel maneja UI state persistente aparte.
                 val userRoleViewModel: UserRoleViewModel = viewModel(
                     factory = viewModelFactory {
                         initializer {
-                            val prefs = context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
+                            val prefs = context.getSharedPreferences("petcare_session", Context.MODE_PRIVATE)
                             UserRoleViewModel(prefs)
                         }
                     }
@@ -105,12 +97,7 @@ class MainActivity : ComponentActivity() {
                     val webSocketClient = remember {
                         PetCareWebSocketClient(
                             onEvent = { event ->
-                                runOnUiThread {
-                                    wsRefreshTick.intValue += 1
-                                }
-                                // Notificacion local (sin FCM): se muestra en la bandeja del sistema
-                                // reusando el WebSocket ya conectado para cualquier evento en tiempo real
-                                // (nuevas solicitudes, postulaciones, mensajes de chat, etc).
+                                runOnUiThread { wsRefreshTick.intValue += 1 }
                                 notifierScope.launch {
                                     notifier.push(
                                         recipientUserId = event.recipientUserId ?: event.userId ?: 0,
@@ -119,12 +106,6 @@ class MainActivity : ComponentActivity() {
                                         type = notificationTypeFor(event.type)
                                     )
                                 }
-                            },
-                            onStatusChanged = { connected ->
-                                android.util.Log.d(
-                                    "PetCareWebSocket",
-                                    if (connected) "Conectado desde Android" else "Desconectado desde Android"
-                                )
                             }
                         )
                     }
@@ -135,9 +116,10 @@ class MainActivity : ComponentActivity() {
 
                     LaunchedEffect(userRole) {
                         val currentUserId = sessionManager.getUserId()
-
                         if (currentUserId > 0 && userRole != null) {
                             webSocketClient.connect(currentUserId)
+                        } else {
+                            webSocketClient.disconnect()
                         }
                     }
 
@@ -181,11 +163,9 @@ class MainActivity : ComponentActivity() {
                             wsRefreshTick = wsRefreshTick.intValue,
                             sessionLogout = { nav, roleVM ->
                                 webSocketClient.disconnect()
-
-                                val logoutSessionManager = SessionManager(nav.context)
-                                logoutSessionManager.clearSession()
+                                val logoutSM = SessionManager(nav.context)
+                                logoutSM.clearSession()
                                 roleVM.clearRole()
-
                                 nav.navigate(Login) {
                                     popUpTo(0) { inclusive = true }
                                 }
@@ -197,18 +177,10 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun shouldKeepSessionOpen(): Boolean {
-        return SessionManager(this).shouldRememberSession()
-    }
-
     private fun askNotificationPermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            val granted = ContextCompat.checkSelfPermission(
-                this,
-                Manifest.permission.POST_NOTIFICATIONS
-            ) == PackageManager.PERMISSION_GRANTED
-
-            if (!granted) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) 
+                != PackageManager.PERMISSION_GRANTED) {
                 requestNotificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
             }
         }
@@ -220,8 +192,7 @@ class MainActivity : ComponentActivity() {
         navController: NavHostController
     ) {
         val sessionManager = SessionManager(context)
-
-        if (sessionManager.isLoggedIn() && shouldKeepSessionOpen()) {
+        if (sessionManager.isLoggedIn()) {
             val savedRoleType = sessionManager.getRole()
             val savedRole = when (savedRoleType) {
                 UserRoleType.CAREGIVER -> UserRole.CAREGIVER
@@ -231,13 +202,7 @@ class MainActivity : ComponentActivity() {
 
             savedRole?.let { role ->
                 userRoleViewModel.setRole(role)
-
-                val destination = if (role == UserRole.CAREGIVER) {
-                    CaregiverHome
-                } else {
-                    OwnerHome
-                }
-
+                val destination = if (role == UserRole.CAREGIVER) CaregiverHome else OwnerHome
                 navController.navigate(destination) {
                     popUpTo(0) { inclusive = true }
                 }
