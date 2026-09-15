@@ -57,10 +57,14 @@ interface ServiceRequestDao {
                 INNER JOIN pets p2 ON p2.petId = srp.petId
                 WHERE srp.serviceRequestId = sr.serviceRequestId
             ) AS petNames,
+            p.breed AS petBreed,
+            p.size AS petSize,
             st.name AS serviceTypeName,
             u.fullName AS ownerName,
             u.phone AS ownerPhone,
-            u.email AS ownerEmail
+            u.email AS ownerEmail,
+            sr.latitude AS latitude,
+            sr.longitude AS longitude
         FROM service_requests sr
         LEFT JOIN pets p ON p.petId = sr.petId
         LEFT JOIN service_types st ON st.serviceTypeId = sr.serviceTypeId
@@ -92,10 +96,14 @@ interface ServiceRequestDao {
                 INNER JOIN pets p2 ON p2.petId = srp.petId
                 WHERE srp.serviceRequestId = sr.serviceRequestId
             ) AS petNames,
+            p.breed AS petBreed,
+            p.size AS petSize,
             st.name AS serviceTypeName,
             u.fullName AS ownerName,
             u.phone AS ownerPhone,
-            u.email AS ownerEmail
+            u.email AS ownerEmail,
+            sr.latitude AS latitude,
+            sr.longitude AS longitude
         FROM service_requests sr
         LEFT JOIN pets p ON p.petId = sr.petId
         LEFT JOIN service_types st ON st.serviceTypeId = sr.serviceTypeId
@@ -128,10 +136,14 @@ interface ServiceRequestDao {
                 INNER JOIN pets p2 ON p2.petId = srp.petId
                 WHERE srp.serviceRequestId = sr.serviceRequestId
             ) AS petNames,
+            p.breed AS petBreed,
+            p.size AS petSize,
             st.name AS serviceTypeName,
             u.fullName AS ownerName,
             u.phone AS ownerPhone,
-            u.email AS ownerEmail
+            u.email AS ownerEmail,
+            sr.latitude AS latitude,
+            sr.longitude AS longitude
         FROM service_requests sr
         LEFT JOIN pets p ON p.petId = sr.petId
         LEFT JOIN service_types st ON st.serviceTypeId = sr.serviceTypeId

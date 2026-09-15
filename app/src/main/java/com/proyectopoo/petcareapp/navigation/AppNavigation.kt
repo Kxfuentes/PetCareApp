@@ -18,6 +18,8 @@ import com.proyectopoo.petcareapp.ui.screen.FiltrosResult
 import com.proyectopoo.petcareapp.ui.screen.FiltrosScreen
 import com.proyectopoo.petcareapp.ui.screen.HistorialScreen
 import com.proyectopoo.petcareapp.util.DistanceUtils
+import com.proyectopoo.petcareapp.util.distanceKmOrNull
+import com.proyectopoo.petcareapp.util.matchesFiltros
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
@@ -596,6 +598,9 @@ fun AppNavigation(
                         )
                     )
                 },
+                onEditRequest = { request ->
+                    navController.navigate(EditarSolicitud(request.serviceRequestId))
+                },
                 ownerId = ownerId
             )
         }
@@ -619,8 +624,30 @@ fun AppNavigation(
                 }
             }
 
+            val ownerFeedDistances: Map<Int, Double> = remember(offeredServices, userLocation) {
+                offeredServices.mapNotNull { service ->
+                    distanceKmOrNull(
+                        userLocation?.first,
+                        userLocation?.second,
+                        service.latitude,
+                        service.longitude
+                    )?.let { km -> service.offeredServiceId to km }
+                }.toMap()
+            }
+
+            val filteredOfferedServices = remember(offeredServices, solicitudFilters, ownerFeedDistances) {
+                offeredServices.filter { service ->
+                    matchesFiltros(
+                        solicitudFilters,
+                        service.serviceTypeName,
+                        service.caregiverRating,
+                        ownerFeedDistances[service.offeredServiceId]
+                    )
+                }
+            }
+
             OwnerFeedScreen(
-                services = offeredServices,
+                services = filteredOfferedServices,
                 isLoading = ownerFeedInitialLoading,
                 isRefreshing = ownerFeedRefreshing,
                 onRefresh = {
@@ -642,7 +669,9 @@ fun AppNavigation(
                             caregiverId = caregiverId
                         )
                     )
-                }
+                },
+                distances = ownerFeedDistances,
+                onOpenFilters = { navController.navigate(Filtros) }
             )
         }
 
@@ -811,8 +840,30 @@ fun AppNavigation(
                 }
             }
 
+            val caregiverFeedDistances: Map<Int, Double> = remember(availableRequests, userLocation) {
+                availableRequests.mapNotNull { request ->
+                    distanceKmOrNull(
+                        userLocation?.first,
+                        userLocation?.second,
+                        request.latitude,
+                        request.longitude
+                    )?.let { km -> request.serviceRequestId to km }
+                }.toMap()
+            }
+
+            val filteredAvailableRequests = remember(availableRequests, solicitudFilters, caregiverFeedDistances) {
+                availableRequests.filter { request ->
+                    matchesFiltros(
+                        solicitudFilters,
+                        request.serviceTypeName,
+                        null,
+                        caregiverFeedDistances[request.serviceRequestId]
+                    )
+                }
+            }
+
             CaregiverFeedScreen(
-                requests = availableRequests,
+                requests = filteredAvailableRequests,
                 isLoading = caregiverFeedInitialLoading,
                 isRefreshing = caregiverFeedRefreshing,
                 onRefresh = {
@@ -837,7 +888,9 @@ fun AppNavigation(
                     scope.launch {
                         snackbarHostState.showSnackbar("Solicitud de trabajo enviada.")
                     }
-                }
+                },
+                distances = caregiverFeedDistances,
+                onOpenFilters = { navController.navigate(Filtros) }
             )
         }
 
@@ -1056,6 +1109,68 @@ fun AppNavigation(
                 viewModel = viewModel,
                 onBack = { navController.popBackStack() },
                 onSaveSuccess = { navController.popBackStack() }
+            )
+        }
+
+        // ===== HISTORIAL =====
+        composable<Historial> { backStackEntry ->
+            val args = backStackEntry.toRoute<Historial>()
+            HistorialScreen(
+                usuarioId = args.usuarioId,
+                role = args.role,
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        // ===== FAVORITOS =====
+        composable<Favoritos> { backStackEntry ->
+            val args = backStackEntry.toRoute<Favoritos>()
+            FavoritosScreen(
+                usuarioId = args.usuarioId,
+                database = database,
+                onBack = { navController.popBackStack() },
+                onGoToCaregiverProfile = { caregiverId ->
+                    navController.navigate(CaregiverProfile(caregiverId = caregiverId))
+                }
+            )
+        }
+
+        // ===== EDITAR SOLICITUD =====
+        composable<EditarSolicitud> { backStackEntry ->
+            val args = backStackEntry.toRoute<EditarSolicitud>()
+            val requestToEdit = recentOwnerRequests.find { it.serviceRequestId == args.serviceRequestId }
+
+            if (requestToEdit != null) {
+                EditarSolicitudScreen(
+                    request = requestToEdit,
+                    dogs = dogs,
+                    onBack = { navController.popBackStack() },
+                    onSaved = {
+                        serviceRequestViewModel.loadOwnerData(sessionManager.getBackendUserId())
+                        navController.popBackStack()
+                    }
+                )
+            } else {
+                LaunchedEffect(Unit) {
+                    navController.popBackStack()
+                }
+            }
+        }
+
+        // ===== FILTROS =====
+        composable<Filtros> {
+            FiltrosScreen(
+                serviceTypes = listOf("Alojamiento", "Guardería", "Paseo", "Taxi", "Peluquería", "Visitante"),
+                initial = solicitudFilters,
+                onBack = { navController.popBackStack() },
+                onApply = { result ->
+                    solicitudFilters = result
+                    navController.popBackStack()
+                },
+                onClear = {
+                    solicitudFilters = null
+                    navController.popBackStack()
+                }
             )
         }
 

@@ -45,7 +45,9 @@ interface OfferedServiceDao {
             u.phone AS caregiverPhone,
             u.email AS caregiverEmail,
             AVG(r.score) AS caregiverRating,
-            COUNT(r.ratingId) AS caregiverRatingCount
+            COUNT(r.ratingId) AS caregiverRatingCount,
+            os.latitude AS latitude,
+            os.longitude AS longitude
         FROM offered_services os
         LEFT JOIN service_types st ON st.serviceTypeId = os.serviceTypeId
         LEFT JOIN caregivers c ON c.caregiverId = os.caregiverId

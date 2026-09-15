@@ -22,7 +22,9 @@ data class ServiceRequestDetails(
     val serviceTypeName: String?,
     val ownerName: String?,
     val ownerPhone: String?,
-    val ownerEmail: String?
+    val ownerEmail: String?,
+    val latitude: Double? = null,
+    val longitude: Double? = null
 )
 
 data class ServiceApplicationDetails(
@@ -66,5 +68,7 @@ data class OfferedServiceDetails(
     val caregiverPhone: String?,
     val caregiverEmail: String?,
     val caregiverRating: Double?,
-    val caregiverRatingCount: Int
+    val caregiverRatingCount: Int,
+    val latitude: Double? = null,
+    val longitude: Double? = null
 )
