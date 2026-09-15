@@ -256,7 +256,17 @@ fun CaregiverServiceScreen(
                         color = colorScheme.onBackground
                     )
 
-                    Spacer(modifier = Modifier.height(24.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // Restriccion de negocio: no se permite venta de animales en la plataforma
+                    // (el backend tambien rechaza el texto con palabras clave, ver EticaUtil).
+                    Text(
+                        "🚫 No se permite la venta de animales en PetCare. Esta plataforma es solo para servicios de cuidado.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
 
                     // Dropdown Tipo de Servicio
                     ExposedDropdownMenuBox(

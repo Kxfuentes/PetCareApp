@@ -159,7 +159,18 @@ fun CreateServiceScreen(
                 Text("Cuéntanos qué necesita tu mascota", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
 
-            Spacer(Modifier.height(18.dp))
+            Spacer(Modifier.height(12.dp))
+
+            // Restriccion de negocio: no se permite venta de animales en la plataforma (el
+            // backend tambien rechaza el texto con palabras clave, ver EticaUtil en el backend).
+            Text(
+                "🚫 No se permite la venta de animales en PetCare. Esta plataforma es solo para servicios de cuidado.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error,
+                modifier = Modifier.padding(horizontal = 4.dp)
+            )
+
+            Spacer(Modifier.height(12.dp))
 
             Card(
                 modifier = Modifier
