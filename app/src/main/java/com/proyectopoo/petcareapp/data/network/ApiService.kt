@@ -242,6 +242,12 @@ interface ApiService {
         @Body request: EmergenciaRequest
     ): Response<EmergenciaDto>
 
+    @POST("api/solicitudes/{id}/valorar-durante")
+    suspend fun valorarDurante(
+        @Path("id") id: Int,
+        @Body request: ValoracionDuranteRequest
+    ): Response<ValoracionDuranteDto>
+
     @GET("api/favoritos")
     suspend fun getFavoritos(
         @Query("usuarioId") usuarioId: Int

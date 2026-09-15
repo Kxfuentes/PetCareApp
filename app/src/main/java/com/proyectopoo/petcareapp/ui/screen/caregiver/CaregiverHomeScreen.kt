@@ -35,8 +35,10 @@ import com.proyectopoo.petcareapp.data.local.entity.ApplicationStatus
 import com.proyectopoo.petcareapp.data.local.relation.ServiceApplicationDetails
 import com.proyectopoo.petcareapp.data.network.EmergenciaRequest
 import com.proyectopoo.petcareapp.data.network.RetrofitClient
+import com.proyectopoo.petcareapp.data.network.ValoracionDuranteRequest
 import com.proyectopoo.petcareapp.location.LocationReporter
 import com.proyectopoo.petcareapp.ui.components.EmergencyReportDialog
+import com.proyectopoo.petcareapp.ui.components.ReactionButtonsRow
 import com.proyectopoo.petcareapp.ui.components.SkeletonList
 import com.proyectopoo.petcareapp.ui.components.StarRatingInput
 import com.proyectopoo.petcareapp.util.abrirNavegacion
@@ -102,6 +104,26 @@ fun CaregiverHomeScreen(
         if (!compartirSolicitud(context, requestId)) {
             actionsScope.launch {
                 actionsSnackbarHostState.showSnackbar("No hay ninguna app disponible para compartir")
+            }
+        }
+    }
+    var isSendingReaction by remember { mutableStateOf(false) }
+    val sendReaction: (Int, String) -> Unit = { requestId, tipoReaccion ->
+        if (!isSendingReaction) {
+            actionsScope.launch {
+                isSendingReaction = true
+                val response = runCatching {
+                    RetrofitClient.apiService.valorarDurante(
+                        id = requestId,
+                        request = ValoracionDuranteRequest(usuarioId = caregiverId, tipoReaccion = tipoReaccion)
+                    )
+                }.getOrNull()
+                isSendingReaction = false
+                if (response?.isSuccessful == true) {
+                    actionsSnackbarHostState.showSnackbar("Reacción enviada")
+                } else {
+                    actionsSnackbarHostState.showSnackbar("No se pudo enviar la reacción")
+                }
             }
         }
     }
@@ -296,7 +318,11 @@ fun CaregiverHomeScreen(
                     emergencyDialogTarget = request
                 }
             } else null,
-            onShareClick = { shareRequest(request.serviceRequestId) }
+            onShareClick = { shareRequest(request.serviceRequestId) },
+            onReact = if (isInProgress) {
+                { tipo -> sendReaction(request.serviceRequestId, tipo) }
+            } else null,
+            isReactingEnabled = !isSendingReaction
         )
     }
 
@@ -591,7 +617,9 @@ private fun CaregiverServiceDetailsDialog(
     onChatClick: (() -> Unit)? = null,
     onComoLlegarClick: (() -> Unit)? = null,
     onEmergencyClick: (() -> Unit)? = null,
-    onShareClick: (() -> Unit)? = null
+    onShareClick: (() -> Unit)? = null,
+    onReact: ((String) -> Unit)? = null,
+    isReactingEnabled: Boolean = true
 ) {
     val title = request.serviceTypeName ?: request.requestTitle
     val fields = caregiverDetailFields(request)
@@ -743,6 +771,15 @@ private fun CaregiverServiceDetailsDialog(
                         Spacer(Modifier.width(8.dp))
                         Text("Reportar emergencia", fontWeight = FontWeight.Bold)
                     }
+                }
+
+                if (onReact != null) {
+                    Spacer(Modifier.height(4.dp))
+                    ReactionButtonsRow(
+                        enabled = isReactingEnabled,
+                        onReact = onReact,
+                        modifier = Modifier.fillMaxWidth()
+                    )
                 }
 
                 Button(

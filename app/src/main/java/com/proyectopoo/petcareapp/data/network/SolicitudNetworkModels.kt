@@ -73,3 +73,24 @@ data class EmergenciaDto(
     val descripcion: String? = null,
     @SerialName("created_at") val createdAt: String? = null
 )
+
+/**
+ * Cuerpo para POST /api/solicitudes/{id}/valorar-durante: reacción rápida enviada mientras un
+ * servicio está en curso (ACCEPTED). `tipoReaccion` debe ser exactamente uno de CORAZON,
+ * ESTRELLA, PULGAR. El backend notifica al cuidador asignado.
+ */
+@Serializable
+data class ValoracionDuranteRequest(
+    @SerialName("usuario_id") val usuarioId: Int,
+    @SerialName("tipo_reaccion") val tipoReaccion: String
+)
+
+/** Respuesta 201 de POST /api/solicitudes/{id}/valorar-durante. */
+@Serializable
+data class ValoracionDuranteDto(
+    val id: Int? = null,
+    @SerialName("service_request_id") val serviceRequestId: Int? = null,
+    @SerialName("usuario_id") val usuarioId: Int? = null,
+    @SerialName("tipo_reaccion") val tipoReaccion: String? = null,
+    @SerialName("created_at") val createdAt: String? = null
+)

@@ -42,7 +42,9 @@ import com.proyectopoo.petcareapp.data.local.relation.ServiceApplicationDetails
 import com.proyectopoo.petcareapp.data.local.relation.ServiceRequestDetails
 import com.proyectopoo.petcareapp.data.network.EmergenciaRequest
 import com.proyectopoo.petcareapp.data.network.RetrofitClient
+import com.proyectopoo.petcareapp.data.network.ValoracionDuranteRequest
 import com.proyectopoo.petcareapp.ui.components.EmergencyReportDialog
+import com.proyectopoo.petcareapp.ui.components.ReactionButtonsRow
 import com.proyectopoo.petcareapp.ui.components.SkeletonList
 import com.proyectopoo.petcareapp.ui.components.StarRatingInput
 import com.proyectopoo.petcareapp.util.abrirNavegacion
@@ -97,6 +99,26 @@ fun OwnerHomeScreen(
         if (!compartirSolicitud(context, requestId)) {
             actionsScope.launch {
                 actionsSnackbarHostState.showSnackbar("No hay ninguna app disponible para compartir")
+            }
+        }
+    }
+    var isSendingReaction by remember { mutableStateOf(false) }
+    val sendReaction: (Int, String) -> Unit = { requestId, tipoReaccion ->
+        if (!isSendingReaction) {
+            actionsScope.launch {
+                isSendingReaction = true
+                val response = runCatching {
+                    RetrofitClient.apiService.valorarDurante(
+                        id = requestId,
+                        request = ValoracionDuranteRequest(usuarioId = ownerId, tipoReaccion = tipoReaccion)
+                    )
+                }.getOrNull()
+                isSendingReaction = false
+                if (response?.isSuccessful == true) {
+                    actionsSnackbarHostState.showSnackbar("Reacción enviada")
+                } else {
+                    actionsSnackbarHostState.showSnackbar("No se pudo enviar la reacción")
+                }
             }
         }
     }
@@ -608,7 +630,11 @@ fun OwnerHomeScreen(
                     emergencyDialogTarget = application
                 }
             } else null,
-            onShareClick = { shareRequest(application.serviceRequestId) }
+            onShareClick = { shareRequest(application.serviceRequestId) },
+            onReact = if (isInProgress) {
+                { tipo -> sendReaction(application.serviceRequestId, tipo) }
+            } else null,
+            isReactingEnabled = !isSendingReaction
         )
     }
 
@@ -1066,7 +1092,9 @@ private fun ServiceApplicationDetailsDialog(
     onComoLlegarClick: (() -> Unit)? = null,
     onTrackingClick: (() -> Unit)? = null,
     onEmergencyClick: (() -> Unit)? = null,
-    onShareClick: (() -> Unit)? = null
+    onShareClick: (() -> Unit)? = null,
+    onReact: ((String) -> Unit)? = null,
+    isReactingEnabled: Boolean = true
 ) {
     DetailsCardDialog(
         title = application.serviceTypeName ?: application.requestTitle,
@@ -1080,7 +1108,9 @@ private fun ServiceApplicationDetailsDialog(
         onComoLlegarClick = onComoLlegarClick,
         onTrackingClick = onTrackingClick,
         onEmergencyClick = onEmergencyClick,
-        onShareClick = onShareClick
+        onShareClick = onShareClick,
+        onReact = onReact,
+        isReactingEnabled = isReactingEnabled
     )
 }
 
@@ -1115,7 +1145,9 @@ private fun DetailsCardDialog(
     onComoLlegarClick: (() -> Unit)? = null,
     onTrackingClick: (() -> Unit)? = null,
     onEmergencyClick: (() -> Unit)? = null,
-    onShareClick: (() -> Unit)? = null
+    onShareClick: (() -> Unit)? = null,
+    onReact: ((String) -> Unit)? = null,
+    isReactingEnabled: Boolean = true
 ) {
     Dialog(onDismissRequest = onDismiss) {
         Card(
@@ -1294,6 +1326,15 @@ private fun DetailsCardDialog(
                         Spacer(Modifier.width(8.dp))
                         Text("Reportar emergencia", fontWeight = FontWeight.Bold)
                     }
+                    Spacer(Modifier.height(10.dp))
+                }
+
+                if (onReact != null) {
+                    ReactionButtonsRow(
+                        enabled = isReactingEnabled,
+                        onReact = onReact,
+                        modifier = Modifier.fillMaxWidth()
+                    )
                     Spacer(Modifier.height(10.dp))
                 }
 
