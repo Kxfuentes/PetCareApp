@@ -8,6 +8,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.filled.Done
+import androidx.compose.material.icons.filled.DoneAll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -133,12 +135,25 @@ private fun ChatBubble(message: ChatMessageDto, isMine: Boolean) {
             color = if (isMine) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
             shape = RoundedCornerShape(16.dp)
         ) {
-            Text(
-                text = message.message,
+            Row(
                 modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
-                color = if (isMine) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
-                fontWeight = FontWeight.Normal
-            )
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = message.message,
+                    color = if (isMine) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontWeight = FontWeight.Normal
+                )
+                if (isMine) {
+                    Spacer(Modifier.width(6.dp))
+                    Icon(
+                        imageVector = if (message.isRead) Icons.Default.DoneAll else Icons.Default.Done,
+                        contentDescription = if (message.isRead) "Visto" else "Enviado",
+                        tint = MaterialTheme.colorScheme.onPrimary,
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+            }
         }
     }
 }
