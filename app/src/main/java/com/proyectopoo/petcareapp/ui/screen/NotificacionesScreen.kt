@@ -8,7 +8,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.DirectionsWalk
+import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.*
@@ -116,7 +116,7 @@ private fun NotificacionCard(notificacion: NotificationEntity) {
 }
 
 private fun iconForTipo(type: NotificationType): ImageVector = when (type) {
-    NotificationType.SERVICE_REQUEST -> Icons.Default.DirectionsWalk
+    NotificationType.SERVICE_REQUEST -> Icons.AutoMirrored.Filled.DirectionsWalk
     NotificationType.REQUEST_ACCEPTED -> Icons.Default.CheckCircle
     NotificationType.REQUEST_REJECTED -> Icons.Default.Info
     NotificationType.REQUEST_CANCELLED -> Icons.Default.Info

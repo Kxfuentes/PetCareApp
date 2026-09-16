@@ -267,7 +267,7 @@ class ServiceRequestViewModel(
             )
             val remoteApplication = createRemoteApplication(application)
             if (remoteApplication == null) return@launch
-            applicationRepo.insert(remoteApplication ?: application)
+            applicationRepo.insert(remoteApplication)
 
             refreshOwnerData(ownerId)
             loadCaregiverData(caregiverId)
@@ -292,7 +292,7 @@ class ServiceRequestViewModel(
             )
             val remoteApplication = createRemoteApplication(application)
             if (remoteApplication == null) return@launch
-            applicationRepo.insert(remoteApplication ?: application)
+            applicationRepo.insert(remoteApplication)
             _caregiverApplicationDetails.value = applicationRepo.getIncomingOwnerRequestsForCaregiver(caregiverId)
 
             val request = requestRepo.getRequestById(serviceRequestId)
@@ -350,7 +350,7 @@ class ServiceRequestViewModel(
             val remoteApplication = updateRemoteApplicationStatus(applicationId, ApplicationStatus.ACCEPTED)
             if (remoteApplication == null) return@launch
 
-            applicationRepo.acceptAndCreateBooking(remoteApplication?.applicationId ?: applicationId)
+            applicationRepo.acceptAndCreateBooking(remoteApplication.applicationId)
             _availableRequests.value = requestRepo.getAvailableDetails()
             ownerId?.let { loadOwnerData(it) }
             caregiverId?.let { loadCaregiverData(it) }
