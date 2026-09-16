@@ -1,5 +1,10 @@
 package com.proyectopoo.petcareapp.ui.screen
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -7,16 +12,25 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
+import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.material.icons.filled.AddComment
+import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.painter.ColorPainter
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import androidx.core.content.FileProvider
+import coil.compose.AsyncImage
+import coil.compose.rememberAsyncImagePainter
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.GoogleMap
@@ -25,11 +39,16 @@ import com.google.maps.android.compose.MarkerState
 import com.google.maps.android.compose.rememberCameraPositionState
 import com.proyectopoo.petcareapp.data.network.AlertaPerdidaEstado
 import com.proyectopoo.petcareapp.data.network.AvistamientoDto
-import com.proyectopoo.petcareapp.data.network.AvistamientoRequest
 import com.proyectopoo.petcareapp.data.network.RetrofitClient
 import com.proyectopoo.petcareapp.location.getOneShotLocation
+import com.proyectopoo.petcareapp.ui.components.FullScreenImageViewer
 import com.proyectopoo.petcareapp.util.abrirNavegacion
 import kotlinx.coroutines.launch
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.RequestBody
+import okhttp3.RequestBody.Companion.toRequestBody
+import java.io.File
 
 /**
  * Detalle de una alerta de mascota perdida (Bloque 12): descripción, ubicación (mapa +
@@ -65,6 +84,7 @@ fun AlertaPerdidaDetalleScreen(
     var isLoadingAvistamientos by remember { mutableStateOf(true) }
     var isMarkingFound by remember { mutableStateOf(false) }
     var showReportDialog by remember { mutableStateOf(false) }
+    var fullScreenImageUrl by remember { mutableStateOf<String?>(null) }
 
     suspend fun reloadAvistamientos() {
         isLoadingAvistamientos = true
@@ -205,7 +225,23 @@ fun AlertaPerdidaDetalleScreen(
                 }
             } else {
                 items(avistamientos, key = { it.id ?: it.hashCode() }) { avistamiento ->
+                    val imageUrl = remember(avistamiento.imagenUrl) { RetrofitClient.resolveImageUrl(avistamiento.imagenUrl) }
                     ListItem(
+                        leadingContent = if (imageUrl != null) {
+                            {
+                                AsyncImage(
+                                    model = imageUrl,
+                                    contentDescription = "Foto del avistamiento",
+                                    contentScale = ContentScale.Crop,
+                                    placeholder = ColorPainter(MaterialTheme.colorScheme.surfaceVariant),
+                                    error = ColorPainter(MaterialTheme.colorScheme.errorContainer),
+                                    modifier = Modifier
+                                        .size(48.dp)
+                                        .clip(RoundedCornerShape(10.dp))
+                                        .clickable { fullScreenImageUrl = imageUrl }
+                                )
+                            }
+                        } else null,
                         headlineContent = { Text(avistamiento.comentario?.takeIf { it.isNotBlank() } ?: "Sin comentario") },
                         supportingContent = {
                             val loc = if (avistamiento.latitud != null && avistamiento.longitud != null) {
@@ -218,6 +254,10 @@ fun AlertaPerdidaDetalleScreen(
                 }
             }
         }
+    }
+
+    fullScreenImageUrl?.let { url ->
+        FullScreenImageViewer(imageUrl = url, onDismiss = { fullScreenImageUrl = null })
     }
 
     if (showReportDialog) {
@@ -243,9 +283,16 @@ private fun estadoLabelFor(estado: String?): String = when (estado) {
     else -> estado ?: "?"
 }
 
+/** Crea un archivo temporal en cache/avistamientos y devuelve su Uri vía FileProvider, para que la app de cámara escriba ahí. */
+private fun crearUriParaCamara(context: android.content.Context): Uri {
+    val dir = File(context.cacheDir, "avistamientos").apply { mkdirs() }
+    val file = File(dir, "avistamiento_${System.currentTimeMillis()}.jpg")
+    return FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+}
+
 /**
- * Formulario "Reportar avistamiento": comentario + ubicación opcional (GPS de una sola vez).
- * `imagen_url` queda fuera de alcance en esta pasada -- ver nota en AlertaPerdidaNetworkModels.kt.
+ * Formulario "Reportar avistamiento": foto obligatoria (cámara o galería), comentario y
+ * ubicación opcional (GPS de una sola vez). Sube la foto en multipart/form-data (Bloque 12).
  */
 @Composable
 private fun ReportarAvistamientoDialog(
@@ -264,6 +311,28 @@ private fun ReportarAvistamientoDialog(
     var includeLocation by remember { mutableStateOf(true) }
     var isSaving by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    var fotoUri by remember { mutableStateOf<Uri?>(null) }
+    var pendingCameraUri by remember { mutableStateOf<Uri?>(null) }
+
+    val galleryLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? -> if (uri != null) fotoUri = uri }
+
+    val cameraLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicture()
+    ) { success -> if (success) fotoUri = pendingCameraUri }
+
+    val cameraPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) {
+            val uri = crearUriParaCamara(context)
+            pendingCameraUri = uri
+            cameraLauncher.launch(uri)
+        } else {
+            errorMessage = "Se necesita permiso de cámara para tomar la foto."
+        }
+    }
 
     LaunchedEffect(includeLocation) {
         if (includeLocation && latitud == null) {
@@ -285,6 +354,40 @@ private fun ReportarAvistamientoDialog(
                 Text("Reportar avistamiento", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                 Spacer(Modifier.height(16.dp))
 
+                Text("Foto (obligatoria)", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
+                Spacer(Modifier.height(6.dp))
+                if (fotoUri != null) {
+                    Box {
+                        Image(
+                            painter = rememberAsyncImagePainter(fotoUri),
+                            contentDescription = "Foto del avistamiento seleccionada",
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier
+                                .size(110.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                        )
+                        IconButton(onClick = { fotoUri = null }, modifier = Modifier.align(Alignment.TopEnd)) {
+                            Icon(Icons.Default.Close, contentDescription = "Quitar foto")
+                        }
+                    }
+                } else {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedButton(onClick = {
+                            cameraPermissionLauncher.launch(android.Manifest.permission.CAMERA)
+                        }) {
+                            Icon(Icons.Default.CameraAlt, contentDescription = null)
+                            Spacer(Modifier.width(6.dp))
+                            Text("Tomar foto")
+                        }
+                        OutlinedButton(onClick = { galleryLauncher.launch("image/*") }) {
+                            Icon(Icons.Default.AddAPhoto, contentDescription = null)
+                            Spacer(Modifier.width(6.dp))
+                            Text("Galería")
+                        }
+                    }
+                }
+
+                Spacer(Modifier.height(16.dp))
                 OutlinedTextField(
                     value = comentario,
                     onValueChange = { comentario = it },
@@ -325,20 +428,36 @@ private fun ReportarAvistamientoDialog(
                     Spacer(Modifier.width(8.dp))
                     Button(
                         onClick = {
+                            val uri = fotoUri
+                            if (uri == null) {
+                                errorMessage = "Adjunta una foto para reportar el avistamiento."
+                                return@Button
+                            }
                             if (isSaving) return@Button
                             isSaving = true
                             errorMessage = null
                             scope.launch {
+                                fun String.part() = toRequestBody("text/plain".toMediaTypeOrNull())
                                 val response = runCatching {
+                                    val contentResolver = context.contentResolver
+                                    val mimeType = contentResolver.getType(uri) ?: "image/jpeg"
+                                    val bytes = contentResolver.openInputStream(uri)?.use { it.readBytes() }
+                                        ?: throw IllegalStateException("No se pudo leer la foto seleccionada.")
+                                    val extension = when {
+                                        mimeType.contains("png") -> "png"
+                                        mimeType.contains("webp") -> "webp"
+                                        else -> "jpg"
+                                    }
+                                    val fileBody: RequestBody = bytes.toRequestBody(mimeType.toMediaTypeOrNull())
+                                    val fotoPart = MultipartBody.Part.createFormData("foto", "avistamiento.$extension", fileBody)
+
                                     RetrofitClient.apiService.reportarAvistamiento(
-                                        alertaId,
-                                        AvistamientoRequest(
-                                            alertaId = alertaId,
-                                            usuarioId = currentUserId,
-                                            latitud = if (includeLocation) latitud else null,
-                                            longitud = if (includeLocation) longitud else null,
-                                            comentario = comentario.trim().takeIf { it.isNotBlank() }
-                                        )
+                                        alertaId = alertaId,
+                                        usuarioId = currentUserId.toString().part(),
+                                        comentario = comentario.trim().takeIf { it.isNotBlank() }?.part(),
+                                        latitud = (if (includeLocation) latitud else null)?.toString()?.part(),
+                                        longitud = (if (includeLocation) longitud else null)?.toString()?.part(),
+                                        foto = fotoPart
                                     )
                                 }.getOrNull()
                                 isSaving = false
@@ -349,7 +468,7 @@ private fun ReportarAvistamientoDialog(
                                 }
                             }
                         },
-                        enabled = !isSaving
+                        enabled = !isSaving && fotoUri != null
                     ) {
                         if (isSaving) {
                             CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)

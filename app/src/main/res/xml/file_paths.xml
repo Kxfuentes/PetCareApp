@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Usado por el FileProvider (ver AndroidManifest.xml) para exponer, vía content://, la foto
+     temporal que la cámara escribe al reportar un avistamiento de mascota perdida (Bloque 12). -->
+<paths xmlns:android="http://schemas.android.com/apk/res/android">
+    <cache-path name="avistamientos" path="avistamientos/" />
+</paths>

@@ -350,10 +350,15 @@ interface ApiService {
     @POST("api/alertas-perdida")
     suspend fun crearAlertaPerdida(@Body request: AlertaPerdidaRequest): Response<AlertaPerdidaDto>
 
+    @Multipart
     @POST("api/alertas-perdida/{id}/avistamiento")
     suspend fun reportarAvistamiento(
         @Path("id") alertaId: Int,
-        @Body request: AvistamientoRequest
+        @Part("usuario_id") usuarioId: RequestBody,
+        @Part("comentario") comentario: RequestBody?,
+        @Part("latitud") latitud: RequestBody?,
+        @Part("longitud") longitud: RequestBody?,
+        @Part foto: MultipartBody.Part
     ): Response<AvistamientoDto>
 
     @GET("api/alertas-perdida/{id}/avistamientos")

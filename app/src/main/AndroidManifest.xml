@@ -85,6 +85,21 @@
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />
             </intent-filter>
         </service>
+
+        <!--
+            FileProvider para la foto de camara al reportar un avistamiento de mascota perdida
+            (Bloque 12): content:// en vez de file:// para cumplir con las restricciones de
+            Android 7+ sobre exponer rutas file:// a otras apps (la app de camara del sistema).
+        -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="com.proyectopoo.petcareapp.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
     </application>
 
 </manifest>
