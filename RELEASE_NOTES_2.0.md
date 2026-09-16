@@ -81,11 +81,27 @@ membresías, planes premium y organizaciones — no se tocó nada de eso.
 - Todos los accesos nuevos viven en el perfil de propietario/cuidador (menú de accesos rápidos)
   y en los puntos de entrada específicos mencionados arriba.
 
+## Auditoría completa — correcciones
+- **Iconos deprecados y código muerto**: reemplazados los últimos `Icons.Filled.Logout`/
+  `DirectionsWalk` por sus equivalentes `AutoMirrored`, y eliminadas 3 ramas `?: application` /
+  `?.applicationId ?: applicationId` muertas en `ServiceRequestViewModel.kt` (el smart-cast tras
+  el `return@launch` ya garantizaba no-nulo).
+- **Deep link funcional**: `petcare://solicitud/{id}` (generado por `ShareUtils.kt`) ahora tiene
+  su intent-filter en `AndroidManifest.xml` — antes no pasaba nada al tocar el link compartido.
+  Con sesión iniciada, abre la app y enfoca el diálogo de detalle de esa solicitud (reutiliza
+  `CalendarNavigationBridge`, el mismo mecanismo del regreso desde el calendario).
+- **Badge del cuidador conectado**: `BadgeChip.kt` + `ApiService.getUsuarioBadge()` — visible en
+  el perfil del cuidador (propio y público), en las tarjetas de cuidadores interesados
+  (`OwnerHomeScreen`) y al comparar ofertas. Pendiente todavía en el feed completo de ofertas
+  (`OwnerFeedScreen`) — ver "Pendiente" abajo.
+
 ## Pendiente
 - **API Key real de Google Maps**: sigue sin configurar. Ver `GOOGLE_MAPS_SETUP.md` para los
   pasos — el mapa funciona pero muestra el watermark "for development purposes only" hasta que
   se configure una key real en `secrets.properties`.
 - Eliminación de cuenta desde la app: no implementada todavía (no hay endpoint de autoservicio
   wireado); por ahora `ConfiguracionScreen` remite a contactar soporte.
-- Badge del cuidador (NUEVO/CONFIABLE/etc.): existe en el backend (`usuarios.badge`) pero no está
-  wireado en ningún DTO/pantalla de la app todavía — pendiente de una iteración futura.
+- Badge del cuidador en `OwnerFeedScreen` (el feed completo de ofertas puede tener muchas
+  tarjetas a la vez; traerlo bien ahí requiere exponerlo en el endpoint de listado del backend,
+  no una consulta en vivo por tarjeta como en las pantallas más acotadas).
+- Deep link sin sesión iniciada: se ignora en silencio en vez de ofrecer iniciar sesión primero.
