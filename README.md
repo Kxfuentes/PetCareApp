@@ -20,7 +20,7 @@ PetCareApp es una app estilo “niñera de mascotas” donde usuarios pueden reg
 * Calendario integrado (vista mensual y semanal)
 * Expediente médico de la mascota con alertas de vacunas próximas
 * Alerta de mascota perdida con notificación a usuarios cercanos y avistamientos
-* Caché offline de chat, accesibilidad (WCAG AA), soporte para inglés
+* Caché offline de chat, accesibilidad (WCAG AA)
 * Navegación completa entre pantallas
 
 ## Tecnologías utilizadas

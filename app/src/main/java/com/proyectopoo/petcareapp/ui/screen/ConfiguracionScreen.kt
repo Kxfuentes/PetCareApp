@@ -1,8 +1,5 @@
 package com.proyectopoo.petcareapp.ui.screen
 
-import android.content.Intent
-import android.os.Build
-import android.provider.Settings
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -12,7 +9,6 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.NotificationsOff
 import androidx.compose.material.icons.filled.PrivacyTip
 import androidx.compose.material3.*
@@ -29,9 +25,10 @@ import com.proyectopoo.petcareapp.data.session.SessionManager
 import kotlinx.coroutines.launch
 
 /**
- * Configuración centralizada de la app (Parte 3.9): apariencia (modo oscuro), idioma,
+ * Configuración centralizada de la app (Parte 3.9): apariencia (modo oscuro),
  * notificaciones (no molestar, mismo campo de backend que ya usa el perfil de cuidador),
- * privacidad (ver los datos guardados localmente) y acerca de.
+ * privacidad (ver los datos guardados localmente) y acerca de. La app es solo en español,
+ * sin selector de idioma.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -86,28 +83,6 @@ fun ConfiguracionScreen(
                             RadioButton(selected = selected, onClick = { onDarkModeOverrideChange(value) })
                             Text(label)
                         }
-                    }
-                }
-            }
-
-            SeccionTitulo("Idioma", Icons.Default.Language)
-            Card(shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
-                Column(Modifier.padding(16.dp)) {
-                    Text("PetCare sigue el idioma configurado en tu dispositivo (español/inglés).")
-                    Spacer(Modifier.height(8.dp))
-                    TextButton(onClick = {
-                        val intent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                            Intent(Settings.ACTION_APP_LOCALE_SETTINGS).apply {
-                                data = android.net.Uri.parse("package:${context.packageName}")
-                            }
-                        } else {
-                            Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-                                data = android.net.Uri.parse("package:${context.packageName}")
-                            }
-                        }
-                        runCatching { context.startActivity(intent) }
-                    }) {
-                        Text("Cambiar idioma del sistema")
                     }
                 }
             }

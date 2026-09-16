@@ -7,7 +7,6 @@ membresías, planes premium y organizaciones — no se tocó nada de eso.
 - Toast → Snackbar en toda la app (con acción "Deshacer" donde aplica).
 - `PetCareApplication` implementa `ImageLoaderFactory` (caché de memoria 25%, disco 50MB).
 - `RetryInterceptor` con backoff exponencial 1s/2s/4s (solo GET, no duplica escrituras).
-- `values-en/strings.xml` para onboarding, login, registro, navegación y acciones comunes.
 
 ## Bloque 5 — Offline y accesibilidad
 - `MensajeLocalEntity`/`MensajeLocalDao` (Room): caché offline del chat y cola de reintento
@@ -72,8 +71,7 @@ membresías, planes premium y organizaciones — no se tocó nada de eso.
 - `BusquedaGlobalScreen.kt`: búsqueda local (sin llamadas de red nuevas) por nombre de cuidador,
   perro o tipo de servicio, sobre los datos ya cargados en la pantalla de inicio.
 - `AyudaScreen.kt` (guías rápidas + FAQ + contacto) y `ConfiguracionScreen.kt` (modo oscuro
-  persistido localmente, idioma vía los ajustes del sistema — Android 13+ tiene selector nativo
-  por app, notificaciones "no molestar", privacidad, acerca de).
+  persistido localmente, notificaciones "no molestar", privacidad, acerca de).
 - Indicador de conexión global (`ConnectivityBanner`) y botón flotante de emergencia visible
   mientras hay un servicio activo (antes solo estaba dentro del diálogo de detalle).
 - Animación de check verde al aceptar una oferta, publicar una solicitud, completar un servicio
@@ -94,6 +92,10 @@ membresías, planes premium y organizaciones — no se tocó nada de eso.
   el perfil del cuidador (propio y público), en las tarjetas de cuidadores interesados
   (`OwnerHomeScreen`) y al comparar ofertas. Pendiente todavía en el feed completo de ofertas
   (`OwnerFeedScreen`) — ver "Pendiente" abajo.
+- **Soporte de inglés eliminado**: PetCare es exclusivamente en español — se eliminó
+  `values-en/strings.xml` y el selector de idioma que existía en `ConfiguracionScreen.kt`
+  (abría los ajustes de idioma por app del sistema). No hay ninguna lógica de `Locale` en el
+  código; `values/strings.xml` es la única fuente de textos.
 
 ## Pendiente
 - **API Key real de Google Maps**: sigue sin configurar. Ver `GOOGLE_MAPS_SETUP.md` para los
