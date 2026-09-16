@@ -54,6 +54,7 @@ import com.kizitonwose.calendar.compose.weekcalendar.rememberWeekCalendarState
 import com.kizitonwose.calendar.core.CalendarDay
 import com.kizitonwose.calendar.core.DayPosition
 import com.kizitonwose.calendar.core.firstDayOfWeekFromLocale
+import com.proyectopoo.petcareapp.data.network.CalendarioDisponibilidadDto
 import com.proyectopoo.petcareapp.data.network.CalendarioServicioDto
 import com.proyectopoo.petcareapp.data.network.RetrofitClient
 import com.proyectopoo.petcareapp.ui.util.statusColor
@@ -69,9 +70,9 @@ import java.util.Locale
 /**
  * Calendario integrado (Bloque 9): vista de mes y semana de los servicios del usuario, con un
  * punto por servicio coloreado según su estado (mismo mapeo que el resto de la app, ver
- * `ui/util/StatusLabels.kt`). Los datos vienen de `GET /api/calendario`; `disponibilidad`
- * siempre llega vacía hoy (el backend no expone disponibilidad de cuidadores todavía), así que
- * esta pantalla solo renderiza `servicios`.
+ * `ui/util/StatusLabels.kt`). Los datos vienen de `GET /api/calendario`; `disponibilidad` es la
+ * expansión del horario semanal recurrente del cuidador (configurado en `DisponibilidadScreen.kt`)
+ * a fechas concretas del mes visible, marcada con una barra inferior verde en el día.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -85,6 +86,7 @@ fun CalendarioScreen(
     var selectedDate by remember { mutableStateOf(today) }
     var loadedYearMonth by remember { mutableStateOf<YearMonth?>(null) }
     var serviciosPorFecha by remember { mutableStateOf<Map<LocalDate, List<CalendarioServicioDto>>>(emptyMap()) }
+    var disponibilidadPorFecha by remember { mutableStateOf<Map<LocalDate, List<String>>>(emptyMap()) }
     var isLoading by remember { mutableStateOf(false) }
     var loadError by remember { mutableStateOf<String?>(null) }
 
@@ -104,6 +106,9 @@ fun CalendarioScreen(
         serviciosPorFecha = body.servicios
             .mapNotNull { dto -> runCatching { LocalDate.parse(dto.fecha) }.getOrNull()?.let { it to dto } }
             .groupBy({ it.first }, { it.second })
+        disponibilidadPorFecha = body.disponibilidad
+            .mapNotNull { dto -> runCatching { LocalDate.parse(dto.fecha) }.getOrNull()?.let { it to dto.horas } }
+            .toMap()
     }
 
     val firstDayOfWeek = remember { firstDayOfWeekFromLocale() }
@@ -183,6 +188,7 @@ fun CalendarioScreen(
                                 inMonth = day.position == DayPosition.MonthDate,
                                 isSelected = day.date == selectedDate,
                                 servicios = serviciosPorFecha[day.date].orEmpty(),
+                                disponible = disponibilidadPorFecha.containsKey(day.date),
                                 onClick = { selectedDate = day.date }
                             )
                         },
@@ -197,6 +203,7 @@ fun CalendarioScreen(
                                 inMonth = true,
                                 isSelected = weekDay.date == selectedDate,
                                 servicios = serviciosPorFecha[weekDay.date].orEmpty(),
+                                disponible = disponibilidadPorFecha.containsKey(weekDay.date),
                                 onClick = { selectedDate = weekDay.date }
                             )
                         }
@@ -209,6 +216,7 @@ fun CalendarioScreen(
             DayServicesList(
                 date = selectedDate,
                 servicios = serviciosPorFecha[selectedDate].orEmpty(),
+                horasDisponibles = disponibilidadPorFecha[selectedDate].orEmpty(),
                 onOpenService = onOpenService,
                 modifier = Modifier.weight(1f)
             )
@@ -249,9 +257,11 @@ private fun CalendarDayCell(
     inMonth: Boolean,
     isSelected: Boolean,
     servicios: List<CalendarioServicioDto>,
+    disponible: Boolean,
     onClick: () -> Unit
 ) {
     val isToday = date == LocalDate.now()
+    val disponibilidadColor = androidx.compose.ui.graphics.Color(0xFF2E7D32)
     Box(
         modifier = Modifier
             .aspectRatio(1f)
@@ -264,6 +274,11 @@ private fun CalendarDayCell(
                     else -> androidx.compose.ui.graphics.Color.Transparent
                 }
             )
+            .let {
+                if (disponible && !isSelected) {
+                    it.background(disponibilidadColor.copy(alpha = 0.10f))
+                } else it
+            }
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
@@ -292,6 +307,16 @@ private fun CalendarDayCell(
                     }
                 }
             }
+            if (disponible) {
+                Box(
+                    modifier = Modifier
+                        .padding(top = 1.dp)
+                        .width(16.dp)
+                        .height(2.dp)
+                        .clip(RoundedCornerShape(1.dp))
+                        .background(if (isSelected) MaterialTheme.colorScheme.onPrimary else disponibilidadColor)
+                )
+            }
         }
     }
 }
@@ -300,6 +325,7 @@ private fun CalendarDayCell(
 private fun DayServicesList(
     date: LocalDate,
     servicios: List<CalendarioServicioDto>,
+    horasDisponibles: List<String>,
     onOpenService: (Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -310,6 +336,15 @@ private fun DayServicesList(
             style = MaterialTheme.typography.titleSmall,
             fontWeight = FontWeight.Bold
         )
+        if (horasDisponibles.isNotEmpty()) {
+            Spacer(Modifier.height(6.dp))
+            Text(
+                text = "Disponible: ${horasDisponibles.joinToString(", ")}",
+                style = MaterialTheme.typography.bodySmall,
+                color = androidx.compose.ui.graphics.Color(0xFF2E7D32),
+                fontWeight = FontWeight.Medium
+            )
+        }
         Spacer(Modifier.height(10.dp))
         if (servicios.isEmpty()) {
             Text(

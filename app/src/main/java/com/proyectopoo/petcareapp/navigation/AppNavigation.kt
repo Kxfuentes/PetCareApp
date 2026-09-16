@@ -83,6 +83,7 @@ import com.proyectopoo.petcareapp.ui.screen.caregiver.CaregiverProfileScreen
 import com.proyectopoo.petcareapp.ui.screen.caregiver.CaregiverPublicProfileScreen
 import com.proyectopoo.petcareapp.ui.screen.caregiver.CaregiverServiceScreen
 import com.proyectopoo.petcareapp.ui.screen.owner.RoleSectionScreen
+import com.proyectopoo.petcareapp.ui.screen.caregiver.DisponibilidadScreen
 import com.proyectopoo.petcareapp.ui.screen.caregiver.EditCaregiverProfileScreen
 import com.proyectopoo.petcareapp.ui.screen.owner.CompararOfertasScreen
 import com.proyectopoo.petcareapp.ui.screen.owner.CreateServiceScreen
@@ -614,6 +615,15 @@ fun AppNavigation(
                 ownerId = args.ownerId,
                 onBack = { navController.popBackStack() },
                 onVerFavoritos = { navController.navigate(Favoritos(usuarioId = args.ownerId)) }
+            )
+        }
+
+        // ===== DISPONIBILIDAD DEL CUIDADOR (Bloque 9) =====
+        composable<Disponibilidad> { backStackEntry ->
+            val args = backStackEntry.toRoute<Disponibilidad>()
+            DisponibilidadScreen(
+                cuidadorId = args.cuidadorId,
+                onBack = { navController.popBackStack() }
             )
         }
 
@@ -1192,7 +1202,7 @@ fun AppNavigation(
                     onEditProfile = {
                         navController.navigate(EditCaregiverProfile(targetCaregiverId))
                     },
-                    onManageAvailability = { },
+                    onManageAvailability = { navController.navigate(Disponibilidad(cuidadorId = targetCaregiverId)) },
                     onGoToStats = { navController.navigate(EstadisticasCuidador(caregiverId = targetCaregiverId)) },
                     onGoToNotifications = { navController.navigate(Notificaciones(usuarioId = targetCaregiverId)) },
                     onGoToSearch = {

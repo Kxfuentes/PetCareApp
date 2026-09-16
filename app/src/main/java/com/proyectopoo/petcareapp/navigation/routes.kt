@@ -127,6 +127,9 @@ data class EstadisticasCuidador(val caregiverId: Int)
 data class EstadisticasPropietario(val ownerId: Int)
 
 @Serializable
+data class Disponibilidad(val cuidadorId: Int)
+
+@Serializable
 data class EditarSolicitud(
     val serviceRequestId: Int
 )

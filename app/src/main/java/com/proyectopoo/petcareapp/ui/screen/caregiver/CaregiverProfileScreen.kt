@@ -229,6 +229,8 @@ fun CaregiverProfileScreen(
                 border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
             ) {
                 Column {
+                    CaregiverProfileMenuRow(Icons.Default.CalendarMonth, "Mi disponibilidad", onManageAvailability)
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                     CaregiverProfileMenuRow(Icons.Default.BarChart, "Mis estadísticas", onGoToStats)
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                     CaregiverProfileMenuRow(Icons.Default.Notifications, "Notificaciones", onGoToNotifications)

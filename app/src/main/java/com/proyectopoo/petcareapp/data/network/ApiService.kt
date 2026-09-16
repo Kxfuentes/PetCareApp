@@ -293,6 +293,22 @@ interface ApiService {
         @Query("anio") anio: Int
     ): Response<CalendarioResponseDto>
 
+    @POST("api/cuidadores/disponibilidad")
+    suspend fun crearDisponibilidad(
+        @Body request: DisponibilidadCuidadorRequest
+    ): Response<DisponibilidadCuidadorDto>
+
+    @GET("api/cuidadores/{id}/disponibilidad")
+    suspend fun getDisponibilidad(
+        @Path("id") cuidadorId: Int
+    ): Response<List<DisponibilidadCuidadorDto>>
+
+    @DELETE("api/cuidadores/disponibilidad/{id}")
+    suspend fun eliminarDisponibilidad(
+        @Path("id") id: Int,
+        @Query("usuario_id") usuarioId: Int
+    ): Response<Unit>
+
     // ===== Expediente médico de la mascota (Bloque 11) =====
 
     @GET("api/pets/{id}/expediente")
