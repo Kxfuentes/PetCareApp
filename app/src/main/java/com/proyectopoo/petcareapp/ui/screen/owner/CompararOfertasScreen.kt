@@ -17,6 +17,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.proyectopoo.petcareapp.data.local.relation.ServiceApplicationDetails
 import com.proyectopoo.petcareapp.data.network.RetrofitClient
+import com.proyectopoo.petcareapp.ui.components.BadgeChip
 import kotlinx.coroutines.launch
 
 /**
@@ -35,18 +36,26 @@ fun CompararOfertasScreen(
 ) {
     val comparadas = remember(ofertas) { ofertas.take(3) }
     var ratings by remember { mutableStateOf<Map<Int, Pair<Double, Int>>>(emptyMap()) }
+    var badges by remember { mutableStateOf<Map<Int, String>>(emptyMap()) }
     val scope = rememberCoroutineScope()
 
     LaunchedEffect(comparadas) {
         val result = mutableMapOf<Int, Pair<Double, Int>>()
+        val badgeResult = mutableMapOf<Int, String>()
         comparadas.forEach { oferta ->
             runCatching { RetrofitClient.apiService.getCaregiverRatingSummary(oferta.caregiverId) }
                 .getOrNull()
                 ?.takeIf { it.isSuccessful }
                 ?.body()
                 ?.let { result[oferta.caregiverId] = it.average to it.count }
+            runCatching { RetrofitClient.apiService.getUsuarioBadge(oferta.caregiverId) }
+                .getOrNull()
+                ?.takeIf { it.isSuccessful }
+                ?.body()
+                ?.let { badgeResult[oferta.caregiverId] = it.badge }
         }
         ratings = result
+        badges = badgeResult
     }
 
     Scaffold(
@@ -80,6 +89,7 @@ fun CompararOfertasScreen(
                 OfertaColumn(
                     oferta = oferta,
                     rating = ratings[oferta.caregiverId],
+                    badge = badges[oferta.caregiverId],
                     onAccept = { onAccept(oferta) },
                     onReject = { onReject(oferta) }
                 )
@@ -92,6 +102,7 @@ fun CompararOfertasScreen(
 private fun OfertaColumn(
     oferta: ServiceApplicationDetails,
     rating: Pair<Double, Int>?,
+    badge: String?,
     onAccept: () -> Unit,
     onReject: () -> Unit
 ) {
@@ -126,6 +137,7 @@ private fun OfertaColumn(
                     style = MaterialTheme.typography.bodySmall
                 )
             }
+            badge?.let { BadgeChip(it) }
 
             HorizontalDivider()
 

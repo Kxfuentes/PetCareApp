@@ -97,3 +97,9 @@ data class UserLocationDto(
     @SerialName("direccion_texto") val direccionTexto: String? = null,
     @SerialName("no_molestar") val noMolestar: Boolean? = false
 )
+
+/** Respuesta de GET /api/usuarios/{id}/badge: NUEVO, EN_CRECIMIENTO, CONFIABLE, EXPERIMENTADO, ELITE o EN_OBSERVACION. */
+@Serializable
+data class BadgeDto(
+    val badge: String
+)

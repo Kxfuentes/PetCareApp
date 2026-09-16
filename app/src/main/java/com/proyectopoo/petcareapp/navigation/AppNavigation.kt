@@ -1171,6 +1171,7 @@ fun AppNavigation(
             val user by viewModel.user.collectAsStateWithLifecycle()
             val completedServicesCount by viewModel.completedServicesCount.collectAsStateWithLifecycle()
             val rating by viewModel.rating.collectAsStateWithLifecycle()
+            val badge by viewModel.badge.collectAsStateWithLifecycle()
             val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
 
             LaunchedEffect(targetCaregiverId) {
@@ -1184,6 +1185,7 @@ fun AppNavigation(
                     isOwnProfile = true,
                     completedServicesCount = completedServicesCount,
                     rating = rating,
+                    badge = badge,
                     isLoading = isLoading,
                     onBack = { navController.popBackStack() },
                     onLogout = performLogout,

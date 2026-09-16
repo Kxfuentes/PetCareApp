@@ -192,6 +192,9 @@ interface ApiService {
         @Path("ownerId") ownerId: Int
     ): Response<RatingSummaryDto>
 
+    @GET("api/usuarios/{id}/badge")
+    suspend fun getUsuarioBadge(@Path("id") id: Int): Response<BadgeDto>
+
     @POST("api/usuarios/fcm-token")
     suspend fun sendFcmToken(
         @Body request: FcmTokenRequest

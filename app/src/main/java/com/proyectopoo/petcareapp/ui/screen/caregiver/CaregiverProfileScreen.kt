@@ -23,6 +23,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.proyectopoo.petcareapp.model.User
+import com.proyectopoo.petcareapp.ui.components.BadgeChip
 import com.proyectopoo.petcareapp.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -38,6 +39,7 @@ fun CaregiverProfileScreen(
     onLogout: () -> Unit,
     onEditProfile: () -> Unit = {},
     onManageAvailability: () -> Unit = {},
+    badge: String? = null,
     noMolestar: Boolean = false,
     onToggleNoMolestar: (Boolean) -> Unit = {},
     onGoToStats: () -> Unit = {},
@@ -112,6 +114,10 @@ fun CaregiverProfileScreen(
                         style = MaterialTheme.typography.bodyMedium,
                         color = TextoSuave
                     )
+                    badge?.let {
+                        Spacer(Modifier.height(6.dp))
+                        BadgeChip(it)
+                    }
                 }
             }
         }

@@ -28,6 +28,9 @@ class CaregiverProfileViewModel(
     private val _rating = MutableStateFlow(5.0)
     val rating: StateFlow<Double> = _rating.asStateFlow()
 
+    private val _badge = MutableStateFlow<String?>(null)
+    val badge: StateFlow<String?> = _badge.asStateFlow()
+
     private val _reviews = MutableStateFlow<List<RatingDto>>(emptyList())
     val reviews: StateFlow<List<RatingDto>> = _reviews.asStateFlow()
 
@@ -81,6 +84,12 @@ class CaregiverProfileViewModel(
 
                     val applications = database.serviceApplicationDao().getByCaregiver(caregiverId)
                     _completedServicesCount.value = applications.count { it.status == ApplicationStatus.COMPLETED }
+
+                    _badge.value = runCatching { apiService.getUsuarioBadge(caregiverId) }
+                        .getOrNull()
+                        ?.takeIf { it.isSuccessful }
+                        ?.body()
+                        ?.badge
                 }
             } catch (e: Exception) {
                 _error.value = "Error al cargar datos del cuidador: ${e.message}"

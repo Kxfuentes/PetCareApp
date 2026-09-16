@@ -47,6 +47,7 @@ import com.proyectopoo.petcareapp.data.network.EmergenciaRequest
 import com.proyectopoo.petcareapp.data.network.RetrofitClient
 import com.proyectopoo.petcareapp.data.network.ValoracionDuranteRequest
 import com.proyectopoo.petcareapp.navigation.SuccessCheckBridge
+import com.proyectopoo.petcareapp.ui.components.BadgeChip
 import com.proyectopoo.petcareapp.ui.components.SuccessCheckOverlay
 import com.proyectopoo.petcareapp.ui.components.EmergencyReportDialog
 import com.proyectopoo.petcareapp.ui.components.EvidenciaThumbnails
@@ -857,6 +858,15 @@ private fun InterestedCaregiverCard(
     onAccept: () -> Unit,
     onReject: () -> Unit
 ) {
+    var badge by remember(application.caregiverId) { mutableStateOf<String?>(null) }
+    LaunchedEffect(application.caregiverId) {
+        badge = runCatching { RetrofitClient.apiService.getUsuarioBadge(application.caregiverId) }
+            .getOrNull()
+            ?.takeIf { it.isSuccessful }
+            ?.body()
+            ?.badge
+    }
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -895,6 +905,10 @@ private fun InterestedCaregiverCard(
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                    badge?.let {
+                        Spacer(Modifier.height(4.dp))
+                        BadgeChip(it)
+                    }
                 }
             }
 

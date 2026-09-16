@@ -22,6 +22,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.proyectopoo.petcareapp.ui.components.BadgeChip
 import com.proyectopoo.petcareapp.ui.theme.*
 import com.proyectopoo.petcareapp.viewmodel.CaregiverProfileViewModel
 
@@ -39,6 +40,7 @@ fun CaregiverPublicProfileScreen(
     val user by viewModel.user.collectAsStateWithLifecycle()
     val completedServicesCount by viewModel.completedServicesCount.collectAsStateWithLifecycle()
     val rating by viewModel.rating.collectAsStateWithLifecycle()
+    val badge by viewModel.badge.collectAsStateWithLifecycle()
     val reviews by viewModel.reviews.collectAsStateWithLifecycle()
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
 
@@ -114,6 +116,10 @@ fun CaregiverPublicProfileScreen(
                             style = MaterialTheme.typography.bodyMedium,
                             color = TextoSuave
                         )
+                        badge?.let {
+                            Spacer(Modifier.height(6.dp))
+                            BadgeChip(it)
+                        }
                     }
                 }
             }
