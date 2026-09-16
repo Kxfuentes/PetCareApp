@@ -2,6 +2,7 @@ package com.proyectopoo.petcareapp
 
 import android.Manifest
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -61,9 +62,22 @@ class MainActivity : ComponentActivity() {
         ActivityResultContracts.RequestPermission()
     ) { /* Las notificaciones se persisten aunque no haya permiso de mostrar el aviso */ }
 
+    // Deep link "petcare://solicitud/{id}" (ver AndroidManifest.xml y ShareUtils.kt). Un
+    // `mutableStateOf` como campo de la Activity, no `remember`ado dentro de un Composable,
+    // porque debe sobrevivir tanto al onCreate inicial como a onNewIntent (activity ya viva,
+    // launchMode="singleTask") y seguir siendo observable por Compose en ambos casos.
+    private var pendingDeepLinkIntent by mutableStateOf<Intent?>(null)
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        pendingDeepLinkIntent = intent
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        pendingDeepLinkIntent = intent
 
         val sessionManager = SessionManager(this)
 
@@ -123,6 +137,35 @@ class MainActivity : ComponentActivity() {
 
                     LaunchedEffect(Unit) {
                         handleAutoLogin(context, userRoleViewModel, navController)
+                    }
+
+                    // Deep link "petcare://solicitud/{id}": si hay sesion, deja el id pendiente
+                    // en CalendarNavigationBridge (mismo mecanismo que "volver desde el
+                    // calendario") y navega al Home del rol correspondiente, que abre el
+                    // dialogo de detalle automaticamente. Sin sesion, se ignora en silencio y
+                    // sigue el flujo normal de login.
+                    LaunchedEffect(pendingDeepLinkIntent) {
+                        val serviceRequestId = pendingDeepLinkIntent
+                            ?.takeIf { it.action == Intent.ACTION_VIEW }
+                            ?.data
+                            ?.takeIf { it.scheme == "petcare" && it.host == "solicitud" }
+                            ?.lastPathSegment
+                            ?.toIntOrNull()
+
+                        if (serviceRequestId != null && sessionManager.isLoggedIn()) {
+                            val role = when (sessionManager.getRole()) {
+                                UserRoleType.CAREGIVER -> UserRole.CAREGIVER
+                                UserRoleType.OWNER -> UserRole.OWNER
+                                else -> null
+                            }
+                            if (role != null) {
+                                userRoleViewModel.setRole(role)
+                                CalendarNavigationBridge.request(serviceRequestId)
+                                val destination = if (role == UserRole.CAREGIVER) CaregiverHome else OwnerHome
+                                navController.navigate(destination) { launchSingleTop = true }
+                            }
+                        }
+                        pendingDeepLinkIntent = null
                     }
 
                     LaunchedEffect(userRole) {
