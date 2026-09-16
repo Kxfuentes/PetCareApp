@@ -97,7 +97,34 @@ data class Historial(
 )
 
 @Serializable
+data class ResumenServicio(
+    val serviceRequestId: Int,
+    val requestTitle: String
+)
+
+@Serializable
 object Filtros
+
+@Serializable
+object CompararOfertas
+
+@Serializable
+data class Notificaciones(val usuarioId: Int)
+
+@Serializable
+object BusquedaGlobal
+
+@Serializable
+object Ayuda
+
+@Serializable
+data class Configuracion(val usuarioId: Int)
+
+@Serializable
+data class EstadisticasCuidador(val caregiverId: Int)
+
+@Serializable
+data class EstadisticasPropietario(val ownerId: Int)
 
 @Serializable
 data class EditarSolicitud(

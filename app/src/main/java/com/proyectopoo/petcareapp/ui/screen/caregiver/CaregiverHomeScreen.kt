@@ -48,6 +48,7 @@ import com.proyectopoo.petcareapp.ui.components.EvidenciaThumbnails
 import com.proyectopoo.petcareapp.ui.components.ReactionButtonsRow
 import com.proyectopoo.petcareapp.ui.components.SkeletonList
 import com.proyectopoo.petcareapp.ui.components.StarRatingInput
+import com.proyectopoo.petcareapp.ui.components.SuccessCheckOverlay
 import com.proyectopoo.petcareapp.ui.components.retryPendingEvidencias
 import com.proyectopoo.petcareapp.util.abrirNavegacion
 import com.proyectopoo.petcareapp.util.compartirSolicitud
@@ -120,6 +121,7 @@ fun CaregiverHomeScreen(
     var ratingComment by remember { mutableStateOf("") }
     var emergencyDialogTarget by remember { mutableStateOf<ServiceApplicationDetails?>(null) }
     var isReportingEmergency by remember { mutableStateOf(false) }
+    var showSuccessCheck by remember { mutableStateOf(false) }
     val actionsScope = rememberCoroutineScope()
     val actionsSnackbarHostState = remember { SnackbarHostState() }
 
@@ -310,6 +312,7 @@ fun CaregiverHomeScreen(
                                 // adicional encima, no una condición previa (Bloque 8).
                                 onAcceptApplication(request.applicationId)
                                 evidenciaPrompt = EvidenciaPrompt(request.serviceRequestId, EvidenciaTipo.ANTES)
+                                showSuccessCheck = true
                             },
                             onReject = { onRejectApplication(request.applicationId) }
                         )
@@ -356,6 +359,23 @@ fun CaregiverHomeScreen(
         hostState = actionsSnackbarHostState,
         modifier = Modifier.align(Alignment.BottomCenter)
     )
+
+    acceptedRequests.firstOrNull()?.let { activeService ->
+        FloatingActionButton(
+            onClick = { emergencyDialogTarget = activeService },
+            containerColor = MaterialTheme.colorScheme.error,
+            contentColor = MaterialTheme.colorScheme.onError,
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(16.dp)
+        ) {
+            Icon(Icons.Default.Warning, contentDescription = "Reportar emergencia")
+        }
+    }
+
+    if (showSuccessCheck) {
+        SuccessCheckOverlay(onFinished = { showSuccessCheck = false })
+    }
     }
 
     requestToDetails?.let { request ->
@@ -438,6 +458,7 @@ fun CaregiverHomeScreen(
                     onClick = {
                         onCompleteAndRate(request, ratingScore.toDouble(), ratingComment)
                         requestToRate = null
+                        showSuccessCheck = true
                     }
                 ) {
                     Text("Guardar y finalizar")

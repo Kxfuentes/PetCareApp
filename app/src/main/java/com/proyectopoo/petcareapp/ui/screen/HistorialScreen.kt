@@ -1,5 +1,6 @@
 package com.proyectopoo.petcareapp.ui.screen
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -25,7 +26,8 @@ import com.proyectopoo.petcareapp.ui.components.SkeletonList
 fun HistorialScreen(
     usuarioId: Int,
     role: String,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onOpenResumen: (ServiceRequestDto) -> Unit = {}
 ) {
     var completados by remember { mutableStateOf<List<ServiceRequestDto>>(emptyList()) }
     var cancelados by remember { mutableStateOf<List<ServiceRequestDto>>(emptyList()) }
@@ -116,7 +118,10 @@ fun HistorialScreen(
                             verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
                             items(list) { request ->
-                                HistorialCard(request)
+                                HistorialCard(
+                                    request = request,
+                                    onClick = if (selectedTab == 0) ({ onOpenResumen(request) }) else null
+                                )
                             }
                         }
                     }
@@ -127,9 +132,9 @@ fun HistorialScreen(
 }
 
 @Composable
-private fun HistorialCard(request: ServiceRequestDto) {
+private fun HistorialCard(request: ServiceRequestDto, onClick: (() -> Unit)? = null) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().let { if (onClick != null) it.clickable(onClick = onClick) else it },
         shape = RoundedCornerShape(18.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {

@@ -37,6 +37,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.proyectopoo.petcareapp.R
 import com.proyectopoo.petcareapp.data.local.entity.ApplicationStatus
 import com.proyectopoo.petcareapp.data.local.entity.PetEntity
@@ -45,6 +46,8 @@ import com.proyectopoo.petcareapp.data.local.relation.ServiceRequestDetails
 import com.proyectopoo.petcareapp.data.network.EmergenciaRequest
 import com.proyectopoo.petcareapp.data.network.RetrofitClient
 import com.proyectopoo.petcareapp.data.network.ValoracionDuranteRequest
+import com.proyectopoo.petcareapp.navigation.SuccessCheckBridge
+import com.proyectopoo.petcareapp.ui.components.SuccessCheckOverlay
 import com.proyectopoo.petcareapp.ui.components.EmergencyReportDialog
 import com.proyectopoo.petcareapp.ui.components.EvidenciaThumbnails
 import com.proyectopoo.petcareapp.ui.components.ReactionButtonsRow
@@ -72,6 +75,7 @@ fun OwnerHomeScreen(
     onCompleteAndRate: (ServiceApplicationDetails, Double, String) -> Unit,
     onCancelService: (ServiceApplicationDetails) -> Unit = {},
     onOpenChat: (ServiceApplicationDetails) -> Unit = {},
+    onCompareOffers: (List<ServiceApplicationDetails>) -> Unit = {},
     onGoToCalendar: () -> Unit = {},
     isLoading: Boolean = false,
     isRefreshing: Boolean = false,
@@ -102,6 +106,14 @@ fun OwnerHomeScreen(
     var showAllRequestedScreen by remember { mutableStateOf(false) }
     var emergencyDialogTarget by remember { mutableStateOf<ServiceApplicationDetails?>(null) }
     var isReportingEmergency by remember { mutableStateOf(false) }
+    var showSuccessCheck by remember { mutableStateOf(false) }
+    val successPending by SuccessCheckBridge.pending.collectAsStateWithLifecycle()
+    LaunchedEffect(successPending) {
+        if (successPending) {
+            showSuccessCheck = true
+            SuccessCheckBridge.consume()
+        }
+    }
     val actionsScope = rememberCoroutineScope()
     val actionsSnackbarHostState = remember { SnackbarHostState() }
     val navAppNotInstalledMessage = stringResource(R.string.nav_app_not_installed)
@@ -212,7 +224,18 @@ fun OwnerHomeScreen(
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
-        snackbarHost = { SnackbarHost(actionsSnackbarHostState) }
+        snackbarHost = { SnackbarHost(actionsSnackbarHostState) },
+        floatingActionButton = {
+            acceptedApplications.firstOrNull()?.let { activeService ->
+                FloatingActionButton(
+                    onClick = { emergencyDialogTarget = activeService },
+                    containerColor = MaterialTheme.colorScheme.error,
+                    contentColor = MaterialTheme.colorScheme.onError
+                ) {
+                    Icon(Icons.Default.Warning, contentDescription = "Reportar emergencia")
+                }
+            }
+        }
     ) { padding ->
 
         PullToRefreshBox(
@@ -457,11 +480,31 @@ fun OwnerHomeScreen(
                 } else if (pendingApplications.isEmpty()) {
                     EmptyStateCard("Aún no hay cuidadores interesados.")
                 } else {
+                    val ofertasPorSolicitud = remember(pendingApplications) {
+                        pendingApplications.groupBy { it.serviceRequestId }.filterValues { it.size >= 2 }
+                    }
+                    if (ofertasPorSolicitud.isNotEmpty()) {
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            ofertasPorSolicitud.forEach { (_, grupo) ->
+                                OutlinedButton(
+                                    onClick = { onCompareOffers(grupo) },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(14.dp)
+                                ) {
+                                    Text("Comparar ${grupo.size} ofertas para \"${grupo.first().requestTitle}\"", fontWeight = FontWeight.Bold)
+                                }
+                            }
+                        }
+                        Spacer(Modifier.height(4.dp))
+                    }
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         pendingApplications.forEach { application ->
                             InterestedCaregiverCard(
                                 application = application,
-                                onAccept = { onAcceptApplication(application.applicationId) },
+                                onAccept = {
+                                    onAcceptApplication(application.applicationId)
+                                    showSuccessCheck = true
+                                },
                                 onReject = { onRejectApplication(application.applicationId) }
                             )
                         }                    }
@@ -693,6 +736,7 @@ fun OwnerHomeScreen(
                     onClick = {
                         onCompleteAndRate(application, ratingScore.toDouble(), ratingComment)
                         applicationToRate = null
+                        showSuccessCheck = true
                     }
                 ) { Text(stringResource(R.string.action_save)) }
             },
@@ -729,6 +773,10 @@ fun OwnerHomeScreen(
                 }
             }
         )
+    }
+
+    if (showSuccessCheck) {
+        SuccessCheckOverlay(onFinished = { showSuccessCheck = false })
     }
 }
 

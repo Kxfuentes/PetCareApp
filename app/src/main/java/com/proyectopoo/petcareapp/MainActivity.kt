@@ -9,18 +9,22 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
@@ -35,11 +39,13 @@ import androidx.navigation.compose.rememberNavController
 import com.proyectopoo.petcareapp.data.local.database.PetCareDatabase
 import com.proyectopoo.petcareapp.data.local.entity.NotificationType
 import com.proyectopoo.petcareapp.data.local.entity.UserRoleType
+import com.proyectopoo.petcareapp.data.session.AppPreferences
 import com.proyectopoo.petcareapp.data.session.SessionManager
 import com.proyectopoo.petcareapp.data.websocket.PetCareWebSocketClient
 import com.proyectopoo.petcareapp.model.UserRole
 import com.proyectopoo.petcareapp.navigation.*
 import com.proyectopoo.petcareapp.notifications.AppNotifier
+import com.proyectopoo.petcareapp.ui.components.ConnectivityBanner
 import com.proyectopoo.petcareapp.ui.components.PetCareNavigationBar
 import com.proyectopoo.petcareapp.ui.theme.PetCareAppTheme
 import com.proyectopoo.petcareapp.viewmodel.UserRoleViewModel
@@ -69,9 +75,14 @@ class MainActivity : ComponentActivity() {
         askNotificationPermission()
 
         setContent {
-            PetCareAppTheme {
+            val themeContext = LocalContext.current
+            val appPreferences = remember { AppPreferences(themeContext) }
+            var darkModeOverride by remember { mutableStateOf(appPreferences.getDarkModeOverride()) }
+            val systemDarkTheme = isSystemInDarkTheme()
+
+            PetCareAppTheme(darkTheme = darkModeOverride ?: systemDarkTheme) {
                 val context = LocalContext.current
-                
+
                 // Usar el mismo SharedPreferences que SessionManager para consistencia si es necesario, 
                 // o mantener "app_prefs" si UserRoleViewModel maneja UI state persistente aparte.
                 val userRoleViewModel: UserRoleViewModel = viewModel(
@@ -157,10 +168,17 @@ class MainActivity : ComponentActivity() {
                             }
                         }
                     ) { innerPadding ->
-                        AppNavigation(
+                        Column(modifier = Modifier.padding(innerPadding)) {
+                            ConnectivityBanner()
+                            AppNavigation(
                             navController = navController,
-                            modifier = Modifier.padding(innerPadding),
+                            modifier = Modifier.weight(1f),
                             wsRefreshTick = wsRefreshTick.intValue,
+                            darkModeOverride = darkModeOverride,
+                            onDarkModeOverrideChange = { value ->
+                                darkModeOverride = value
+                                appPreferences.setDarkModeOverride(value)
+                            },
                             sessionLogout = { nav, roleVM ->
                                 webSocketClient.disconnect()
                                 val logoutSM = SessionManager(nav.context)
@@ -170,7 +188,8 @@ class MainActivity : ComponentActivity() {
                                     popUpTo(0) { inclusive = true }
                                 }
                             }
-                        )
+                            )
+                        }
                     }
                 }
             }

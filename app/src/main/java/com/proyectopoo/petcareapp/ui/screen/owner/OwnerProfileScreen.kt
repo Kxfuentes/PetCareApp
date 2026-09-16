@@ -2,6 +2,7 @@ package com.proyectopoo.petcareapp.ui.screen.owner
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -10,6 +11,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Assignment
 import androidx.compose.material.icons.automirrored.filled.DirectionsWalk
+import androidx.compose.material.icons.automirrored.filled.HelpOutline
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -34,7 +37,12 @@ fun OwnerProfileScreen(
     historyServices: List<ServiceRequestDetails>,
     onLogout: () -> Unit,
     onEditProfile: () -> Unit = {},
-    onAddPet: () -> Unit = {}
+    onAddPet: () -> Unit = {},
+    onGoToStats: () -> Unit = {},
+    onGoToNotifications: () -> Unit = {},
+    onGoToSearch: () -> Unit = {},
+    onGoToHelp: () -> Unit = {},
+    onGoToSettings: () -> Unit = {}
 ) {
     val scrollState = rememberScrollState()
     var showFullHistory by remember { mutableStateOf(false) }
@@ -167,6 +175,25 @@ fun OwnerProfileScreen(
             }
         }
 
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(20.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+        ) {
+            Column {
+                ProfileMenuRow(Icons.Default.BarChart, "Mis estadísticas", onGoToStats)
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                ProfileMenuRow(Icons.Default.Notifications, "Notificaciones", onGoToNotifications)
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                ProfileMenuRow(Icons.Default.Search, "Buscar", onGoToSearch)
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                ProfileMenuRow(Icons.AutoMirrored.Filled.HelpOutline, "Ayuda", onGoToHelp)
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                ProfileMenuRow(Icons.Default.Settings, "Configuración", onGoToSettings)
+            }
+        }
+
         Button(onClick = onEditProfile, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp)) {
             Icon(Icons.Default.Edit, null)
             Spacer(Modifier.width(8.dp))
@@ -188,5 +215,20 @@ fun OwnerProfileScreen(
 @Composable private fun EmptyProfileCard(title: String, subtitle: String) { Column(Modifier.fillMaxWidth().padding(28.dp), horizontalAlignment = Alignment.CenterHorizontally) { Icon(Icons.Default.Pets, null, Modifier.size(56.dp), tint = MaterialTheme.colorScheme.outline); Spacer(Modifier.height(10.dp)); Text(title, fontWeight = FontWeight.Bold); Text(subtitle, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center) } }
 @Composable private fun ServiceBubble(service: String) { Surface(shape = CircleShape, color = MaterialTheme.colorScheme.surfaceVariant, modifier = Modifier.size(48.dp)) { Box(contentAlignment = Alignment.Center) { Icon(serviceIconForProfile(service), null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(25.dp)) } } }
 @Composable private fun StatusPill(text: String, color: Color) { Surface(shape = RoundedCornerShape(50), color = color.copy(alpha = .12f)) { Text(text, modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp), color = color, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold) } }
+@Composable private fun ProfileMenuRow(icon: ImageVector, text: String, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(icon, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(22.dp))
+        Spacer(Modifier.width(14.dp))
+        Text(text, modifier = Modifier.weight(1f), fontWeight = FontWeight.Medium)
+        Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
+
 private fun serviceIconForProfile(service: String): ImageVector = when (service.lowercase()) { "paseo" -> Icons.AutoMirrored.Filled.DirectionsWalk; "guardería" -> Icons.Default.WbSunny; "taxi" -> Icons.Default.LocalTaxi; "peluquería" -> Icons.Default.ContentCut; "alojamiento" -> Icons.Default.Home; else -> Icons.AutoMirrored.Filled.Assignment }
 private fun formatProfilePetSize(size: String): String = if (size.contains("kg", true) || size.contains("tamaño", true)) size else "Tamaño $size"

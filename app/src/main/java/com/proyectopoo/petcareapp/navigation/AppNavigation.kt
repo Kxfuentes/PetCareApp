@@ -14,11 +14,18 @@ import com.proyectopoo.petcareapp.data.network.ServiceRequestDto
 import com.proyectopoo.petcareapp.ui.screen.AlertaPerdidaDetalleScreen
 import com.proyectopoo.petcareapp.ui.screen.AlertasPerdidasScreen
 import com.proyectopoo.petcareapp.ui.screen.EditarSolicitudScreen
+import com.proyectopoo.petcareapp.ui.screen.AyudaScreen
+import com.proyectopoo.petcareapp.ui.screen.BusquedaGlobalScreen
+import com.proyectopoo.petcareapp.ui.screen.ConfiguracionScreen
+import com.proyectopoo.petcareapp.ui.screen.EstadisticasCuidadorScreen
+import com.proyectopoo.petcareapp.ui.screen.EstadisticasPropietarioScreen
 import com.proyectopoo.petcareapp.ui.screen.ExpedienteMedicoScreen
 import com.proyectopoo.petcareapp.ui.screen.FavoritosScreen
+import com.proyectopoo.petcareapp.ui.screen.NotificacionesScreen
 import com.proyectopoo.petcareapp.ui.screen.FiltrosResult
 import com.proyectopoo.petcareapp.ui.screen.FiltrosScreen
 import com.proyectopoo.petcareapp.ui.screen.HistorialScreen
+import com.proyectopoo.petcareapp.ui.screen.ResumenServicioScreen
 import com.proyectopoo.petcareapp.ui.screen.SeguimientoMapaScreen
 import com.proyectopoo.petcareapp.util.DistanceUtils
 import com.proyectopoo.petcareapp.util.distanceKmOrNull
@@ -51,7 +58,10 @@ import com.proyectopoo.petcareapp.data.local.entity.ServiceTypeEntity
 import com.proyectopoo.petcareapp.data.local.entity.UserRoleType
 import com.proyectopoo.petcareapp.data.network.RetrofitClient
 import com.proyectopoo.petcareapp.data.network.RetrofitClient.apiService
+import com.proyectopoo.petcareapp.data.local.relation.ServiceApplicationDetails
+import com.proyectopoo.petcareapp.data.local.relation.ServiceRequestDetails
 import com.proyectopoo.petcareapp.data.repository.PetRepository
+import com.proyectopoo.petcareapp.data.repository.NotificationRepository
 import com.proyectopoo.petcareapp.data.repository.OfferedServiceRepository
 import com.proyectopoo.petcareapp.data.repository.ServiceApplicationRepository
 import com.proyectopoo.petcareapp.data.repository.ServiceRequestRepository
@@ -74,6 +84,7 @@ import com.proyectopoo.petcareapp.ui.screen.caregiver.CaregiverPublicProfileScre
 import com.proyectopoo.petcareapp.ui.screen.caregiver.CaregiverServiceScreen
 import com.proyectopoo.petcareapp.ui.screen.owner.RoleSectionScreen
 import com.proyectopoo.petcareapp.ui.screen.caregiver.EditCaregiverProfileScreen
+import com.proyectopoo.petcareapp.ui.screen.owner.CompararOfertasScreen
 import com.proyectopoo.petcareapp.ui.screen.owner.CreateServiceScreen
 import com.proyectopoo.petcareapp.ui.screen.chat.ChatScreen
 import com.proyectopoo.petcareapp.ui.screen.owner.DogInfoScreen
@@ -100,6 +111,8 @@ fun AppNavigation(
     navController: NavHostController,
     modifier: Modifier = Modifier,
     wsRefreshTick: Int = 0,
+    darkModeOverride: Boolean? = null,
+    onDarkModeOverrideChange: (Boolean?) -> Unit = {},
     sessionLogout: (NavHostController, UserRoleViewModel) -> Unit
 ) {
     val userRoleViewModel = LocalUserRoleViewModel.current
@@ -109,6 +122,7 @@ fun AppNavigation(
     val database = remember { PetCareDatabase.getDatabase(context) }
     val notifier = remember(context, database) { AppNotifier(context, database.notificationDao()) }
     val appNotifier = remember { AppNotifier(context, database.notificationDao()) }
+    val notificationRepository = remember { NotificationRepository(database.notificationDao()) }
     val offeredServiceRepository = remember {
         OfferedServiceRepository(database.offeredServiceDao(), apiService)
     }
@@ -529,6 +543,80 @@ fun AppNavigation(
             )
         }
 
+        // ===== COMPARAR OFERTAS (Parte 3.1) =====
+        composable<CompararOfertas> {
+            val ownerId = sessionManager.getBackendUserId()
+            val ofertas by CompararOfertasBridge.ofertas.collectAsStateWithLifecycle()
+            CompararOfertasScreen(
+                ofertas = ofertas,
+                onBack = {
+                    CompararOfertasBridge.clear()
+                    navController.popBackStack()
+                },
+                onAccept = { oferta ->
+                    serviceRequestViewModel.acceptApplication(oferta.applicationId, ownerId = ownerId)
+                    CompararOfertasBridge.clear()
+                    navController.popBackStack()
+                },
+                onReject = { oferta ->
+                    serviceRequestViewModel.rejectApplication(oferta.applicationId, ownerId)
+                    CompararOfertasBridge.set(CompararOfertasBridge.ofertas.value.filter { it.applicationId != oferta.applicationId })
+                }
+            )
+        }
+
+        // ===== NOTIFICACIONES (Parte 3.3) =====
+        composable<Notificaciones> { backStackEntry ->
+            val args = backStackEntry.toRoute<Notificaciones>()
+            NotificacionesScreen(
+                usuarioId = args.usuarioId,
+                repository = notificationRepository,
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        // ===== BUSQUEDA GLOBAL (Parte 3.6) =====
+        composable<BusquedaGlobal> {
+            val items by BusquedaGlobalBridge.items.collectAsStateWithLifecycle()
+            BusquedaGlobalScreen(items = items, onBack = { navController.popBackStack() })
+        }
+
+        // ===== AYUDA / FAQ (Parte 3.8) =====
+        composable<Ayuda> {
+            AyudaScreen(onBack = { navController.popBackStack() })
+        }
+
+        // ===== CONFIGURACION (Parte 3.9) =====
+        composable<Configuracion> { backStackEntry ->
+            val args = backStackEntry.toRoute<Configuracion>()
+            ConfiguracionScreen(
+                usuarioId = args.usuarioId,
+                darkModeOverride = darkModeOverride,
+                onDarkModeOverrideChange = onDarkModeOverrideChange,
+                onBack = { navController.popBackStack() },
+                onLogout = { sessionLogout(navController, userRoleViewModel) }
+            )
+        }
+
+        // ===== ESTADISTICAS CUIDADOR (Parte 3.4) =====
+        composable<EstadisticasCuidador> { backStackEntry ->
+            val args = backStackEntry.toRoute<EstadisticasCuidador>()
+            EstadisticasCuidadorScreen(
+                caregiverId = args.caregiverId,
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        // ===== ESTADISTICAS PROPIETARIO (Parte 3.5) =====
+        composable<EstadisticasPropietario> { backStackEntry ->
+            val args = backStackEntry.toRoute<EstadisticasPropietario>()
+            EstadisticasPropietarioScreen(
+                ownerId = args.ownerId,
+                onBack = { navController.popBackStack() },
+                onVerFavoritos = { navController.navigate(Favoritos(usuarioId = args.ownerId)) }
+            )
+        }
+
         // ===== OWNER HOME =====
         composable<OwnerHome> {
             val ownerId = sessionManager.getBackendUserId()
@@ -638,6 +726,10 @@ fun AppNavigation(
                             petId = application.petId
                         )
                     )
+                },
+                onCompareOffers = { ofertas ->
+                    CompararOfertasBridge.set(ofertas)
+                    navController.navigate(CompararOfertas)
                 },
                 onEditRequest = { request ->
                     navController.navigate(EditarSolicitud(request.serviceRequestId))
@@ -789,6 +881,7 @@ fun AppNavigation(
                         latitude = latitude,
                         longitude = longitude,
                         onSuccess = {
+                            SuccessCheckBridge.trigger()
                             navController.navigate(OwnerHome) {
                                 popUpTo(OwnerHome) { inclusive = false }
                                 launchSingleTop = true
@@ -1021,7 +1114,15 @@ fun AppNavigation(
                     onEditProfile = {
                         navController.navigate(EditOwnerProfile(targetOwnerId))
                     },
-                    onAddPet = { navController.navigate(DogInfo()) }
+                    onAddPet = { navController.navigate(DogInfo()) },
+                    onGoToStats = { navController.navigate(EstadisticasPropietario(ownerId = targetOwnerId)) },
+                    onGoToNotifications = { navController.navigate(Notificaciones(usuarioId = targetOwnerId)) },
+                    onGoToSearch = {
+                        BusquedaGlobalBridge.set(buildBusquedaItems(recentOwnerRequests, ownerApplicationDetails + ownerScheduledServices))
+                        navController.navigate(BusquedaGlobal)
+                    },
+                    onGoToHelp = { navController.navigate(Ayuda) },
+                    onGoToSettings = { navController.navigate(Configuracion(usuarioId = targetOwnerId)) }
                 )
             } else {
                 OwnerPublicProfileScreen(
@@ -1089,7 +1190,15 @@ fun AppNavigation(
                     onEditProfile = {
                         navController.navigate(EditCaregiverProfile(targetCaregiverId))
                     },
-                    onManageAvailability = { }
+                    onManageAvailability = { },
+                    onGoToStats = { navController.navigate(EstadisticasCuidador(caregiverId = targetCaregiverId)) },
+                    onGoToNotifications = { navController.navigate(Notificaciones(usuarioId = targetCaregiverId)) },
+                    onGoToSearch = {
+                        BusquedaGlobalBridge.set(buildBusquedaItems(availableRequests, caregiverApplicationDetails + caregiverScheduledServices))
+                        navController.navigate(BusquedaGlobal)
+                    },
+                    onGoToHelp = { navController.navigate(Ayuda) },
+                    onGoToSettings = { navController.navigate(Configuracion(usuarioId = targetCaregiverId)) }
                 )
             } else {
                 CaregiverPublicProfileScreen(
@@ -1180,6 +1289,19 @@ fun AppNavigation(
             HistorialScreen(
                 usuarioId = args.usuarioId,
                 role = args.role,
+                onBack = { navController.popBackStack() },
+                onOpenResumen = { request ->
+                    navController.navigate(ResumenServicio(serviceRequestId = request.id, requestTitle = request.title))
+                }
+            )
+        }
+
+        // ===== RESUMEN DE SERVICIO (Parte 3.2) =====
+        composable<ResumenServicio> { backStackEntry ->
+            val args = backStackEntry.toRoute<ResumenServicio>()
+            ResumenServicioScreen(
+                serviceRequestId = args.serviceRequestId,
+                requestTitle = args.requestTitle,
                 onBack = { navController.popBackStack() }
             )
         }
@@ -1326,6 +1448,28 @@ fun AppNavigation(
 }
 
 // ========== FUNCIONES AUXILIARES ==========
+
+/** Construye los items indexables para la búsqueda global (Parte 3.6) a partir de datos ya cargados. */
+private fun buildBusquedaItems(
+    requests: List<ServiceRequestDetails>,
+    applications: List<ServiceApplicationDetails>
+): List<BusquedaResultItem> {
+    val fromRequests = requests.map { r ->
+        BusquedaResultItem(
+            title = r.petName ?: r.title,
+            subtitle = "${r.serviceTypeName ?: r.title} · ${r.ownerName ?: "Dueño"}",
+            searchText = listOfNotNull(r.petName, r.ownerName, r.serviceTypeName, r.title).joinToString(" ").lowercase()
+        )
+    }
+    val fromApplications = applications.map { a ->
+        BusquedaResultItem(
+            title = a.petName ?: a.requestTitle,
+            subtitle = "${a.serviceTypeName ?: a.requestTitle} · ${a.caregiverName ?: a.ownerName ?: ""}",
+            searchText = listOfNotNull(a.petName, a.caregiverName, a.ownerName, a.serviceTypeName, a.requestTitle).joinToString(" ").lowercase()
+        )
+    }
+    return (fromRequests + fromApplications).distinctBy { it.title to it.subtitle }
+}
 
 private fun generatePetId(existingPets: List<PetEntity>): Int {
     var candidate = (System.currentTimeMillis() % Int.MAX_VALUE).toInt()

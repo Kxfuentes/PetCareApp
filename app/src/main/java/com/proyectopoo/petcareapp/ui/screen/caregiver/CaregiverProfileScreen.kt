@@ -1,12 +1,15 @@
 package com.proyectopoo.petcareapp.ui.screen.caregiver
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.HelpOutline
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -36,7 +39,12 @@ fun CaregiverProfileScreen(
     onEditProfile: () -> Unit = {},
     onManageAvailability: () -> Unit = {},
     noMolestar: Boolean = false,
-    onToggleNoMolestar: (Boolean) -> Unit = {}
+    onToggleNoMolestar: (Boolean) -> Unit = {},
+    onGoToStats: () -> Unit = {},
+    onGoToNotifications: () -> Unit = {},
+    onGoToSearch: () -> Unit = {},
+    onGoToHelp: () -> Unit = {},
+    onGoToSettings: () -> Unit = {}
 ) {
     val scrollState = rememberScrollState()
 
@@ -208,6 +216,27 @@ fun CaregiverProfileScreen(
         Spacer(Modifier.weight(1f))
 
         if (isOwnProfile) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+            ) {
+                Column {
+                    CaregiverProfileMenuRow(Icons.Default.BarChart, "Mis estadísticas", onGoToStats)
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                    CaregiverProfileMenuRow(Icons.Default.Notifications, "Notificaciones", onGoToNotifications)
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                    CaregiverProfileMenuRow(Icons.Default.Search, "Buscar", onGoToSearch)
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                    CaregiverProfileMenuRow(Icons.AutoMirrored.Filled.HelpOutline, "Ayuda", onGoToHelp)
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                    CaregiverProfileMenuRow(Icons.Default.Settings, "Configuración", onGoToSettings)
+                }
+            }
+
+            Spacer(Modifier.height(12.dp))
+
             Button(
                 onClick = onEditProfile,
                 Modifier.fillMaxWidth(),
@@ -232,5 +261,21 @@ fun CaregiverProfileScreen(
                 Text("Cerrar Sesión")
             }
         }
+    }
+}
+
+@Composable
+private fun CaregiverProfileMenuRow(icon: androidx.compose.ui.graphics.vector.ImageVector, text: String, onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(icon, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(22.dp))
+        Spacer(Modifier.width(14.dp))
+        Text(text, modifier = Modifier.weight(1f), fontWeight = FontWeight.Medium)
+        Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
