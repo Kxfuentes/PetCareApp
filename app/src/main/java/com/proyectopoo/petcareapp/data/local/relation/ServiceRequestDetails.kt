@@ -32,6 +32,7 @@ data class ServiceApplicationDetails(
     val serviceRequestId: Int,
     val caregiverId: Int,
     val ownerId: Int,
+    val petId: Int,
     val offeredServiceId: Int?,
     val initiatedBy: ApplicationInitiator,
     val applicationStatus: ApplicationStatus,

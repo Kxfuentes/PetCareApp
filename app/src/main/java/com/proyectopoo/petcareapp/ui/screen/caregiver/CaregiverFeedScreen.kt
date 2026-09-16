@@ -15,6 +15,7 @@ import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.MonetizationOn
+import androidx.compose.material.icons.automirrored.filled.Notes
 import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
@@ -40,6 +41,7 @@ fun CaregiverFeedScreen(
     requests: List<ServiceRequestDetails>,
     onGoToOwnerProfile: (Int, Int) -> Unit,
     onApplyToRequest: (Int) -> Unit,
+    onViewExpediente: (Int) -> Unit = {},
     isLoading: Boolean = false,
     isRefreshing: Boolean = false,
     onRefresh: () -> Unit = {},
@@ -335,6 +337,19 @@ fun CaregiverFeedScreen(
                                 colors = ButtonDefaults.outlinedButtonColors(contentColor = CafeMedio)
                             ) {
                                 Text("Ver perfil completo", fontWeight = FontWeight.Bold)
+                            }
+
+                            Spacer(modifier = Modifier.height(10.dp))
+
+                            OutlinedButton(
+                                onClick = { onViewExpediente(servicio.petId) },
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(14.dp),
+                                colors = ButtonDefaults.outlinedButtonColors(contentColor = CafeMedio)
+                            ) {
+                                Icon(Icons.AutoMirrored.Filled.Notes, contentDescription = null)
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Ver expediente del perro", fontWeight = FontWeight.Bold)
                             }
 
                             Spacer(modifier = Modifier.height(10.dp))

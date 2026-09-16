@@ -80,7 +80,14 @@ data class Chat(
     val serviceRequestId: Int,
     val currentUserId: Int,
     val otherUserId: Int,
-    val otherUserName: String
+    val otherUserName: String,
+    val petId: Int = -1
+)
+
+@Serializable
+data class ExpedienteMedico(
+    val petId: Int,
+    val usuarioId: Int
 )
 
 @Serializable

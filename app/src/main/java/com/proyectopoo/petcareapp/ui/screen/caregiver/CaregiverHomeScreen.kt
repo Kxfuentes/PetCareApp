@@ -72,6 +72,7 @@ fun CaregiverHomeScreen(
     onCancelService: (ServiceApplicationDetails) -> Unit = {},
     onScheduledClick: (ServiceApplicationDetails) -> Unit = {},
     onOpenChat: (ServiceApplicationDetails) -> Unit = {},
+    onViewExpediente: (ServiceApplicationDetails) -> Unit = {},
     onGoToCalendar: () -> Unit = {},
     onGoToLostPetAlerts: () -> Unit = {},
     isLoading: Boolean = false,
@@ -393,6 +394,10 @@ fun CaregiverHomeScreen(
                 }
             } else null,
             onShareClick = { shareRequest(request.serviceRequestId) },
+            onViewExpedienteClick = {
+                requestToDetails = null
+                onViewExpediente(request)
+            },
             onReact = if (isInProgress) {
                 { tipo -> sendReaction(request.serviceRequestId, tipo) }
             } else null,
@@ -705,6 +710,7 @@ private fun CaregiverServiceDetailsDialog(
     onComoLlegarClick: (() -> Unit)? = null,
     onEmergencyClick: (() -> Unit)? = null,
     onShareClick: (() -> Unit)? = null,
+    onViewExpedienteClick: (() -> Unit)? = null,
     onReact: ((String) -> Unit)? = null,
     isReactingEnabled: Boolean = true,
     evidenciaContent: (@Composable () -> Unit)? = null
@@ -844,6 +850,20 @@ private fun CaregiverServiceDetailsDialog(
                         Icon(Icons.AutoMirrored.Filled.Chat, contentDescription = null, modifier = Modifier.size(20.dp))
                         Spacer(Modifier.width(8.dp))
                         Text("Chat", fontWeight = FontWeight.Bold)
+                    }
+                }
+
+                if (onViewExpedienteClick != null) {
+                    OutlinedButton(
+                        onClick = onViewExpedienteClick,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(50.dp),
+                        shape = RoundedCornerShape(14.dp)
+                    ) {
+                        Icon(Icons.AutoMirrored.Filled.Notes, contentDescription = null, modifier = Modifier.size(20.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text("Ver expediente del perro", fontWeight = FontWeight.Bold)
                     }
                 }
 

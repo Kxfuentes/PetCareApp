@@ -71,7 +71,7 @@ fun ExpedienteMedicoSection(
 
     suspend fun reload() {
         isLoading = true
-        val response = runCatching { RetrofitClient.apiService.getExpediente(petId) }.getOrNull()
+        val response = runCatching { RetrofitClient.apiService.getExpediente(petId, currentUserId) }.getOrNull()
         if (response?.isSuccessful == true) {
             entries = response.body().orEmpty()
             loadError = false

@@ -14,6 +14,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Notes
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.AttachFile
 import androidx.compose.material.icons.filled.Close
@@ -148,7 +149,9 @@ fun ChatScreen(
     otherUserId: Int,
     otherUserName: String,
     refreshTick: Int,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    petId: Int = -1,
+    onViewExpediente: (Int) -> Unit = {}
 ) {
     var displayMessages by remember { mutableStateOf<List<ChatDisplayMessage>>(emptyList()) }
     var draft by remember { mutableStateOf("") }
@@ -347,6 +350,13 @@ fun ChatScreen(
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
+                    }
+                },
+                actions = {
+                    if (petId > 0) {
+                        IconButton(onClick = { onViewExpediente(petId) }) {
+                            Icon(Icons.AutoMirrored.Filled.Notes, contentDescription = "Ver expediente médico")
+                        }
                     }
                 }
             )

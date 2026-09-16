@@ -293,7 +293,10 @@ interface ApiService {
     // ===== Expediente médico de la mascota (Bloque 11) =====
 
     @GET("api/pets/{id}/expediente")
-    suspend fun getExpediente(@Path("id") petId: Int): Response<List<ExpedienteEntryDto>>
+    suspend fun getExpediente(
+        @Path("id") petId: Int,
+        @Query("usuario_id") usuarioId: Int
+    ): Response<List<ExpedienteEntryDto>>
 
     @Multipart
     @POST("api/pets/{id}/expediente")

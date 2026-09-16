@@ -14,6 +14,7 @@ import com.proyectopoo.petcareapp.data.network.ServiceRequestDto
 import com.proyectopoo.petcareapp.ui.screen.AlertaPerdidaDetalleScreen
 import com.proyectopoo.petcareapp.ui.screen.AlertasPerdidasScreen
 import com.proyectopoo.petcareapp.ui.screen.EditarSolicitudScreen
+import com.proyectopoo.petcareapp.ui.screen.ExpedienteMedicoScreen
 import com.proyectopoo.petcareapp.ui.screen.FavoritosScreen
 import com.proyectopoo.petcareapp.ui.screen.FiltrosResult
 import com.proyectopoo.petcareapp.ui.screen.FiltrosScreen
@@ -510,6 +511,20 @@ fun AppNavigation(
                 otherUserId = args.otherUserId,
                 otherUserName = args.otherUserName,
                 refreshTick = wsRefreshTick,
+                onBack = { navController.popBackStack() },
+                petId = args.petId,
+                onViewExpediente = { petId ->
+                    navController.navigate(ExpedienteMedico(petId = petId, usuarioId = args.currentUserId))
+                }
+            )
+        }
+
+        // ===== EXPEDIENTE MEDICO (solo lectura, para el cuidador) =====
+        composable<ExpedienteMedico> { backStackEntry ->
+            val args = backStackEntry.toRoute<ExpedienteMedico>()
+            ExpedienteMedicoScreen(
+                petId = args.petId,
+                currentUserId = args.usuarioId,
                 onBack = { navController.popBackStack() }
             )
         }
@@ -619,7 +634,8 @@ fun AppNavigation(
                             serviceRequestId = application.serviceRequestId,
                             currentUserId = ownerId,
                             otherUserId = application.caregiverId,
-                            otherUserName = application.caregiverName ?: "Cuidador"
+                            otherUserName = application.caregiverName ?: "Cuidador",
+                            petId = application.petId
                         )
                     )
                 },
@@ -844,9 +860,13 @@ fun AppNavigation(
                             serviceRequestId = request.serviceRequestId,
                             currentUserId = caregiverId,
                             otherUserId = request.ownerId,
-                            otherUserName = request.ownerName ?: "Dueño"
+                            otherUserName = request.ownerName ?: "Dueño",
+                            petId = request.petId
                         )
                     )
+                },
+                onViewExpediente = { request ->
+                    navController.navigate(ExpedienteMedico(petId = request.petId, usuarioId = caregiverId))
                 },
                 onGoToCalendar = { navController.navigate(Calendario(usuarioId = caregiverId)) },
                 onGoToLostPetAlerts = { navController.navigate(AlertasPerdidas(usuarioId = caregiverId)) },
@@ -927,6 +947,9 @@ fun AppNavigation(
                     scope.launch {
                         snackbarHostState.showSnackbar("Solicitud de trabajo enviada.")
                     }
+                },
+                onViewExpediente = { petId ->
+                    navController.navigate(ExpedienteMedico(petId = petId, usuarioId = caregiverId))
                 },
                 distances = caregiverFeedDistances,
                 onOpenFilters = { navController.navigate(Filtros) }
